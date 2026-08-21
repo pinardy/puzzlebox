@@ -1,11 +1,12 @@
 # PuzzleBox
 
-A puzzle PWA — thirty games, endless boards: word guess, sudoku,
+A puzzle PWA — forty-one games, endless boards: word guess, sudoku,
 picross, word search, lights out, minesweeper, queens, suns & moons,
 zip, 2048, pairs, fifteen, hangman, futoshiki, skyscrapers, hitori,
 nurikabe, bridges, kenken, kropki, star battle, flow, tents & trees,
 shikaku, battleships, slitherlink, kakuro, mastermind, towers of
-hanoi, and klondike solitaire. Pick any game, play as many rounds as
+hanoi, klondike, freecell, spider, anagram, masyu, light up,
+dominoes, thermometers, suguru, sokoban, peg solitaire, and yahtzee. Pick any game, play as many rounds as
 you like. Fully offline: puzzles are generated **on-device** from
 random seeds, so nothing is ever fetched at runtime.
 
@@ -43,6 +44,17 @@ random seeds, so nothing is ever fetched at runtime.
 | **Mastermind** | Crack the colour code from peg feedback | 6 colours, length 4, 10 guesses |
 | **Towers of Hanoi** | Rebuild the tower, big never on small | 5–7 disks by seed |
 | **Solitaire** | Klondike, draw-1, tap-to-move | Seeded deals |
+| **FreeCell** | All face-up, four spare cells | Seeded deals, supermove sizing |
+| **Spider** | One suit, clear eight K→A runs | Seeded 104-card deals |
+| **Anagram** | Unscramble a five-letter word | Seeded pick, letter-lock hints |
+| **Masyu** | One loop obeying black/white pearls | Loop from a grown blob boundary |
+| **Light Up** | Bulbs light all cells, never each other | Bulbs placed first; numbered walls |
+| **Dominoes** | Re-draw the hidden domino set | Backtracking tiling, full pair set |
+| **Thermometers** | Fill from the bulb to match counts | Hamiltonian path cut into thermos |
+| **Suguru** | 1..N per region, no touching twins | Region growth + backtracking fill |
+| **Sokoban** | Push crates onto goals | Reverse-play generation, always solvable |
+| **Peg Solitaire** | Jump pegs down to one | Classic English cross board |
+| **Yahtzee** | 13 rounds of dice, chase a high score | Seeded deterministic dice stream |
 
 The current puzzle of each game (its seed, difficulty, progress, and play
 time) persists in `localStorage`, so leaving and returning resumes where
