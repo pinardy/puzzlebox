@@ -19,7 +19,9 @@ export function save<T>(key: string, value: T): void {
 
 export type GameId =
   | "word" | "sudoku" | "picross" | "wordsearch" | "lights" | "mines"
-  | "queens" | "tango" | "zip";
+  | "queens" | "tango" | "zip"
+  | "2048" | "memory" | "fifteen" | "hangman" | "futoshiki" | "sky"
+  | "hitori" | "nurikabe" | "hashi";
 
 export interface Stats {
   played: number;

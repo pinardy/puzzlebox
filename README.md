@@ -1,10 +1,11 @@
 # PuzzleBox
 
-A puzzle PWA — nine games, endless boards: word guess, sudoku, picross,
-word search, lights out, minesweeper, queens, suns & moons, and zip.
-Pick any game, play as many rounds as you like. Fully offline: puzzles
-are generated **on-device** from random seeds, so nothing is ever
-fetched at runtime.
+A puzzle PWA — eighteen games, endless boards: word guess, sudoku,
+picross, word search, lights out, minesweeper, queens, suns & moons,
+zip, 2048, pairs, fifteen, hangman, futoshiki, skyscrapers, hitori,
+nurikabe, and bridges. Pick any game, play as many rounds as you like.
+Fully offline: puzzles are generated **on-device** from random seeds,
+so nothing is ever fetched at runtime.
 
 ## Games
 
@@ -19,6 +20,15 @@ fetched at runtime.
 | **Queens** | One crown per row/column/colour, none touching | 8×8; unique solution |
 | **Suns & Moons** | Balance two symbols, no three in a row | 6×6; unique fill |
 | **Zip** | One line through every square, numbers in order | 6×6; solvable by construction |
+| **2048** | Swipe to merge equal tiles, reach 2048 | 4×4; deterministic spawns per seed |
+| **Pairs** | Flip two cards, find every match | 4×4, 8 symbol pairs |
+| **Fifteen** | Slide tiles into 1–15 order | 4×4; scrambled by legal moves, always solvable |
+| **Hangman** | Guess the word letter by letter | 6 lives, 5-letter answers |
+| **Futoshiki** | Latin square with inequality arrows | 5×5, 10 arrows, 3 givens |
+| **Skyscrapers** | Latin square with visibility clues | 5×5, all 20 edge clues |
+| **Hitori** | Shade duplicates: no touching, rest connected | 6×6; built from a Latin square |
+| **Nurikabe** | Fill a connected sea around sized islands | 7×7; constraint-repair generator |
+| **Bridges** | Link islands with 1–2 bridges, no crossings | 7×7, ~9 islands; connected by construction |
 
 The current puzzle of each game (its seed plus your progress) persists in
 `localStorage`, so leaving and returning resumes where you left off.

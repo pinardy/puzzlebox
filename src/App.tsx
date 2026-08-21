@@ -11,6 +11,15 @@ const Mines = lazy(() => import("./games/Mines"));
 const Queens = lazy(() => import("./games/Queens"));
 const Tango = lazy(() => import("./games/Tango"));
 const Zip = lazy(() => import("./games/Zip"));
+const Game2048 = lazy(() => import("./games/Game2048"));
+const Memory = lazy(() => import("./games/Memory"));
+const Fifteen = lazy(() => import("./games/Fifteen"));
+const Hangman = lazy(() => import("./games/Hangman"));
+const Futoshiki = lazy(() => import("./games/Futoshiki"));
+const Skyscrapers = lazy(() => import("./games/Skyscrapers"));
+const Hitori = lazy(() => import("./games/Hitori"));
+const Nurikabe = lazy(() => import("./games/Nurikabe"));
+const Hashi = lazy(() => import("./games/Hashi"));
 import { GameId, loadStats, loadSlot } from "./lib/storage";
 
 type View = "hub" | GameId;
@@ -32,7 +41,16 @@ const CARDS: CardInfo[] = [
   { id: "mines", name: "Minesweeper", tagline: "First tap is always safe", accent: "var(--purple)", glyph: "✹" },
   { id: "queens", name: "Queens", tagline: "One crown per colour, none touching", accent: "var(--indigo)", glyph: "♛" },
   { id: "tango", name: "Suns & Moons", tagline: "Balance the board, no three in a row", accent: "var(--coral)", glyph: "☾" },
-  { id: "zip", name: "Zip", tagline: "One line, every square, in order", accent: "var(--olive)", glyph: "⤳" }
+  { id: "zip", name: "Zip", tagline: "One line, every square, in order", accent: "var(--olive)", glyph: "⤳" },
+  { id: "2048", name: "2048", tagline: "Merge tiles, double up", accent: "var(--amber)", glyph: "⊞" },
+  { id: "memory", name: "Pairs", tagline: "Flip two, find the match", accent: "var(--rose)", glyph: "❖" },
+  { id: "fifteen", name: "Fifteen", tagline: "Slide the tiles into order", accent: "var(--blue)", glyph: "⇆" },
+  { id: "hangman", name: "Hangman", tagline: "Six lives, one word", accent: "var(--green)", glyph: "?" },
+  { id: "futoshiki", name: "Futoshiki", tagline: "Fill 1–5, obey the arrows", accent: "var(--purple)", glyph: "≶" },
+  { id: "sky", name: "Skyscrapers", tagline: "Count the towers you can see", accent: "var(--teal)", glyph: "⌂" },
+  { id: "hitori", name: "Hitori", tagline: "Shade out the duplicates", accent: "var(--indigo)", glyph: "▩" },
+  { id: "nurikabe", name: "Nurikabe", tagline: "Islands in a connected sea", accent: "var(--coral)", glyph: "◍" },
+  { id: "hashi", name: "Bridges", tagline: "Link every island, no crossings", accent: "var(--olive)", glyph: "☰" }
 ];
 
 type Progress = "fresh" | "started" | "done";
@@ -69,7 +87,10 @@ export default function App() {
     const Game = {
       word: Wordle, sudoku: Sudoku, picross: Picross,
       wordsearch: WordSearch, lights: LightsOut, mines: Mines,
-      queens: Queens, tango: Tango, zip: Zip
+      queens: Queens, tango: Tango, zip: Zip,
+      "2048": Game2048, memory: Memory, fifteen: Fifteen,
+      hangman: Hangman, futoshiki: Futoshiki, sky: Skyscrapers,
+      hitori: Hitori, nurikabe: Nurikabe, hashi: Hashi
     }[view];
     return (
       <Suspense fallback={<div className="game" />}>
@@ -84,7 +105,7 @@ export default function App() {
         <h1>PuzzleBox</h1>
         <p className="ticket-note">
           {online
-            ? "Nine puzzles, endless boards — pick one."
+            ? "Eighteen puzzles, endless boards — pick one."
             : "Offline — puzzles still work."}
         </p>
       </header>
