@@ -1,0 +1,762 @@
+/* PuzzleBox — cool graph-paper stationery, ink type, one accent per game.
+   System fonts only: the app is offline-first and loads zero external assets. */
+
+:root {
+  --paper: #eef1f4;
+  --grid-line: #dde3ea;
+  --ink: #1b2733;
+  --ink-soft: #5b6a78;
+  --card: #ffffff;
+  --green: #2e9e6b;
+  --blue: #3b6fe0;
+  --rose: #c9407a;
+  --amber: #e0a23b;
+  --teal: #2a9d8f;
+  --purple: #7857c9;
+  --indigo: #4b56b8;
+  --coral: #d95c43;
+  --olive: #6f8f2f;
+  --shadow: 0 2px 0 rgba(27, 39, 51, 0.16);
+  --radius: 14px;
+  --display: "Avenir Next", "Segoe UI", "Trebuchet MS", system-ui, sans-serif;
+  --body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body { margin: 0; padding: 0; }
+
+body {
+  font-family: var(--body);
+  color: var(--ink);
+  background:
+    linear-gradient(var(--grid-line) 1px, transparent 1px) 0 0 / 100% 28px,
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px) 0 0 / 28px 100%,
+    var(--paper);
+  min-height: 100dvh;
+}
+
+#root {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 16px 14px calc(20px + env(safe-area-inset-bottom));
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+button { font-family: inherit; color: inherit; }
+
+/* ---------- Hub ---------- */
+
+.hub { display: flex; flex-direction: column; gap: 18px; flex: 1; }
+
+.ticket {
+  background: var(--card);
+  border: 1.5px solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px 18px 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.ticket::after {
+  /* perforated ticket edge */
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: 6px;
+  border-bottom: 2px dashed var(--grid-line);
+}
+
+.ticket h1 {
+  margin: 10px 0 2px;
+  font-family: var(--display);
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.ticket-note { margin: 8px 0 10px; font-size: 14px; color: var(--ink-soft); }
+
+.cards { display: flex; flex-direction: column; gap: 12px; }
+
+.card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-align: left;
+  background: var(--card);
+  border: 1.5px solid var(--ink);
+  border-left: 8px solid var(--accent);
+  border-radius: var(--radius);
+  box-shadow: 0 3px 0 rgba(27, 39, 51, 0.2);
+  padding: 16px 16px;
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+  animation: card-in 340ms ease backwards;
+  animation-delay: calc(var(--i) * 70ms);
+}
+
+.card:active {
+  transform: translateY(3px);
+  box-shadow: 0 0 0 rgba(27, 39, 51, 0.2);
+}
+
+@keyframes card-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.card-glyph {
+  font-family: var(--mono);
+  font-size: 26px;
+  font-weight: 700;
+  width: 48px; height: 48px;
+  display: grid; place-items: center;
+  border: 1.5px solid var(--accent);
+  border-radius: 10px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.card-body { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.card-name { font-family: var(--display); font-weight: 700; font-size: 18px; }
+.card-tag { font-size: 13px; color: var(--ink-soft); }
+
+.card-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.card-state { font-size: 13px; font-weight: 600; color: var(--accent); white-space: nowrap; }
+.card-solved { font-size: 12px; color: var(--ink-soft); }
+
+.hub-footer {
+  margin-top: auto;
+  text-align: center;
+  font-size: 12px;
+  color: var(--ink-soft);
+  padding-top: 10px;
+}
+
+/* ---------- Shared game chrome ---------- */
+
+.game { display: flex; flex-direction: column; gap: 10px; flex: 1; }
+
+.game-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.game-header h2 {
+  margin: 0;
+  flex: 1;
+  font-family: var(--display);
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.back-btn {
+  width: 40px; height: 40px;
+  border: 1.5px solid var(--ink);
+  border-radius: 10px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  font-size: 18px;
+  cursor: pointer;
+}
+.back-btn:active { transform: translateY(2px); box-shadow: none; }
+.header-spacer { width: 40px; }
+
+.new-btn {
+  height: 40px;
+  padding: 0 14px;
+  border: 1.5px solid var(--ink);
+  border-radius: 10px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.new-btn:active { transform: translateY(2px); box-shadow: none; }
+
+.game-hint { margin: 0; font-size: 13px; color: var(--ink-soft); }
+
+.toast {
+  align-self: center;
+  background: var(--ink);
+  color: var(--paper);
+  font-weight: 600;
+  padding: 10px 18px;
+  border-radius: 999px;
+  animation: card-in 240ms ease;
+}
+
+/* ---------- Word Guess ---------- */
+
+.word-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-self: center;
+  margin: 8px 0;
+}
+
+.word-row { display: flex; gap: 6px; }
+.word-row.shake { animation: shake 380ms ease; }
+
+@keyframes shake {
+  20%, 60% { transform: translateX(-5px); }
+  40%, 80% { transform: translateX(5px); }
+}
+
+.word-cell {
+  width: min(58px, 15vw);
+  height: min(58px, 15vw);
+  border: 2px solid var(--grid-line);
+  border-radius: 8px;
+  background: var(--card);
+  display: grid; place-items: center;
+  font-family: var(--mono);
+  font-size: 26px;
+  font-weight: 700;
+  text-transform: uppercase;
+  transition: background 200ms, border-color 200ms, color 200ms;
+}
+
+.word-cell.filled { border-color: var(--ink-soft); }
+.word-cell.is-correct { background: var(--green); border-color: var(--green); color: #fff; }
+.word-cell.is-present { background: var(--amber); border-color: var(--amber); color: #fff; }
+.word-cell.is-absent { background: var(--ink-soft); border-color: var(--ink-soft); color: #fff; }
+
+.keyboard {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  user-select: none;
+}
+
+.key-row { display: flex; gap: 5px; justify-content: center; }
+
+.key {
+  flex: 1;
+  max-width: 42px;
+  height: 52px;
+  border: 1.5px solid var(--ink);
+  border-radius: 8px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  padding: 0;
+}
+.key:active { transform: translateY(2px); box-shadow: none; }
+.key-wide { max-width: 64px; font-size: 12px; }
+.key.is-correct { background: var(--green); border-color: var(--green); color: #fff; }
+.key.is-present { background: var(--amber); border-color: var(--amber); color: #fff; }
+.key.is-absent { background: var(--grid-line); border-color: var(--grid-line); color: var(--ink-soft); box-shadow: none; }
+
+/* ---------- Sudoku ---------- */
+
+.sudoku-grid {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--card);
+  align-self: center;
+  width: min(100%, 440px);
+  aspect-ratio: 1;
+  margin: 6px 0;
+}
+
+.sudoku-cell {
+  border: 0.5px solid var(--grid-line);
+  background: var(--card);
+  font-family: var(--mono);
+  font-size: clamp(15px, 4.5vw, 22px);
+  font-weight: 600;
+  color: var(--blue);
+  display: grid; place-items: center;
+  padding: 0;
+  cursor: pointer;
+  position: relative;
+}
+
+.sudoku-cell.given { color: var(--ink); font-weight: 700; }
+.sudoku-cell.inline { background: #f2f6fd; }
+.sudoku-cell.same { background: #dbe7fb; }
+.sudoku-cell.selected { background: #c3d7f8; outline: 2px solid var(--blue); outline-offset: -2px; z-index: 1; }
+.sudoku-cell.conflict { color: var(--rose); background: #fbe6ef; }
+.sudoku-cell.br { border-right: 2px solid var(--ink); }
+.sudoku-cell.bb { border-bottom: 2px solid var(--ink); }
+
+.notes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  width: 100%; height: 100%;
+  font-size: 8px;
+  color: var(--ink-soft);
+}
+.notes i { font-style: normal; display: grid; place-items: center; }
+
+.numpad {
+  margin-top: auto;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+}
+
+.num-key {
+  height: 54px;
+  border: 1.5px solid var(--ink);
+  border-radius: 8px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  font-family: var(--mono);
+  font-size: 20px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+}
+.num-key small { font-size: 9px; color: var(--ink-soft); font-family: var(--body); }
+.num-key:active { transform: translateY(2px); box-shadow: none; }
+.num-key:disabled { opacity: 0.35; }
+.num-key.tool.active { background: var(--blue); color: #fff; }
+.num-key.tool.active small { color: #e6eeff; }
+
+/* ---------- Picross ---------- */
+
+.picross-wrap {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto 1fr;
+  align-self: center;
+  width: min(100%, 440px);
+  margin: 6px 0;
+  font-family: var(--mono);
+}
+
+.picross-corner { grid-area: 1 / 1; }
+
+.picross-colclues {
+  grid-area: 1 / 2;
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  gap: 0;
+}
+.colclue {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  padding-bottom: 4px;
+  gap: 1px;
+  min-height: calc(var(--colclue) * 13px);
+}
+
+.picross-rowclues {
+  grid-area: 2 / 1;
+  display: grid;
+  grid-template-rows: repeat(var(--n), 1fr);
+}
+.rowclue {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  padding-right: 6px;
+  min-width: calc(var(--rowclue) * 14px);
+}
+
+.colclue.satisfied, .rowclue.satisfied { color: var(--ink-soft); opacity: 0.45; }
+
+.picross-grid {
+  grid-area: 2 / 2;
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  border: 2px solid var(--ink);
+  background: var(--card);
+  aspect-ratio: 1;
+}
+
+.pic-cell {
+  border: 0.5px solid var(--grid-line);
+  background: var(--card);
+  padding: 0;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--ink-soft);
+  display: grid; place-items: center;
+}
+.pic-cell.fill { background: var(--rose); border-color: var(--rose); }
+.pic-cell.cross { color: var(--ink-soft); }
+.pic-cell.br { border-right: 1.5px solid var(--ink); }
+.pic-cell.bb { border-bottom: 1.5px solid var(--ink); }
+
+.picross-tools {
+  margin-top: auto;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.tool-btn {
+  flex: 1;
+  max-width: 180px;
+  height: 52px;
+  border: 1.5px solid var(--ink);
+  border-radius: 10px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+}
+.tool-btn:active { transform: translateY(2px); box-shadow: none; }
+.tool-btn.active { background: var(--rose); border-color: var(--rose); color: #fff; }
+
+/* ---------- Accessibility ---------- */
+
+:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ---------- Word Search ---------- */
+
+.ws-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--card);
+  align-self: center;
+  width: min(100%, 440px);
+  aspect-ratio: 1;
+  margin: 6px 0;
+}
+
+.ws-cell {
+  border: 0.5px solid var(--grid-line);
+  background: var(--card);
+  font-family: var(--mono);
+  font-weight: 600;
+  font-size: clamp(13px, 3.8vw, 19px);
+  padding: 0;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+.ws-cell.anchor { background: var(--teal); color: #fff; }
+.ws-cell.found { background: #d7efe9; color: var(--teal); font-weight: 700; }
+
+.ws-words {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: auto;
+  padding-bottom: 4px;
+}
+
+.ws-word {
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border: 1.5px solid var(--ink);
+  border-radius: 999px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
+.ws-word.found {
+  background: var(--teal);
+  border-color: var(--teal);
+  color: #fff;
+  text-decoration: line-through;
+  box-shadow: none;
+  opacity: 0.75;
+}
+
+/* ---------- Lights Out ---------- */
+
+.lights-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.mini-btn {
+  border: 1.5px solid var(--ink);
+  border-radius: 8px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.mini-btn:active { transform: translateY(2px); box-shadow: none; }
+
+.lights-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  gap: 8px;
+  align-self: center;
+  width: min(100%, 380px);
+  aspect-ratio: 1;
+  margin: 10px 0;
+}
+
+.light {
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: inset 0 3px 0 rgba(27, 39, 51, 0.12);
+  cursor: pointer;
+  transition: background 140ms, box-shadow 140ms;
+}
+.light.on {
+  background: var(--amber);
+  border-color: var(--amber);
+  box-shadow: 0 0 14px rgba(224, 162, 59, 0.65);
+}
+
+/* ---------- Minesweeper ---------- */
+
+.mines-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--card);
+  align-self: center;
+  width: min(100%, 440px);
+  aspect-ratio: 1;
+  margin: 6px 0;
+}
+
+.mine-cell {
+  border: 0.5px solid var(--grid-line);
+  background: #dfe5ec;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.7);
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: clamp(11px, 3.4vw, 17px);
+  padding: 0;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+.mine-cell.open { background: var(--card); box-shadow: none; cursor: default; }
+.mine-cell.boom { background: var(--rose); color: #fff; }
+.mine-cell.c1 { color: var(--blue); }
+.mine-cell.c2 { color: var(--green); }
+.mine-cell.c3 { color: var(--rose); }
+.mine-cell.c4 { color: var(--purple); }
+.mine-cell.c5 { color: #a3552b; }
+.mine-cell.c6 { color: var(--teal); }
+.mine-cell.c7 { color: var(--ink); }
+.mine-cell.c8 { color: var(--ink-soft); }
+
+.tool-btn.mines-flag.active { background: var(--purple); border-color: var(--purple); }
+
+/* ---------- Queens ---------- */
+
+.queens-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  overflow: hidden;
+  align-self: center;
+  width: min(100%, 420px);
+  aspect-ratio: 1;
+  margin: 6px 0;
+}
+
+.q-cell {
+  border: 0.5px solid rgba(27, 39, 51, 0.35);
+  font-size: clamp(15px, 4.6vw, 24px);
+  padding: 0;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  color: var(--ink);
+}
+.q-cell.conflict { color: var(--rose); text-shadow: 0 0 8px rgba(201, 64, 122, 0.5); }
+
+/* ---------- Suns & Moons ---------- */
+
+.tango-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--card);
+  align-self: center;
+  width: min(100%, 380px);
+  aspect-ratio: 1;
+  margin: 6px 0;
+}
+
+.tango-cell {
+  border: 0.5px solid var(--grid-line);
+  background: var(--card);
+  font-size: clamp(18px, 5.5vw, 28px);
+  padding: 0;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+.tango-cell.given { background: #f1f3f6; cursor: default; }
+.tango-cell.sun { color: var(--amber); }
+.tango-cell.moon { color: var(--indigo); }
+.tango-cell.conflict { background: #fbe6ef; }
+
+/* ---------- Zip ---------- */
+
+.zip-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--card);
+  align-self: center;
+  width: min(100%, 420px);
+  aspect-ratio: 1;
+  margin: 6px 0;
+  touch-action: none;
+  user-select: none;
+}
+
+.zip-cell {
+  border: 0.5px solid var(--grid-line);
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: clamp(14px, 4vw, 20px);
+  color: var(--ink);
+}
+.zip-cell.on { background: #dcead0; }
+.zip-cell.head { background: var(--olive); color: #fff; }
+.zip-cell.cp {
+  position: relative;
+}
+.zip-cell.cp::before {
+  content: "";
+  position: absolute;
+  width: 68%;
+  height: 68%;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  background: var(--card);
+  z-index: 0;
+}
+.zip-cell.cp { z-index: 0; }
+.zip-cell.cp > * { z-index: 1; }
+.zip-cell.cp-done::before { background: var(--olive); border-color: var(--olive); }
+.zip-cell.cp-done { color: #fff; }
+.zip-cell .cp-num { position: relative; z-index: 1; }
+
+/* ---------- Wider screens: tablet & desktop ---------- */
+
+@media (min-width: 700px) {
+  #root {
+    max-width: 1020px;
+    padding: 28px 32px calc(28px + env(safe-area-inset-bottom));
+  }
+
+  /* Hub: cards flow into a grid instead of one long column */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+  /* Split leftover height above the ticket and below the cards, so the
+     hub sits balanced instead of hugging the top. Footer stays at the
+     bottom via its own margin-top: auto. */
+  .ticket { margin-top: auto; padding: 24px 28px 22px; }
+  .ticket h1 { font-size: 42px; }
+  .ticket-note { font-size: 15px; }
+
+  /* Games: a wider centred column with larger boards */
+  .game {
+    align-self: center;
+    width: 100%;
+    max-width: 660px;
+    gap: 12px;
+  }
+  .game-hint { font-size: 14px; text-align: center; }
+
+  .sudoku-grid, .mines-grid, .ws-grid { width: min(100%, 560px); }
+  .picross-wrap { width: min(100%, 580px); }
+  .queens-grid, .zip-grid { width: min(100%, 540px); }
+  .lights-grid { width: min(100%, 460px); }
+  .tango-grid { width: min(100%, 470px); }
+
+  /* Boards absorb leftover height with auto margins, so tall viewports
+     spread the space around the board instead of leaving one big hole
+     above the bottom-pinned controls. */
+  .word-grid,
+  .sudoku-grid,
+  .picross-wrap,
+  .ws-grid,
+  .lights-grid,
+  .mines-grid,
+  .queens-grid,
+  .tango-grid,
+  .zip-grid {
+    margin-top: auto;
+    margin-bottom: auto;
+  }
+
+  .word-cell { width: 64px; height: 64px; font-size: 30px; }
+
+  .notes { font-size: 11px; }
+  .colclue, .rowclue { font-size: 13px; }
+  .colclue { min-height: calc(var(--colclue) * 15px); }
+  .rowclue { min-width: calc(var(--rowclue) * 16px); }
+
+  .key { max-width: 48px; height: 56px; }
+  .key-wide { max-width: 74px; }
+  .keyboard,
+  .numpad,
+  .picross-tools,
+  .lights-meta,
+  .ws-words {
+    align-self: center;
+    width: 100%;
+    max-width: 580px;
+  }
+}
+
+@media (min-width: 1080px) {
+  #root { max-width: 1240px; }
+  .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  .card { padding: 20px 18px; }
+}
