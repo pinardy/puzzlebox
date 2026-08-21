@@ -25,7 +25,9 @@ export type GameId =
   | "kenken" | "kropki" | "stars" | "flow" | "tents" | "shikaku"
   | "ships" | "slither" | "kakuro" | "mastermind" | "hanoi" | "klondike"
   | "freecell" | "spider" | "anagram" | "masyu" | "akari" | "dominoes"
-  | "thermo" | "suguru" | "sokoban" | "pegs" | "yahtzee";
+  | "thermo" | "suguru" | "sokoban" | "pegs" | "yahtzee"
+  | "tripeaks" | "aquarium" | "galaxies" | "net" | "ballsort" | "samegame"
+  | "math24";
 
 export interface Stats {
   played: number;

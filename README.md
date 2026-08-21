@@ -1,12 +1,13 @@
 # PuzzleBox
 
-A puzzle PWA — forty-one games, endless boards: word guess, sudoku,
+A puzzle PWA — forty-eight games, endless boards: word guess, sudoku,
 picross, word search, lights out, minesweeper, queens, suns & moons,
 zip, 2048, pairs, fifteen, hangman, futoshiki, skyscrapers, hitori,
 nurikabe, bridges, kenken, kropki, star battle, flow, tents & trees,
 shikaku, battleships, slitherlink, kakuro, mastermind, towers of
 hanoi, klondike, freecell, spider, anagram, masyu, light up,
-dominoes, thermometers, suguru, sokoban, peg solitaire, and yahtzee. Pick any game, play as many rounds as
+dominoes, thermometers, suguru, sokoban, peg solitaire, yahtzee,
+tripeaks, aquarium, galaxies, pipes, ball sort, samegame, and math 24. Pick any game, play as many rounds as
 you like. Fully offline: puzzles are generated **on-device** from
 random seeds, so nothing is ever fetched at runtime.
 
@@ -55,6 +56,13 @@ random seeds, so nothing is ever fetched at runtime.
 | **Sokoban** | Push crates onto goals | Reverse-play generation, always solvable |
 | **Peg Solitaire** | Jump pegs down to one | Classic English cross board |
 | **Yahtzee** | 13 rounds of dice, chase a high score | Seeded deterministic dice stream |
+| **TriPeaks** | Clear the peaks one rank at a time | Seeded deals, classic 28-card layout |
+| **Aquarium** | Flood tanks; water obeys gravity | Region growth + level choice |
+| **Galaxies** | 180°-symmetric regions around dots | Symmetric-pair region growth |
+| **Pipes (Net)** | Rotate tiles into one sealed network | Random spanning tree, scrambled |
+| **Ball Sort** | Pour tubes to one colour each | Seeded deals, two spare tubes |
+| **SameGame** | Pop groups, chase the clear bonus | Seeded boards, (n−2)² scoring |
+| **Math 24** | Reach 24 with +−×÷ | Brute-force-verified solvable deals |
 
 The current puzzle of each game (its seed, difficulty, progress, and play
 time) persists in `localStorage`, so leaving and returning resumes where
