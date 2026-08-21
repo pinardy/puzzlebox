@@ -80,6 +80,35 @@ button { font-family: inherit; color: inherit; }
 
 .ticket-note { margin: 8px 0 10px; font-size: 14px; color: var(--ink-soft); }
 
+.sound-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 38px;
+  height: 38px;
+  border: 1.5px solid var(--ink);
+  border-radius: 10px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  font-size: 16px;
+  cursor: pointer;
+}
+.sound-btn:active { transform: translateY(2px); box-shadow: none; }
+
+.hub-search {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--shadow);
+  font: inherit;
+  font-size: 15px;
+  color: var(--ink);
+}
+.hub-search::placeholder { color: var(--ink-soft); }
+.hub-search:focus { outline: 2px solid var(--blue); outline-offset: -1px; }
+
 .cards { display: flex; flex-direction: column; gap: 12px; }
 
 .cat-card { padding: 20px 16px; }
@@ -301,6 +330,21 @@ button { font-family: inherit; color: inherit; }
   font-family: var(--display);
   font-size: 20px;
   font-weight: 800;
+}
+
+.result-best {
+  margin: 6px 0 0;
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--amber);
+}
+
+.result-streak,
+.result-hinted {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--ink-soft);
 }
 
 .result-stats {

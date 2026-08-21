@@ -47,13 +47,16 @@ interface SavedState {
 }
 
 export default function Skyscrapers({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
+  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
     useGame<SavedState>("sky", (_s, d) => ({
       entries: Array(SIZE[d] * SIZE[d]).fill(0),
       done: false
     }));
   const n = SIZE[diff];
   const clues = useMemo(() => generateClues(seed, n), [seed, n]);
+  // Same seed string as generateClues, so this is the grid the clues
+  // were read from.
+  const solution = useMemo(() => generateLatin(`sky-${seed}`, n), [seed, n]);
   const [selected, setSelected] = useState<number | null>(null);
 
   const board = saved.entries;
@@ -108,6 +111,20 @@ export default function Skyscrapers({ onExit }: { onExit: () => void }) {
     commit({ ...saved, entries });
   }
 
+  function hint() {
+    const open = (i: number) => board[i] !== solution[i];
+    const cands = [...Array(n * n).keys()].filter(open);
+    if (!cands.length) return;
+    const idx =
+      selected !== null && open(selected)
+        ? selected
+        : cands[Math.floor(Math.random() * cands.length)];
+    const entries = saved.entries.slice();
+    entries[idx] = solution[idx];
+    commitHint({ ...saved, entries });
+    setSelected(idx);
+  }
+
   function startNew(d?: Diff) {
     newPuzzle(d);
     setSelected(null);
@@ -133,6 +150,7 @@ export default function Skyscrapers({ onExit }: { onExit: () => void }) {
         help={HELP}
         onUndo={undo}
         canUndo={canUndo && !saved.done}
+        onHint={saved.done ? undefined : hint}
       />
 
       <div

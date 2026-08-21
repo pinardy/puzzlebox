@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState, type CSSProperties } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, type CSSProperties } from "react";
 
 // Each game is its own chunk: the hub paints without parsing any game
 // code, and the service worker still precaches every chunk for offline.
@@ -51,6 +51,7 @@ const BallSort = lazy(() => import("./games/BallSort"));
 const SameGame = lazy(() => import("./games/SameGame"));
 const Math24 = lazy(() => import("./games/Math24"));
 import { GameId, loadStats, loadSlot } from "./lib/storage";
+import { soundEnabled, setSoundEnabled } from "./lib/sound";
 
 type View = "hub" | GameId;
 
@@ -147,6 +148,25 @@ const CARDS: CardInfo[] = [
   { id: "samegame", name: "SameGame", tagline: "Pop groups, clear the board", accent: "var(--rose)", glyph: "⣿", cat: "classic" }
 ];
 
+const CATEGORIES: Category[] = ["words", "numbers", "logic", "classic"];
+const GAME_IDS = new Set<string>(CARDS.map((c) => c.id));
+
+/** The view lives in location.hash (#/game/sudoku, #/cat/words), so the
+ *  browser back button navigates in-app instead of leaving the PWA, and
+ *  any game can be deep-linked or bookmarked. */
+interface Route {
+  view: View;
+  cat: Category | null;
+}
+
+function parseRoute(): Route {
+  const [kind, id] = window.location.hash.replace(/^#\/?/, "").split("/");
+  if (kind === "game" && GAME_IDS.has(id)) return { view: id as GameId, cat: null };
+  if (kind === "cat" && (CATEGORIES as string[]).includes(id))
+    return { view: "hub", cat: id as Category };
+  return { view: "hub", cat: null };
+}
+
 type Progress = "fresh" | "started" | "done";
 
 function progressOf(id: GameId): Progress {
@@ -188,23 +208,42 @@ function Card({ card, index, onOpen }: { card: CardInfo; index: number; onOpen: 
 }
 
 export default function App() {
-  const [view, setView] = useState<View>("hub");
+  const [{ view, cat: openCat }, setRoute] = useState<Route>(parseRoute);
   const [online, setOnline] = useState(navigator.onLine);
-  const [openCat, setOpenCat] = useState<Category | null>(null);
+  const [query, setQuery] = useState("");
+  const [sound, setSound] = useState(soundEnabled);
   const wide = useIsWide();
+  // True once we've pushed an in-app hash, so "back" can pop real history;
+  // on a deep link there's nothing behind us, so we push the hub instead.
+  const navigated = useRef(false);
 
   useEffect(() => {
     const on = () => setOnline(true);
     const off = () => setOnline(false);
+    const onHash = () => setRoute(parseRoute());
     window.addEventListener("online", on);
     window.addEventListener("offline", off);
+    window.addEventListener("hashchange", onHash);
     return () => {
       window.removeEventListener("online", on);
       window.removeEventListener("offline", off);
+      window.removeEventListener("hashchange", onHash);
     };
   }, []);
 
-  const exit = () => setView("hub");
+  const navigate = (hash: string) => {
+    navigated.current = true;
+    window.location.hash = hash;
+  };
+  const exit = () => {
+    if (navigated.current) window.history.back();
+    else window.location.hash = "/";
+  };
+  const toggleSound = () => {
+    setSoundEnabled(!sound);
+    setSound(!sound);
+  };
+
   if (view !== "hub") {
     const Game = {
       word: Wordle, sudoku: Sudoku, picross: Picross,
@@ -231,14 +270,14 @@ export default function App() {
   }
 
   const inProgress = CARDS.filter((c) => progressOf(c.id) === "started");
-  const categories: Category[] = ["words", "numbers", "logic", "classic"];
+  const open = (id: GameId) => navigate(`/game/${id}`);
 
   const jumpBackIn = inProgress.length > 0 && (
     <section className="cards-section">
       <h2>Jump back in</h2>
       <div className="cards">
         {inProgress.map((card, i) => (
-          <Card key={card.id} card={card} index={i} onOpen={() => setView(card.id)} />
+          <Card key={card.id} card={card} index={i} onOpen={() => open(card.id)} />
         ))}
       </div>
     </section>
@@ -247,7 +286,7 @@ export default function App() {
   const gamesOf = (cat: Category) => (
     <div className="cards">
       {CARDS.filter((c) => c.cat === cat).map((card, i) => (
-        <Card key={card.id} card={card} index={i} onOpen={() => setView(card.id)} />
+        <Card key={card.id} card={card} index={i} onOpen={() => open(card.id)} />
       ))}
     </div>
   );
@@ -260,7 +299,7 @@ export default function App() {
         <header className="cat-head">
           <button
             className="back-btn"
-            onClick={() => setOpenCat(null)}
+            onClick={exit}
             aria-label="Back to categories"
           >
             ←
@@ -282,9 +321,24 @@ export default function App() {
     );
   }
 
+  const q = query.trim().toLowerCase();
+  const matches = q
+    ? CARDS.filter(
+        (c) => c.name.toLowerCase().includes(q) || c.tagline.toLowerCase().includes(q)
+      )
+    : [];
+
   return (
     <div className="hub">
       <header className="ticket" aria-label="PuzzleBox">
+        <button
+          className="sound-btn"
+          onClick={toggleSound}
+          aria-label={sound ? "Mute sounds" : "Unmute sounds"}
+          aria-pressed={sound}
+        >
+          {sound ? "🔊" : "🔇"}
+        </button>
         <h1>PuzzleBox</h1>
         <p className="ticket-note">
           {online
@@ -293,50 +347,76 @@ export default function App() {
         </p>
       </header>
 
-      {jumpBackIn}
+      <input
+        className="hub-search"
+        type="search"
+        placeholder="Search 48 games…"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        aria-label="Search games"
+      />
 
-      {wide ? (
-        categories.map((cat) => (
-          <section key={cat} className="cards-section">
-            <h2>{CATEGORY_LABEL[cat]}</h2>
-            {gamesOf(cat)}
-          </section>
-        ))
-      ) : (
+      {q ? (
         <section className="cards-section">
-          <h2>Pick a category</h2>
+          <h2>
+            {matches.length
+              ? `${matches.length} ${matches.length === 1 ? "match" : "matches"}`
+              : "No matches"}
+          </h2>
           <div className="cards">
-            {categories.map((cat, i) => {
-              const meta = CATEGORY_META[cat];
-              const games = CARDS.filter((c) => c.cat === cat);
-              const started = games.filter((c) => progressOf(c.id) === "started").length;
-              return (
-                <button
-                  key={cat}
-                  className="card cat-card"
-                  style={{ "--accent": meta.accent, "--i": i } as CSSProperties}
-                  onClick={() => setOpenCat(cat)}
-                >
-                  <span className="card-glyph" aria-hidden="true">
-                    {meta.glyph}
-                  </span>
-                  <span className="card-body">
-                    <span className="card-name">{CATEGORY_LABEL[cat]}</span>
-                    <span className="card-tag">{meta.tagline}</span>
-                  </span>
-                  <span className="card-meta">
-                    <span className="card-state">
-                      {games.length} games →
-                    </span>
-                    {started > 0 && (
-                      <span className="card-solved">{started} in progress</span>
-                    )}
-                  </span>
-                </button>
-              );
-            })}
+            {matches.map((card, i) => (
+              <Card key={card.id} card={card} index={i} onOpen={() => open(card.id)} />
+            ))}
           </div>
         </section>
+      ) : (
+        <>
+          {jumpBackIn}
+
+          {wide ? (
+            CATEGORIES.map((cat) => (
+              <section key={cat} className="cards-section">
+                <h2>{CATEGORY_LABEL[cat]}</h2>
+                {gamesOf(cat)}
+              </section>
+            ))
+          ) : (
+            <section className="cards-section">
+              <h2>Pick a category</h2>
+              <div className="cards">
+                {CATEGORIES.map((cat, i) => {
+                  const meta = CATEGORY_META[cat];
+                  const games = CARDS.filter((c) => c.cat === cat);
+                  const started = games.filter((c) => progressOf(c.id) === "started").length;
+                  return (
+                    <button
+                      key={cat}
+                      className="card cat-card"
+                      style={{ "--accent": meta.accent, "--i": i } as CSSProperties}
+                      onClick={() => navigate(`/cat/${cat}`)}
+                    >
+                      <span className="card-glyph" aria-hidden="true">
+                        {meta.glyph}
+                      </span>
+                      <span className="card-body">
+                        <span className="card-name">{CATEGORY_LABEL[cat]}</span>
+                        <span className="card-tag">{meta.tagline}</span>
+                      </span>
+                      <span className="card-meta">
+                        <span className="card-state">
+                          {games.length} games →
+                        </span>
+                        {started > 0 && (
+                          <span className="card-solved">{started} in progress</span>
+                        )}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+        </>
       )}
 
       <footer className="hub-footer">

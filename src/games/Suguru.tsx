@@ -17,6 +17,7 @@ interface Puzzle {
   regionOf: number[];
   regionSize: number[];
   givens: number[]; // 0 = player cell
+  solution: number[];
 }
 
 function generateSuguru(seed: string, n: number, reveal: number): Puzzle {
@@ -86,7 +87,7 @@ function generateSuguru(seed: string, n: number, reveal: number): Puzzle {
       Math.round(n * n * reveal)
     ))
       givens[i] = values[i];
-    return { regionOf, regionSize, givens };
+    return { regionOf, regionSize, givens, solution: values };
   }
 }
 
@@ -96,7 +97,7 @@ interface SavedState {
 }
 
 export default function Suguru({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
+  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
     useGame<SavedState>("suguru", (_s, d) => ({
       entries: Array(SIZE[d] * SIZE[d]).fill(0),
       done: false
@@ -153,6 +154,21 @@ export default function Suguru({ onExit }: { onExit: () => void }) {
     commit({ ...saved, entries });
   }
 
+  function hint() {
+    const open = (i: number) =>
+      puzzle.givens[i] === 0 && board[i] !== puzzle.solution[i];
+    const cands = [...Array(n * n).keys()].filter(open);
+    if (!cands.length) return;
+    const idx =
+      selected !== null && open(selected)
+        ? selected
+        : cands[Math.floor(Math.random() * cands.length)];
+    const entries = saved.entries.slice();
+    entries[idx] = puzzle.solution[idx];
+    commitHint({ ...saved, entries });
+    setSelected(idx);
+  }
+
   function startNew(d?: Diff) {
     newPuzzle(d);
     setSelected(null);
@@ -173,6 +189,7 @@ export default function Suguru({ onExit }: { onExit: () => void }) {
         help={HELP}
         onUndo={undo}
         canUndo={canUndo && !saved.done}
+        onHint={saved.done ? undefined : hint}
       />
 
       <div

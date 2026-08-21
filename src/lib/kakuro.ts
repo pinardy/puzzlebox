@@ -11,6 +11,7 @@ export interface KakuroPuzzle {
   across: Map<number, number>; // black cell → sum of the run to its right
   down: Map<number, number>; // black cell → sum of the run below it
   runs: KakuroRun[]; // every run, for checking
+  solution: number[]; // the digits the sums were read from (0 on black cells)
 }
 
 /** Generate a Kakuro board: pick a black-cell pattern whose runs are all
@@ -82,6 +83,6 @@ export function generateKakuro(seed: string, G: number): KakuroPuzzle {
       if (horizontal) across.set(run[0] - 1, sum);
       else down.set(run[0] - G, sum);
     }
-    return { g: G, black, across, down, runs: outRuns };
+    return { g: G, black, across, down, runs: outRuns, solution: digits };
   }
 }

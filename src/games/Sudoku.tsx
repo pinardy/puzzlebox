@@ -41,7 +41,7 @@ function peers(idx: number): number[] {
 }
 
 export default function Sudoku({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
+  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
     useGame<SavedState>("sudoku", fresh);
   const { puzzle, solution } = useMemo(
     () => generateSudoku(`sudoku-${seed}`, REMOVALS[diff]),
@@ -84,6 +84,29 @@ export default function Sudoku({ onExit }: { onExit: () => void }) {
     commit(next);
   }
 
+  /** Reveal the solution's digit in the selected cell if it's open or
+   *  wrong, otherwise in a random such cell. Marks the puzzle assisted. */
+  function hint() {
+    const open = (i: number) => puzzle[i] === 0 && board[i] !== solution[i];
+    const cands = [...Array(81).keys()].filter(open);
+    if (!cands.length) return;
+    const idx =
+      selected !== null && open(selected)
+        ? selected
+        : cands[Math.floor(Math.random() * cands.length)];
+    const next: SavedState = {
+      ...saved,
+      entries: saved.entries.slice(),
+      notes: saved.notes.map((n) => n.slice())
+    };
+    next.entries[idx] = solution[idx];
+    next.notes[idx] = [];
+    for (const p of peers(idx))
+      next.notes[p] = next.notes[p].filter((x) => x !== solution[idx]);
+    commitHint(next);
+    setSelected(idx);
+  }
+
   function startNew(d?: Diff) {
     newPuzzle(d);
     setSelected(null);
@@ -112,6 +135,7 @@ export default function Sudoku({ onExit }: { onExit: () => void }) {
         help={HELP}
         onUndo={undo}
         canUndo={canUndo && !saved.done}
+        onHint={saved.done ? undefined : hint}
       />
 
       <div className="sudoku-grid" role="grid" aria-label="Sudoku board">

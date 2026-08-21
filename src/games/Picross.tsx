@@ -43,7 +43,7 @@ function buildTarget(seed: string, size: number): number[] {
 }
 
 export default function Picross({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
+  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
     useGame<SavedState>("picross", (_s, d) => ({
       marks: Array(SIZE[d] * SIZE[d]).fill(0) as Mark[],
       done: false
@@ -101,6 +101,19 @@ export default function Picross({ onExit }: { onExit: () => void }) {
     commit({ ...saved, marks }, { undoable });
   }
 
+  /** Correct one random cell that disagrees with the picture: fill it if
+   *  it should be filled, cross it otherwise. Marks the puzzle assisted. */
+  function hint() {
+    const wrong = [...Array(size * size).keys()].filter(
+      (i) => (saved.marks[i] === 1) !== (target[i] === 1)
+    );
+    if (!wrong.length) return;
+    const idx = wrong[Math.floor(Math.random() * wrong.length)];
+    const marks = saved.marks.slice() as Mark[];
+    marks[idx] = target[idx] === 1 ? 1 : 2;
+    commitHint({ ...saved, marks });
+  }
+
   function cellFromPoint(x: number, y: number): number | null {
     const el = document.elementFromPoint(x, y)?.closest("[data-pic-idx]");
     const v = el instanceof HTMLElement ? el.dataset.picIdx : undefined;
@@ -119,6 +132,7 @@ export default function Picross({ onExit }: { onExit: () => void }) {
         help={HELP}
         onUndo={undo}
         canUndo={canUndo && !saved.done}
+        onHint={saved.done ? undefined : hint}
       />
 
       <div

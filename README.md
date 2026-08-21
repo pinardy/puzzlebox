@@ -73,6 +73,21 @@ counts accumulate per game.
 
 - **Undo** (20 steps) in every game where it makes sense, via a shared
   `useGame` hook that also tracks active play time.
+- **Hints** (💡) in the eight solution-backed grid games — Sudoku,
+  Picross, Futoshiki, Skyscrapers, KenKen, Kropki, Kakuro, and Suguru —
+  reveal one cell; hinted solves still count, but never set a best time
+  or extend a streak.
+- **Streaks & best times**: per-game win streaks, longest streak, a
+  fastest-solve time per difficulty, and per-difficulty play splits —
+  all surfaced on the win banner ("★ New best time!").
+- **Back-button navigation & deep links**: the view lives in the URL
+  hash (`#/game/sudoku`, `#/cat/logic`), so Android/browser back
+  returns to the hub instead of closing the app, and any game can be
+  bookmarked.
+- **Search** across all 48 games from the hub, by name or tagline.
+- **Sound effects** — tiny WebAudio jingles on win/lose/hint, no audio
+  assets so the app stays fully offline; mute toggle in the hub header,
+  remembered across visits.
 - **Difficulty picker** (Easy / Medium / Hard) on 24 of the 30 games —
   board sizes, clue counts, and fleets scale with it.
 - **Win banner** with time, lifetime stats, haptic feedback, and
@@ -97,6 +112,8 @@ npm install
 npm run dev        # local dev server
 npm run build      # production build in dist/
 npm run preview    # serve the production build locally
+npm run lint       # ESLint (also runs in CI before deploys)
+npm run format     # Prettier over src/
 ```
 
 > **PWA note:** service workers require a secure context. `npm run preview`
