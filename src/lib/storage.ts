@@ -40,7 +40,9 @@ export type GameId =
   | "freecell" | "spider" | "anagram" | "masyu" | "akari" | "dominoes"
   | "thermo" | "suguru" | "sokoban" | "pegs" | "yahtzee"
   | "tripeaks" | "aquarium" | "galaxies" | "net" | "ballsort" | "samegame"
-  | "math24";
+  | "math24"
+  | "killer" | "equation" | "fillapix" | "fillomino" | "yinyang" | "unblock"
+  | "pyramid" | "golf" | "farkle" | "crypto" | "ladder" | "mini";
 
 export type Diff = "easy" | "medium" | "hard";
 

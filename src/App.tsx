@@ -50,6 +50,18 @@ const Net = lazy(() => import("./games/Net"));
 const BallSort = lazy(() => import("./games/BallSort"));
 const SameGame = lazy(() => import("./games/SameGame"));
 const Math24 = lazy(() => import("./games/Math24"));
+const Killer = lazy(() => import("./games/Killer"));
+const Equation = lazy(() => import("./games/Equation"));
+const FillAPix = lazy(() => import("./games/FillAPix"));
+const Fillomino = lazy(() => import("./games/Fillomino"));
+const YinYang = lazy(() => import("./games/YinYang"));
+const Unblock = lazy(() => import("./games/Unblock"));
+const Pyramid = lazy(() => import("./games/Pyramid"));
+const Golf = lazy(() => import("./games/Golf"));
+const Farkle = lazy(() => import("./games/Farkle"));
+const Cryptogram = lazy(() => import("./games/Cryptogram"));
+const Ladder = lazy(() => import("./games/Ladder"));
+const MiniCrossword = lazy(() => import("./games/MiniCrossword"));
 import { GameId, loadStats, loadSlot } from "./lib/storage";
 import { soundEnabled, setSoundEnabled } from "./lib/sound";
 
@@ -99,6 +111,9 @@ const CARDS: CardInfo[] = [
   { id: "hangman", name: "Hangman", tagline: "Six lives, one word", accent: "var(--amber)", glyph: "?", cat: "words" },
   { id: "wordsearch", name: "Word Search", tagline: "Hidden words, eight directions", accent: "var(--teal)", glyph: "⌕", cat: "words" },
   { id: "anagram", name: "Anagram", tagline: "Unscramble the letters", accent: "var(--coral)", glyph: "⇄", cat: "words" },
+  { id: "crypto", name: "Cryptogram", tagline: "Crack the letter cipher", accent: "var(--indigo)", glyph: "§", cat: "words" },
+  { id: "ladder", name: "Word Ladder", tagline: "One letter at a time", accent: "var(--blue)", glyph: "⇅", cat: "words" },
+  { id: "mini", name: "Mini Crossword", tagline: "Five by five, clued", accent: "var(--purple)", glyph: "╋", cat: "words" },
 
   { id: "sudoku", name: "Sudoku", tagline: "Fill the grid, no repeats", accent: "var(--blue)", glyph: "9", cat: "numbers" },
   { id: "futoshiki", name: "Futoshiki", tagline: "Fill the grid, obey the arrows", accent: "var(--purple)", glyph: "≶", cat: "numbers" },
@@ -107,6 +122,8 @@ const CARDS: CardInfo[] = [
   { id: "kropki", name: "Kropki", tagline: "Dots join neighbours and doubles", accent: "var(--rose)", glyph: "◉", cat: "numbers" },
   { id: "kakuro", name: "Kakuro", tagline: "Crossword sums, digits 1–9", accent: "var(--olive)", glyph: "Σ", cat: "numbers" },
   { id: "math24", name: "Math 24", tagline: "Make 24 from four numbers", accent: "var(--green)", glyph: "24", cat: "numbers" },
+  { id: "killer", name: "Killer Sudoku", tagline: "Cages that add up", accent: "var(--indigo)", glyph: "⊠", cat: "numbers" },
+  { id: "equation", name: "Equation", tagline: "Guess the hidden math", accent: "var(--purple)", glyph: "=", cat: "numbers" },
 
   { id: "picross", name: "Picross", tagline: "Reveal the hidden picture", accent: "var(--rose)", glyph: "▦", cat: "logic" },
   { id: "queens", name: "Queens", tagline: "One crown per colour, none touching", accent: "var(--indigo)", glyph: "♛", cat: "logic" },
@@ -129,6 +146,9 @@ const CARDS: CardInfo[] = [
   { id: "aquarium", name: "Aquarium", tagline: "Water always finds its level", accent: "var(--blue)", glyph: "≋", cat: "logic" },
   { id: "galaxies", name: "Galaxies", tagline: "Symmetric regions around each dot", accent: "var(--indigo)", glyph: "✦", cat: "logic" },
   { id: "net", name: "Pipes", tagline: "Rotate tiles, reconnect the network", accent: "var(--teal)", glyph: "╬", cat: "logic" },
+  { id: "fillapix", name: "Fill-a-Pix", tagline: "Paint by neighbour counts", accent: "var(--blue)", glyph: "▨", cat: "logic" },
+  { id: "fillomino", name: "Fillomino", tagline: "Regions sized by their number", accent: "var(--amber)", glyph: "▤", cat: "logic" },
+  { id: "yinyang", name: "Yin-Yang", tagline: "Two circles, one balance", accent: "var(--teal)", glyph: "☯", cat: "logic" },
 
   { id: "mines", name: "Minesweeper", tagline: "First tap is always safe", accent: "var(--purple)", glyph: "✹", cat: "classic" },
   { id: "lights", name: "Lights Out", tagline: "Flip them all off", accent: "var(--amber)", glyph: "◉", cat: "classic" },
@@ -145,7 +165,11 @@ const CARDS: CardInfo[] = [
   { id: "yahtzee", name: "Yahtzee", tagline: "Thirteen rounds of dice", accent: "var(--coral)", glyph: "⚄", cat: "classic" },
   { id: "tripeaks", name: "TriPeaks", tagline: "Clear the peaks, rank by rank", accent: "var(--amber)", glyph: "▲", cat: "classic" },
   { id: "ballsort", name: "Ball Sort", tagline: "Pour until every tube matches", accent: "var(--purple)", glyph: "⫶", cat: "classic" },
-  { id: "samegame", name: "SameGame", tagline: "Pop groups, clear the board", accent: "var(--rose)", glyph: "⣿", cat: "classic" }
+  { id: "samegame", name: "SameGame", tagline: "Pop groups, clear the board", accent: "var(--rose)", glyph: "⣿", cat: "classic" },
+  { id: "unblock", name: "Unblock", tagline: "Slide the red car free", accent: "var(--coral)", glyph: "⇥", cat: "classic" },
+  { id: "pyramid", name: "Pyramid", tagline: "Pairs that make thirteen", accent: "var(--amber)", glyph: "♦", cat: "classic" },
+  { id: "golf", name: "Golf", tagline: "One up or down, clear the course", accent: "var(--green)", glyph: "◎", cat: "classic" },
+  { id: "farkle", name: "Farkle", tagline: "Push your luck with six dice", accent: "var(--rose)", glyph: "⚅", cat: "classic" }
 ];
 
 const CATEGORIES: Category[] = ["words", "numbers", "logic", "classic"];
@@ -260,7 +284,11 @@ export default function App() {
       thermo: Thermometers, suguru: Suguru, sokoban: Sokoban,
       pegs: PegSolitaire, yahtzee: Yahtzee, tripeaks: TriPeaks,
       aquarium: Aquarium, galaxies: Galaxies, net: Net,
-      ballsort: BallSort, samegame: SameGame, math24: Math24
+      ballsort: BallSort, samegame: SameGame, math24: Math24,
+      killer: Killer, equation: Equation, fillapix: FillAPix,
+      fillomino: Fillomino, yinyang: YinYang, unblock: Unblock,
+      pyramid: Pyramid, golf: Golf, farkle: Farkle, crypto: Cryptogram,
+      ladder: Ladder, mini: MiniCrossword
     }[view];
     return (
       <Suspense fallback={<div className="game" />}>
@@ -342,7 +370,7 @@ export default function App() {
         <h1>PuzzleBox</h1>
         <p className="ticket-note">
           {online
-            ? "Forty-eight puzzles, endless boards — pick one."
+            ? "Sixty puzzles, endless boards — pick one."
             : "Offline — puzzles still work."}
         </p>
       </header>
@@ -350,7 +378,7 @@ export default function App() {
       <input
         className="hub-search"
         type="search"
-        placeholder="Search 48 games…"
+        placeholder={`Search ${CARDS.length} games…`}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         aria-label="Search games"
