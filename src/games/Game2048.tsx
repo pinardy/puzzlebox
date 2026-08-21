@@ -1,122 +1,146 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
-import { makeRng, newSeed } from "../lib/rng";
-import { loadSlot, saveSlot, recordResult } from "../lib/storage";
+import { useCallback, useEffect, useMemo, useRef, type CSSProperties } from "react";
+import { makeRng } from "../lib/rng";
+import { recordResult } from "../lib/storage";
+import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { GameTools, Result } from "./ui";
 
 const N = 4;
 const TARGET = 2048;
+const HELP =
+  "Swipe (or use the arrow keys) to slide every tile. Two equal tiles that " +
+  "collide merge into their sum — build up to 2048 before the board locks.";
+
+interface Tile {
+  id: number;
+  v: number;
+  r: number;
+  c: number;
+  merged?: boolean;
+  spawned?: boolean;
+}
 
 interface SavedState {
-  cells: number[];
+  tiles: Tile[];
+  nextId: number;
   score: number;
-  spawns: number; // total tiles spawned — keys the deterministic spawn RNG
+  spawns: number;
   done: boolean;
   won: boolean;
 }
 
 /** Deterministic spawn: the k-th tile of a given seed always lands the same
  *  way, so a reloaded game replays identically. */
-function spawn(cells: number[], seed: string, k: number): number[] {
+function spawnTile(tiles: Tile[], nextId: number, seed: string, k: number): { tiles: Tile[]; nextId: number } {
   const rng = makeRng(`2048-${seed}-${k}`);
-  const empty = cells.flatMap((v, i) => (v === 0 ? [i] : []));
-  if (!empty.length) return cells;
-  const out = cells.slice();
-  out[empty[Math.floor(rng() * empty.length)]] = rng() < 0.9 ? 2 : 4;
-  return out;
+  const occupied = new Set(tiles.map((t) => t.r * N + t.c));
+  const empty = [...Array(N * N).keys()].filter((i) => !occupied.has(i));
+  if (!empty.length) return { tiles, nextId };
+  const cell = empty[Math.floor(rng() * empty.length)];
+  const v = rng() < 0.9 ? 2 : 4;
+  return {
+    tiles: [...tiles, { id: nextId, v, r: Math.floor(cell / N), c: cell % N, spawned: true }],
+    nextId: nextId + 1
+  };
 }
 
 function fresh(seed: string): SavedState {
-  let cells = Array(N * N).fill(0);
-  cells = spawn(cells, seed, 0);
-  cells = spawn(cells, seed, 1);
-  return { cells, score: 0, spawns: 2, done: false, won: false };
-}
-
-function slideLine(line: number[]): { line: number[]; gained: number } {
-  const vals = line.filter((v) => v !== 0);
-  const out: number[] = [];
-  let gained = 0;
-  for (let i = 0; i < vals.length; i++) {
-    if (i + 1 < vals.length && vals[i] === vals[i + 1]) {
-      out.push(vals[i] * 2);
-      gained += vals[i] * 2;
-      i++;
-    } else out.push(vals[i]);
-  }
-  while (out.length < N) out.push(0);
-  return { line: out, gained };
+  let s = spawnTile([], 1, seed, 0);
+  s = spawnTile(s.tiles, s.nextId, seed, 1);
+  return { tiles: s.tiles, nextId: s.nextId, score: 0, spawns: 2, done: false, won: false };
 }
 
 type Dir = "left" | "right" | "up" | "down";
 
-/** Cell indices of each line, in slide order for `dir`. */
-function lines(dir: Dir): number[][] {
-  return Array.from({ length: N }, (_, i) => {
-    const idx = Array.from({ length: N }, (_, j) => {
-      if (dir === "left" || dir === "right") return i * N + j;
-      return j * N + i;
+function moveTiles(tiles: Tile[], dir: Dir): { tiles: Tile[]; gained: number; changed: boolean } {
+  const horiz = dir === "left" || dir === "right";
+  const rev = dir === "right" || dir === "down";
+  let gained = 0;
+  let changed = false;
+  const out: Tile[] = [];
+  for (let line = 0; line < N; line++) {
+    const inLine = tiles
+      .filter((t) => (horiz ? t.r : t.c) === line)
+      .sort((a, b) => (horiz ? a.c - b.c : a.r - b.r));
+    if (rev) inLine.reverse();
+    const placed: Tile[] = [];
+    for (const t of inLine) {
+      const prev = placed[placed.length - 1];
+      if (prev && prev.v === t.v && !prev.merged) {
+        prev.v *= 2;
+        prev.merged = true;
+        gained += prev.v;
+        changed = true; // the absorbed tile disappears
+      } else {
+        placed.push({ ...t, merged: false, spawned: false });
+      }
+    }
+    placed.forEach((t, k) => {
+      const pos = rev ? N - 1 - k : k;
+      const nr = horiz ? line : pos;
+      const nc = horiz ? pos : line;
+      if (nr !== t.r || nc !== t.c) changed = true;
+      t.r = nr;
+      t.c = nc;
+      out.push(t);
     });
-    return dir === "right" || dir === "down" ? idx.reverse() : idx;
-  });
+  }
+  return { tiles: out, gained, changed };
 }
 
-function anyMoves(cells: number[]): boolean {
-  if (cells.some((v) => v === 0)) return true;
-  for (let r = 0; r < N; r++)
-    for (let c = 0; c < N; c++) {
-      const v = cells[r * N + c];
-      if (c < N - 1 && cells[r * N + c + 1] === v) return true;
-      if (r < N - 1 && cells[(r + 1) * N + c] === v) return true;
-    }
+function anyMoves(tiles: Tile[]): boolean {
+  if (tiles.length < N * N) return true;
+  const at = new Map(tiles.map((t) => [t.r * N + t.c, t.v]));
+  for (const t of tiles) {
+    if (at.get(t.r * N + t.c + 1) === t.v && t.c < N - 1) return true;
+    if (at.get((t.r + 1) * N + t.c) === t.v && t.r < N - 1) return true;
+  }
   return false;
 }
 
+/** Convert a save from before tiles had identity (plain cells array). */
+function migrate(state: SavedState & { cells?: number[] }): SavedState {
+  if (state.tiles) return state;
+  const cells = state.cells ?? [];
+  const tiles: Tile[] = [];
+  cells.forEach((v, i) => {
+    if (v) tiles.push({ id: tiles.length + 1, v, r: Math.floor(i / N), c: i % N });
+  });
+  return { ...state, tiles, nextId: tiles.length + 1 };
+}
+
 export default function Game2048({ onExit }: { onExit: () => void }) {
-  const [seed, setSeed] = useState(
-    () => loadSlot<SavedState>("2048")?.seed ?? newSeed()
-  );
-  const [saved, setSaved] = useState<SavedState>(
-    () => loadSlot<SavedState>("2048")?.state ?? fresh(seed)
-  );
-  const [toast, setToast] = useState<string | null>(null);
+  const { seed, saved, commit, undo, canUndo, newPuzzle, playMs } =
+    useGame<SavedState>("2048", (s) => fresh(s));
+  const state = useMemo(() => migrate(saved), [saved]);
   const touch = useRef<{ x: number; y: number } | null>(null);
 
   const move = useCallback(
     (dir: Dir) => {
-      if (saved.done) return;
-      const cells = saved.cells.slice();
-      let gained = 0;
-      let changed = false;
-      for (const idx of lines(dir)) {
-        const res = slideLine(idx.map((i) => cells[i]));
-        gained += res.gained;
-        idx.forEach((i, j) => {
-          if (cells[i] !== res.line[j]) changed = true;
-          cells[i] = res.line[j];
-        });
-      }
-      if (!changed) return;
+      if (state.done) return;
+      const res = moveTiles(state.tiles, dir);
+      if (!res.changed) return;
+      const sp = spawnTile(res.tiles, state.nextId, seed, state.spawns);
       const next: SavedState = {
-        cells: spawn(cells, seed, saved.spawns),
-        score: saved.score + gained,
-        spawns: saved.spawns + 1,
+        tiles: sp.tiles,
+        nextId: sp.nextId,
+        score: state.score + res.gained,
+        spawns: state.spawns + 1,
         done: false,
-        won: saved.won
+        won: state.won
       };
-      if (!next.won && next.cells.some((v) => v >= TARGET)) {
+      if (!next.won && next.tiles.some((t) => t.v >= TARGET)) {
         next.done = true;
         next.won = true;
         recordResult("2048", true);
-        setToast("2048 — you made it!");
-      } else if (!anyMoves(next.cells)) {
+      } else if (!anyMoves(next.tiles)) {
         next.done = true;
         recordResult("2048", false);
-        setToast(`No moves left — score ${next.score}`);
       }
-      setSaved(next);
-      saveSlot("2048", seed, next);
+      commit(next);
     },
-    [saved, seed]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [state, seed]
   );
 
   useEffect(() => {
@@ -133,29 +157,20 @@ export default function Game2048({ onExit }: { onExit: () => void }) {
     return () => window.removeEventListener("keydown", h);
   }, [move]);
 
-  function newPuzzle() {
-    const s = newSeed();
-    const next = fresh(s);
-    setSeed(s);
-    setSaved(next);
-    saveSlot("2048", s, next);
-    setToast(null);
-  }
-
   return (
     <div className="game game-2048">
-      <GameHeader title="2048" onExit={onExit} onNew={newPuzzle} />
+      <GameHeader title="2048" onExit={onExit} onNew={() => newPuzzle()} />
       <p className="game-hint">
         Swipe or use arrow keys. Equal tiles merge — reach {TARGET}.
       </p>
+      <GameTools help={HELP} onUndo={undo} canUndo={canUndo && !state.done} />
 
       <div className="lights-meta">
-        <span>Score: {saved.score}</span>
+        <span>Score: {state.score}</span>
       </div>
 
       <div
-        className="t2048-grid"
-        style={{ "--n": N } as CSSProperties}
+        className="t2048-board"
         role="grid"
         aria-label="2048 board"
         onPointerDown={(e) => {
@@ -174,13 +189,23 @@ export default function Game2048({ onExit }: { onExit: () => void }) {
           );
         }}
       >
-        {saved.cells.map((v, i) => (
+        <div className="t2048-bg">
+          {Array.from({ length: N * N }).map((_, i) => (
+            <div key={i} className="t2048-slot" />
+          ))}
+        </div>
+        {state.tiles.map((t) => (
           <div
-            key={i}
-            role="gridcell"
-            className={`t2048-cell${v ? ` t${v > 2048 ? "big" : v}` : ""}`}
+            key={t.id}
+            className={[
+              "t2048-tile",
+              `t${t.v > 2048 ? "big" : t.v}`,
+              t.merged ? "pulse" : "",
+              t.spawned ? "pop" : ""
+            ].join(" ")}
+            style={{ "--r": t.r, "--c": t.c } as CSSProperties}
           >
-            {v || ""}
+            {t.v}
           </div>
         ))}
       </div>
@@ -194,7 +219,17 @@ export default function Game2048({ onExit }: { onExit: () => void }) {
         </div>
       </div>
 
-      {toast && <div className="toast">{toast}</div>}
+      {state.done && (
+        <Result
+          key={seed}
+          game="2048"
+          won={state.won}
+          message={state.won ? "2048 — you made it!" : `No moves left — score ${state.score}`}
+          playMs={playMs}
+          onNew={() => newPuzzle()}
+          onExit={onExit}
+        />
+      )}
     </div>
   );
 }

@@ -1,15 +1,25 @@
 import { useState } from "react";
-import { makeRng, newSeed } from "../lib/rng";
-import { loadSlot, saveSlot, recordResult } from "../lib/storage";
+import { makeRng } from "../lib/rng";
+import { recordResult, Diff } from "../lib/storage";
+import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { GameTools, Result } from "./ui";
 
-const COLORS = ["#e05252", "#e0a23b", "#2e9e6b", "#3b6fe0", "#7857c9", "#e06fb2"];
-const CODE_LEN = 4;
+const ALL_COLORS = [
+  "#e05252", "#e0a23b", "#2e9e6b", "#3b6fe0", "#7857c9", "#e06fb2",
+  "#2a9d8f", "#8a5a2b"
+];
+const COLOR_COUNT: Record<Diff, number> = { easy: 5, medium: 6, hard: 8 };
+const CODE_LEN: Record<Diff, number> = { easy: 4, medium: 4, hard: 5 };
 const MAX_GUESSES = 10;
+const HELP =
+  "The computer hides a colour code (repeats allowed). After each guess: " +
+  "● one peg is the right colour in the right spot, ○ one is the right " +
+  "colour in the wrong spot. Deduce the code before the guesses run out.";
 
-function codeFor(seed: string): number[] {
+function codeFor(seed: string, colors: number, len: number): number[] {
   const rng = makeRng(`mastermind-${seed}`);
-  return Array.from({ length: CODE_LEN }, () => Math.floor(rng() * COLORS.length));
+  return Array.from({ length: len }, () => Math.floor(rng() * colors));
 }
 
 /** Standard feedback: exact = right colour right spot, near = right colour
@@ -17,7 +27,7 @@ function codeFor(seed: string): number[] {
 function score(guess: number[], code: number[]): { exact: number; near: number } {
   let exact = 0;
   const codeLeft: number[] = [], guessLeft: number[] = [];
-  for (let i = 0; i < CODE_LEN; i++) {
+  for (let i = 0; i < code.length; i++) {
     if (guess[i] === code[i]) exact++;
     else { codeLeft.push(code[i]); guessLeft.push(guess[i]); }
   }
@@ -35,51 +45,40 @@ interface SavedState {
   won: boolean;
 }
 
-const FRESH: SavedState = { guesses: [], done: false, won: false };
-
 export default function Mastermind({ onExit }: { onExit: () => void }) {
-  const [seed, setSeed] = useState(
-    () => loadSlot<SavedState>("mastermind")?.seed ?? newSeed()
+  const { seed, diff, saved, commit, newPuzzle, playMs } = useGame<SavedState>(
+    "mastermind",
+    () => ({ guesses: [], done: false, won: false })
   );
-  const code = codeFor(seed);
-  const [saved, setSaved] = useState<SavedState>(
-    () => loadSlot<SavedState>("mastermind")?.state ?? FRESH
-  );
+  const colors = COLOR_COUNT[diff];
+  const codeLen = CODE_LEN[diff];
+  const code = codeFor(seed, colors, codeLen);
   const [current, setCurrent] = useState<number[]>([]);
-  const [toast, setToast] = useState<string | null>(null);
 
   function submit() {
-    if (saved.done || current.length !== CODE_LEN) return;
+    if (saved.done || current.length !== codeLen) return;
     const guesses = [...saved.guesses, current];
     const { exact } = score(current, code);
-    const won = exact === CODE_LEN;
+    const won = exact === codeLen;
     const done = won || guesses.length >= MAX_GUESSES;
-    const next = { guesses, done, won };
-    setSaved(next);
-    saveSlot("mastermind", seed, next);
+    commit({ guesses, done, won });
     setCurrent([]);
-    if (done) {
-      recordResult("mastermind", won);
-      setToast(won ? `Cracked in ${guesses.length}!` : "Out of guesses — code revealed");
-    }
+    if (done) recordResult("mastermind", won);
   }
 
-  function newPuzzle() {
-    const s = newSeed();
-    setSeed(s);
-    setSaved(FRESH);
-    saveSlot("mastermind", s, FRESH);
+  function startNew(d?: Diff) {
+    newPuzzle(d);
     setCurrent([]);
-    setToast(null);
   }
 
   return (
     <div className="game game-mastermind">
-      <GameHeader title="Mastermind" onExit={onExit} onNew={newPuzzle} />
+      <GameHeader title="Mastermind" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
-        Crack the {CODE_LEN}-colour code in {MAX_GUESSES}. ● right colour &
+        Crack the {codeLen}-colour code in {MAX_GUESSES}. ● right colour &
         spot, ○ right colour, wrong spot.
       </p>
+      <GameTools diff={diff} onDiff={startNew} help={HELP} />
 
       <div className="mm-rows">
         {saved.guesses.map((g, i) => {
@@ -87,7 +86,7 @@ export default function Mastermind({ onExit }: { onExit: () => void }) {
           return (
             <div key={i} className="mm-row">
               {g.map((c, j) => (
-                <span key={j} className="mm-peg" style={{ background: COLORS[c] }} />
+                <span key={j} className="mm-peg" style={{ background: ALL_COLORS[c] }} />
               ))}
               <span className="mm-feedback">
                 {"●".repeat(exact)}
@@ -98,11 +97,11 @@ export default function Mastermind({ onExit }: { onExit: () => void }) {
         })}
         {!saved.done && (
           <div className="mm-row mm-current">
-            {Array.from({ length: CODE_LEN }).map((_, j) => (
+            {Array.from({ length: codeLen }).map((_, j) => (
               <button
                 key={j}
                 className="mm-peg mm-slot"
-                style={current[j] !== undefined ? { background: COLORS[current[j]] } : undefined}
+                style={current[j] !== undefined ? { background: ALL_COLORS[current[j]] } : undefined}
                 onClick={() => setCurrent((c) => c.slice(0, j))}
                 aria-label={`Slot ${j + 1}`}
               />
@@ -115,35 +114,49 @@ export default function Mastermind({ onExit }: { onExit: () => void }) {
         {saved.done && !saved.won && (
           <div className="mm-row mm-answer">
             {code.map((c, j) => (
-              <span key={j} className="mm-peg" style={{ background: COLORS[c] }} />
+              <span key={j} className="mm-peg" style={{ background: ALL_COLORS[c] }} />
             ))}
             <span className="mm-feedback">code</span>
           </div>
         )}
       </div>
 
-      {toast && <div className="toast">{toast}</div>}
-
       <div className="mm-palette">
-        {COLORS.map((col, i) => (
+        {ALL_COLORS.slice(0, colors).map((col, i) => (
           <button
             key={col}
             className="mm-peg mm-pick"
             style={{ background: col }}
             onClick={() =>
-              setCurrent((c) => (c.length < CODE_LEN ? [...c, i] : c))
+              setCurrent((c) => (c.length < codeLen ? [...c, i] : c))
             }
             aria-label={`Colour ${i + 1}`}
           />
         ))}
         <button
           className="mini-btn"
-          disabled={current.length !== CODE_LEN}
+          disabled={current.length !== codeLen}
           onClick={submit}
         >
           Guess
         </button>
       </div>
+
+      {saved.done && (
+        <Result
+          key={seed}
+          game="mastermind"
+          won={saved.won}
+          message={
+            saved.won
+              ? `Cracked in ${saved.guesses.length}!`
+              : "Out of guesses — code revealed"
+          }
+          playMs={playMs}
+          onNew={() => startNew()}
+          onExit={onExit}
+        />
+      )}
     </div>
   );
 }

@@ -1,10 +1,15 @@
-import { useMemo, useState, type CSSProperties } from "react";
-import { makeRng, newSeed } from "../lib/rng";
-import { loadSlot, saveSlot, recordResult } from "../lib/storage";
+import { useMemo, type CSSProperties } from "react";
+import { makeRng } from "../lib/rng";
+import { recordResult, Diff } from "../lib/storage";
+import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { GameTools, Result } from "./ui";
 
 const N = 5;
-const SCRAMBLES = 8;
+const SCRAMBLES: Record<Diff, number> = { easy: 6, medium: 8, hard: 12 };
+const HELP =
+  "Tapping a light flips it and its four neighbours. Turn every light off. " +
+  "The board is scrambled from all-off, so a solution always exists.";
 
 function press(cells: boolean[], idx: number): boolean[] {
   const out = cells.slice();
@@ -38,65 +43,45 @@ interface SavedState {
 }
 
 export default function LightsOut({ onExit }: { onExit: () => void }) {
-  const [seed, setSeed] = useState(
-    () => loadSlot<SavedState>("lights")?.seed ?? newSeed()
-  );
-  const initial = useMemo(() => buildBoard(seed, SCRAMBLES), [seed]);
-
-  const [saved, setSaved] = useState<SavedState>(
-    () =>
-      loadSlot<SavedState>("lights")?.state ?? {
-        cells: initial,
-        moves: 0,
-        done: false
-      }
-  );
-  const [toast, setToast] = useState<string | null>(null);
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
+    useGame<SavedState>("lights", (s, d) => ({
+      cells: buildBoard(`lights-${s}`, SCRAMBLES[d]),
+      moves: 0,
+      done: false
+    }));
+  const scrambles = SCRAMBLES[diff];
+  const initial = useMemo(() => buildBoard(`lights-${seed}`, scrambles), [seed, scrambles]);
 
   function tap(idx: number) {
     if (saved.done) return;
     const cells = press(saved.cells, idx);
     const done = cells.every((c) => !c);
-    const next = { cells, moves: saved.moves + 1, done };
-    setSaved(next);
-    saveSlot("lights", seed, next);
-    if (done) {
-      recordResult("lights", true);
-      setToast(
-        next.moves <= SCRAMBLES
-          ? `Perfect — ${next.moves} moves!`
-          : `Lights out in ${next.moves} moves`
-      );
-    }
-  }
-
-  function reset() {
-    const next = { cells: initial, moves: 0, done: false };
-    setSaved(next);
-    saveSlot("lights", seed, next);
-    setToast(null);
-  }
-
-  function newPuzzle() {
-    const s = newSeed();
-    const next = { cells: buildBoard(s, SCRAMBLES), moves: 0, done: false };
-    setSeed(s);
-    setSaved(next);
-    saveSlot("lights", s, next);
-    setToast(null);
+    commit({ cells, moves: saved.moves + 1, done });
+    if (done) recordResult("lights", true);
   }
 
   return (
     <div className="game game-lights">
-      <GameHeader title="Lights Out" onExit={onExit} onNew={newPuzzle} />
+      <GameHeader title="Lights Out" onExit={onExit} onNew={() => newPuzzle()} />
       <p className="game-hint">
-        Tapping a light flips it and its neighbours. Turn them all off — a
-        perfect solve is {SCRAMBLES} moves.
+        Turn them all off — a perfect solve is {scrambles} moves.
       </p>
+      <GameTools
+        diff={diff}
+        onDiff={newPuzzle}
+        help={HELP}
+        onUndo={undo}
+        canUndo={canUndo && !saved.done}
+      />
 
       <div className="lights-meta">
         <span>Moves: {saved.moves}</span>
-        <button className="mini-btn" onClick={reset}>Restart</button>
+        <button
+          className="mini-btn"
+          onClick={() => commit({ cells: initial, moves: 0, done: false })}
+        >
+          Restart
+        </button>
       </div>
 
       <div
@@ -116,7 +101,21 @@ export default function LightsOut({ onExit }: { onExit: () => void }) {
         ))}
       </div>
 
-      {toast && <div className="toast">{toast}</div>}
+      {saved.done && (
+        <Result
+          key={seed}
+          game="lights"
+          won
+          message={
+            saved.moves <= scrambles
+              ? `Perfect — ${saved.moves} moves!`
+              : `Lights out in ${saved.moves} moves`
+          }
+          playMs={playMs}
+          onNew={() => newPuzzle()}
+          onExit={onExit}
+        />
+      )}
     </div>
   );
 }

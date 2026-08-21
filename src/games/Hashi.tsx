@@ -1,18 +1,24 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
-import { newSeed } from "../lib/rng";
 import { generateHashi, hashiSolved, corridor, edgeKey, Edges } from "../lib/hashi";
-import { loadSlot, saveSlot, recordResult } from "../lib/storage";
+import { recordResult, Diff } from "../lib/storage";
+import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { GameTools, Result } from "./ui";
 
-const N = 7;
-const ISLANDS = 9;
+const LEVELS: Record<Diff, [number, number]> = {
+  easy: [7, 7],
+  medium: [7, 9],
+  hard: [9, 12]
+};
+const HELP =
+  "Connect the islands with straight bridges — one or two per pair — until " +
+  "every island has exactly its number and the whole network is joined. " +
+  "Bridges never cross. Tap an island, then another in line with it.";
 
 interface SavedState {
   edges: Edges;
   done: boolean;
 }
-
-const FRESH: SavedState = { edges: {}, done: false };
 
 interface BridgeMark {
   horizontal: boolean;
@@ -20,33 +26,30 @@ interface BridgeMark {
 }
 
 export default function Hashi({ onExit }: { onExit: () => void }) {
-  const [seed, setSeed] = useState(
-    () => loadSlot<SavedState>("hashi")?.seed ?? newSeed()
-  );
-  const puzzle = useMemo(() => generateHashi(`hashi-${seed}`, N, ISLANDS), [seed]);
-  const [saved, setSaved] = useState<SavedState>(
-    () => loadSlot<SavedState>("hashi")?.state ?? FRESH
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
+    useGame<SavedState>("hashi", () => ({ edges: {}, done: false }));
+  const [n, islandCount] = LEVELS[diff];
+  const puzzle = useMemo(
+    () => generateHashi(`hashi-${seed}`, n, islandCount),
+    [seed, n, islandCount]
   );
   const [sel, setSel] = useState<number | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
 
-  /** Cell → bridge drawn over it, and cell → owning edge key (for the
-   *  crossing check when toggling). */
   const { bridgeAt, ownerAt } = useMemo(() => {
     const bridgeAt = new Map<number, BridgeMark>();
     const ownerAt = new Map<number, string>();
     for (const [key, count] of Object.entries(saved.edges)) {
       if (count <= 0) continue;
       const [a, b] = key.split("-").map(Number);
-      const between = corridor(a, b, N) ?? [];
-      const horizontal = Math.floor(a / N) === Math.floor(b / N);
+      const between = corridor(a, b, n) ?? [];
+      const horizontal = Math.floor(a / n) === Math.floor(b / n);
       for (const i of between) {
         bridgeAt.set(i, { horizontal, count });
         ownerAt.set(i, key);
       }
     }
     return { bridgeAt, ownerAt };
-  }, [saved.edges]);
+  }, [saved.edges, n]);
 
   const degrees = useMemo(() => {
     const d = new Map<number, number>();
@@ -61,28 +64,23 @@ export default function Hashi({ onExit }: { onExit: () => void }) {
 
   useEffect(() => {
     if (!saved.done && hashiSolved(puzzle, saved.edges)) {
-      const next = { ...saved, done: true };
-      setSaved(next);
-      saveSlot("hashi", seed, next);
+      commit({ ...saved, done: true }, { undoable: false });
       recordResult("hashi", true);
-      setToast("All islands connected!");
     }
-  }, [saved, puzzle, seed]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [saved, puzzle]);
 
   function toggle(a: number, b: number) {
     const key = edgeKey(a, b);
-    const between = corridor(a, b, N);
+    const between = corridor(a, b, n);
     if (!between) return;
     if (between.some((i) => puzzle.islands.has(i))) return;
-    // No crossing another bridge (cells owned by a different edge).
     if (between.some((i) => ownerAt.has(i) && ownerAt.get(i) !== key)) return;
     const edges = { ...saved.edges };
     const count = ((edges[key] ?? 0) + 1) % 3;
     if (count === 0) delete edges[key];
     else edges[key] = count;
-    const next = { ...saved, edges };
-    setSaved(next);
-    saveSlot("hashi", seed, next);
+    commit({ ...saved, edges });
   }
 
   function tap(idx: number) {
@@ -98,31 +96,32 @@ export default function Hashi({ onExit }: { onExit: () => void }) {
     toggle(sel, idx);
   }
 
-  function newPuzzle() {
-    const s = newSeed();
-    setSeed(s);
-    setSaved(FRESH);
-    saveSlot("hashi", s, FRESH);
+  function startNew(d?: Diff) {
+    newPuzzle(d);
     setSel(null);
-    setToast(null);
   }
 
   return (
     <div className="game game-hashi">
-      <GameHeader title="Bridges" onExit={onExit} onNew={newPuzzle} />
+      <GameHeader title="Bridges" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
-        Tap two islands to bridge them (tap again for a double, again to
-        clear). Every island needs exactly its number of bridges, all
-        connected, none crossing.
+        Tap two islands to bridge them — again for a double, again to clear.
       </p>
+      <GameTools
+        diff={diff}
+        onDiff={startNew}
+        help={HELP}
+        onUndo={undo}
+        canUndo={canUndo && !saved.done}
+      />
 
       <div
         className="hashi-grid"
-        style={{ "--n": N } as CSSProperties}
+        style={{ "--n": n } as CSSProperties}
         role="grid"
         aria-label="Bridges board"
       >
-        {Array.from({ length: N * N }).map((_, i) => {
+        {Array.from({ length: n * n }).map((_, i) => {
           const clue = puzzle.islands.get(i);
           if (clue !== undefined) {
             const deg = degrees.get(i) ?? 0;
@@ -160,8 +159,6 @@ export default function Hashi({ onExit }: { onExit: () => void }) {
         })}
       </div>
 
-      {toast && <div className="toast">{toast}</div>}
-
       <div className="lights-meta">
         <span>
           {sel !== null ? "Now tap an island in line with it" : "Tap an island to start a bridge"}
@@ -169,14 +166,25 @@ export default function Hashi({ onExit }: { onExit: () => void }) {
         <button
           className="mini-btn"
           onClick={() => {
-            setSaved(FRESH);
-            saveSlot("hashi", seed, FRESH);
+            commit({ edges: {}, done: false });
             setSel(null);
           }}
         >
           Clear
         </button>
       </div>
+
+      {saved.done && (
+        <Result
+          key={seed}
+          game="hashi"
+          won
+          message="All islands connected!"
+          playMs={playMs}
+          onNew={() => startNew()}
+          onExit={onExit}
+        />
+      )}
     </div>
   );
 }

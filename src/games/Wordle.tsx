@@ -1,8 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { makeRng, newSeed } from "../lib/rng";
-import { ANSWERS, LetterState, scoreGuess } from "../lib/words";
-import { loadSlot, saveSlot, recordResult } from "../lib/storage";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { makeRng } from "../lib/rng";
+import { ANSWERS, LetterState, isValidGuess, scoreGuess } from "../lib/words";
+import { recordResult } from "../lib/storage";
+import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { Result } from "./ui";
 
 const ROWS = 6;
 const COLS = 5;
@@ -14,23 +16,28 @@ interface SavedState {
   won: boolean;
 }
 
-const FRESH: SavedState = { guesses: [], done: false, won: false };
-
 function answerFor(seed: string): string {
   return ANSWERS[Math.floor(makeRng(seed)() * ANSWERS.length)].toUpperCase();
 }
 
 export default function Wordle({ onExit }: { onExit: () => void }) {
-  const [seed, setSeed] = useState(
-    () => loadSlot<SavedState>("word")?.seed ?? newSeed()
+  const { seed, saved, commit, newPuzzle, playMs } = useGame<SavedState>(
+    "word",
+    () => ({ guesses: [], done: false, won: false })
   );
   const answer = useMemo(() => answerFor(seed), [seed]);
-  const [saved, setSaved] = useState<SavedState>(
-    () => loadSlot<SavedState>("word")?.state ?? FRESH
-  );
   const [current, setCurrent] = useState("");
   const [shake, setShake] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const toastTimer = useRef<number | null>(null);
+
+  function flash(msg: string) {
+    setToast(msg);
+    setShake(true);
+    setTimeout(() => setShake(false), 400);
+    if (toastTimer.current !== null) clearTimeout(toastTimer.current);
+    toastTimer.current = window.setTimeout(() => setToast(null), 1400);
+  }
 
   const keyStates = useMemo(() => {
     const map: Record<string, LetterState> = {};
@@ -48,22 +55,21 @@ export default function Wordle({ onExit }: { onExit: () => void }) {
   const submit = useCallback(() => {
     if (saved.done) return;
     if (current.length !== COLS) {
-      setShake(true);
-      setTimeout(() => setShake(false), 400);
+      flash("Not enough letters");
+      return;
+    }
+    if (!isValidGuess(current)) {
+      flash("Not in word list");
       return;
     }
     const guesses = [...saved.guesses, current];
     const won = current === answer;
     const done = won || guesses.length >= ROWS;
-    const next = { guesses, done, won };
-    setSaved(next);
-    saveSlot("word", seed, next);
+    commit({ guesses, done, won });
     setCurrent("");
-    if (done) {
-      recordResult("word", won);
-      setToast(won ? winMessage(guesses.length) : `The word was ${answer}`);
-    }
-  }, [current, saved, answer, seed]);
+    if (done) recordResult("word", won);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current, saved, answer]);
 
   const onKey = useCallback(
     (k: string) => {
@@ -76,11 +82,8 @@ export default function Wordle({ onExit }: { onExit: () => void }) {
     [saved.done, submit, current.length]
   );
 
-  function newPuzzle() {
-    const s = newSeed();
-    setSeed(s);
-    setSaved(FRESH);
-    saveSlot("word", s, FRESH);
+  function startNew() {
+    newPuzzle();
     setCurrent("");
     setToast(null);
   }
@@ -97,7 +100,7 @@ export default function Wordle({ onExit }: { onExit: () => void }) {
 
   return (
     <div className="game game-word">
-      <GameHeader title="Word Guess" onExit={onExit} onNew={newPuzzle} />
+      <GameHeader title="Word Guess" onExit={onExit} onNew={startNew} />
       <p className="game-hint">Guess the 5-letter word in 6 tries.</p>
 
       <div className="word-grid" role="grid" aria-label="Guess grid">
@@ -160,6 +163,18 @@ export default function Wordle({ onExit }: { onExit: () => void }) {
           </div>
         ))}
       </div>
+
+      {saved.done && (
+        <Result
+          key={seed}
+          game="word"
+          won={saved.won}
+          message={saved.won ? winMessage(saved.guesses.length) : `The word was ${answer}`}
+          playMs={playMs}
+          onNew={startNew}
+          onExit={onExit}
+        />
+      )}
     </div>
   );
 }

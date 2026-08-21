@@ -1,16 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
-import { newSeed } from "../lib/rng";
 import { generateSudoku, isSolved, peersConflict, Grid } from "../lib/sudoku";
-import { loadSlot, saveSlot, recordResult } from "../lib/storage";
+import { recordResult, Diff } from "../lib/storage";
+import { useGame } from "../lib/useGame";
+import { useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
+import { GameTools, Result } from "./ui";
+
+const REMOVALS: Record<Diff, number> = { easy: 42, medium: 47, hard: 53 };
+const HELP =
+  "Fill every row, column, and 3×3 box with the digits 1–9, no repeats. " +
+  "Pencil notes (✏️) mark candidates; placing a digit clears that note from " +
+  "the row, column, and box around it.";
 
 interface SavedState {
   entries: Grid; // player-entered values only (0 where empty / given)
   notes: number[][]; // pencil marks per cell
   done: boolean;
 }
-
-const REMOVALS = 47; // medium difficulty
 
 function fresh(): SavedState {
   return {
@@ -20,20 +26,29 @@ function fresh(): SavedState {
   };
 }
 
+function peers(idx: number): number[] {
+  const r = Math.floor(idx / 9), c = idx % 9;
+  const out = new Set<number>();
+  for (let k = 0; k < 9; k++) {
+    out.add(r * 9 + k);
+    out.add(k * 9 + c);
+  }
+  const br = Math.floor(r / 3) * 3, bc = Math.floor(c / 3) * 3;
+  for (let dr = 0; dr < 3; dr++)
+    for (let dc = 0; dc < 3; dc++) out.add((br + dr) * 9 + (bc + dc));
+  out.delete(idx);
+  return [...out];
+}
+
 export default function Sudoku({ onExit }: { onExit: () => void }) {
-  const [seed, setSeed] = useState(
-    () => loadSlot<SavedState>("sudoku")?.seed ?? newSeed()
-  );
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
+    useGame<SavedState>("sudoku", fresh);
   const { puzzle, solution } = useMemo(
-    () => generateSudoku(`sudoku-${seed}`, REMOVALS),
-    [seed]
-  );
-  const [saved, setSaved] = useState<SavedState>(
-    () => loadSlot<SavedState>("sudoku")?.state ?? fresh()
+    () => generateSudoku(`sudoku-${seed}`, REMOVALS[diff]),
+    [seed, diff]
   );
   const [selected, setSelected] = useState<number | null>(null);
   const [pencil, setPencil] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
 
   const board: Grid = useMemo(
     () => puzzle.map((v, i) => (v !== 0 ? v : saved.entries[i])),
@@ -42,13 +57,11 @@ export default function Sudoku({ onExit }: { onExit: () => void }) {
 
   useEffect(() => {
     if (!saved.done && board.every((v) => v !== 0) && isSolved(board, solution)) {
-      const next = { ...saved, done: true };
-      setSaved(next);
-      saveSlot("sudoku", seed, next);
+      commit({ ...saved, done: true }, { undoable: false });
       recordResult("sudoku", true);
-      setToast("Solved!");
     }
-  }, [board, solution, saved, seed]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [board, solution, saved]);
 
   function setCell(idx: number, val: number) {
     if (saved.done || puzzle[idx] !== 0) return;
@@ -63,28 +76,43 @@ export default function Sudoku({ onExit }: { onExit: () => void }) {
     } else {
       next.entries[idx] = next.entries[idx] === val ? 0 : val;
       next.notes[idx] = [];
+      // Placing a digit clears it from the pencil notes of its peers.
+      if (val !== 0 && next.entries[idx] === val)
+        for (const p of peers(idx))
+          next.notes[p] = next.notes[p].filter((x) => x !== val);
     }
-    setSaved(next);
-    saveSlot("sudoku", seed, next);
+    commit(next);
   }
 
-  function newPuzzle() {
-    const s = newSeed();
-    setSeed(s);
-    setSaved(fresh());
-    saveSlot("sudoku", s, fresh());
+  function startNew(d?: Diff) {
+    newPuzzle(d);
     setSelected(null);
-    setToast(null);
   }
+
+  useGridKeys({
+    cols: 9,
+    rows: 9,
+    max: 9,
+    selected,
+    setSelected,
+    setCell
+  });
 
   const selVal = selected !== null ? board[selected] : 0;
 
   return (
     <div className="game game-sudoku">
-      <GameHeader title="Sudoku" onExit={onExit} onNew={newPuzzle} />
+      <GameHeader title="Sudoku" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
-        Tap a cell, then a number. Use ✏️ for pencil notes.
+        Tap a cell, then a number — or type. Use ✏️ for pencil notes.
       </p>
+      <GameTools
+        diff={diff}
+        onDiff={startNew}
+        help={HELP}
+        onUndo={undo}
+        canUndo={canUndo && !saved.done}
+      />
 
       <div className="sudoku-grid" role="grid" aria-label="Sudoku board">
         {board.map((v, i) => {
@@ -128,8 +156,6 @@ export default function Sudoku({ onExit }: { onExit: () => void }) {
         })}
       </div>
 
-      {toast && <div className="toast">{toast}</div>}
-
       <div className="numpad">
         {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => {
           const remaining = 9 - board.filter((v) => v === d).length;
@@ -159,6 +185,18 @@ export default function Sudoku({ onExit }: { onExit: () => void }) {
           ⌫<small>erase</small>
         </button>
       </div>
+
+      {saved.done && (
+        <Result
+          key={seed}
+          game="sudoku"
+          won
+          message="Solved!"
+          playMs={playMs}
+          onNew={() => startNew()}
+          onExit={onExit}
+        />
+      )}
     </div>
   );
 }

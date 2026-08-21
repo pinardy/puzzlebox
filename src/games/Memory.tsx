@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { makeRng, newSeed, shuffled } from "../lib/rng";
-import { loadSlot, saveSlot, recordResult } from "../lib/storage";
+import { makeRng, shuffled } from "../lib/rng";
+import { recordResult, Diff } from "../lib/storage";
+import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { GameTools, Result } from "./ui";
 
-const SYMBOLS = ["🍎", "🌙", "⭐", "🐟", "🎈", "🍀", "🔔", "🦋"];
-const N = SYMBOLS.length * 2; // 16 cards, 4×4
+const SYMBOLS = ["🍎", "🌙", "⭐", "🐟", "🎈", "🍀", "🔔", "🦋", "🍄", "⚡"];
+const PAIRS: Record<Diff, number> = { easy: 6, medium: 8, hard: 10 };
+const COLS = 4;
 
 interface SavedState {
   matched: boolean[];
@@ -12,23 +15,18 @@ interface SavedState {
   done: boolean;
 }
 
-function fresh(): SavedState {
-  return { matched: Array(N).fill(false), flips: 0, done: false };
-}
-
 export default function Memory({ onExit }: { onExit: () => void }) {
-  const [seed, setSeed] = useState(
-    () => loadSlot<SavedState>("memory")?.seed ?? newSeed()
+  const { seed, diff, saved, commit, newPuzzle, playMs } = useGame<SavedState>(
+    "memory",
+    (_s, d) => ({ matched: Array(PAIRS[d] * 2).fill(false), flips: 0, done: false })
   );
-  const cards = useMemo(
-    () => shuffled([...SYMBOLS, ...SYMBOLS], makeRng(`memory-${seed}`)),
-    [seed]
-  );
-  const [saved, setSaved] = useState<SavedState>(
-    () => loadSlot<SavedState>("memory")?.state ?? fresh()
-  );
+  const pairs = PAIRS[diff];
+  const cards = useMemo(() => {
+    const set = SYMBOLS.slice(0, pairs);
+    return shuffled([...set, ...set], makeRng(`memory-${seed}`));
+  }, [seed, pairs]);
+
   const [open, setOpen] = useState<number[]>([]);
-  const [toast, setToast] = useState<string | null>(null);
   const closeTimer = useRef<number | null>(null);
 
   useEffect(
@@ -39,8 +37,7 @@ export default function Memory({ onExit }: { onExit: () => void }) {
   );
 
   function tap(i: number) {
-    if (saved.done || saved.matched[i]) return;
-    if (open.includes(i)) return;
+    if (saved.done || saved.matched[i] || open.includes(i)) return;
 
     // A mismatched pair is showing — close it early and open the new card.
     if (open.length === 2) {
@@ -48,7 +45,6 @@ export default function Memory({ onExit }: { onExit: () => void }) {
       setOpen([i]);
       return;
     }
-
     if (open.length === 0) {
       setOpen([i]);
       return;
@@ -61,31 +57,26 @@ export default function Memory({ onExit }: { onExit: () => void }) {
       next.matched[first] = next.matched[i] = true;
       next.done = next.matched.every(Boolean);
       setOpen([]);
-      if (next.done) {
-        recordResult("memory", true);
-        setToast(`Matched everything in ${next.flips} flips!`);
-      }
+      if (next.done) recordResult("memory", true);
     } else {
       setOpen([first, i]);
       closeTimer.current = window.setTimeout(() => setOpen([]), 800);
     }
-    setSaved(next);
-    saveSlot("memory", seed, next);
+    commit(next, { undoable: false }); // undo would reveal card positions
   }
 
-  function newPuzzle() {
-    const s = newSeed();
-    setSeed(s);
-    setSaved(fresh());
-    saveSlot("memory", s, fresh());
+  function startNew(d?: Diff) {
+    newPuzzle(d);
     setOpen([]);
-    setToast(null);
   }
+
+  const rows = (pairs * 2) / COLS;
 
   return (
     <div className="game game-memory">
-      <GameHeader title="Pairs" onExit={onExit} onNew={newPuzzle} />
+      <GameHeader title="Pairs" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">Flip two cards at a time and find every pair.</p>
+      <GameTools diff={diff} onDiff={startNew} />
 
       <div className="lights-meta">
         <span>Flips: {saved.flips}</span>
@@ -93,7 +84,7 @@ export default function Memory({ onExit }: { onExit: () => void }) {
 
       <div
         className="memory-grid"
-        style={{ "--n": 4 } as CSSProperties}
+        style={{ "--n": COLS, aspectRatio: `${COLS} / ${rows}` } as CSSProperties}
         role="grid"
         aria-label="Card grid"
       >
@@ -113,7 +104,17 @@ export default function Memory({ onExit }: { onExit: () => void }) {
         })}
       </div>
 
-      {toast && <div className="toast">{toast}</div>}
+      {saved.done && (
+        <Result
+          key={seed}
+          game="memory"
+          won
+          message={`Matched everything in ${saved.flips} flips!`}
+          playMs={playMs}
+          onNew={() => startNew()}
+          onExit={onExit}
+        />
+      )}
     </div>
   );
 }

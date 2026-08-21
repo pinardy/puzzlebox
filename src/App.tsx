@@ -36,45 +36,58 @@ import { GameId, loadStats, loadSlot } from "./lib/storage";
 
 type View = "hub" | GameId;
 
+type Category = "words" | "numbers" | "logic" | "classic";
+
+const CATEGORY_LABEL: Record<Category, string> = {
+  words: "Word games",
+  numbers: "Number grids",
+  logic: "Logic grids",
+  classic: "Classics & arcade"
+};
+
 interface CardInfo {
   id: GameId;
   name: string;
   tagline: string;
   accent: string;
   glyph: string;
+  cat: Category;
 }
 
 const CARDS: CardInfo[] = [
-  { id: "word", name: "Word Guess", tagline: "Six tries, five letters", accent: "var(--green)", glyph: "A" },
-  { id: "sudoku", name: "Sudoku", tagline: "Fill the grid, no repeats", accent: "var(--blue)", glyph: "9" },
-  { id: "picross", name: "Picross", tagline: "Reveal the hidden picture", accent: "var(--rose)", glyph: "▦" },
-  { id: "wordsearch", name: "Word Search", tagline: "Hidden words, eight directions", accent: "var(--teal)", glyph: "⌕" },
-  { id: "lights", name: "Lights Out", tagline: "Flip them all off", accent: "var(--amber)", glyph: "◉" },
-  { id: "mines", name: "Minesweeper", tagline: "First tap is always safe", accent: "var(--purple)", glyph: "✹" },
-  { id: "queens", name: "Queens", tagline: "One crown per colour, none touching", accent: "var(--indigo)", glyph: "♛" },
-  { id: "tango", name: "Suns & Moons", tagline: "Balance the board, no three in a row", accent: "var(--coral)", glyph: "☾" },
-  { id: "zip", name: "Zip", tagline: "One line, every square, in order", accent: "var(--olive)", glyph: "⤳" },
-  { id: "2048", name: "2048", tagline: "Merge tiles, double up", accent: "var(--amber)", glyph: "⊞" },
-  { id: "memory", name: "Pairs", tagline: "Flip two, find the match", accent: "var(--rose)", glyph: "❖" },
-  { id: "fifteen", name: "Fifteen", tagline: "Slide the tiles into order", accent: "var(--blue)", glyph: "⇆" },
-  { id: "hangman", name: "Hangman", tagline: "Six lives, one word", accent: "var(--green)", glyph: "?" },
-  { id: "futoshiki", name: "Futoshiki", tagline: "Fill 1–5, obey the arrows", accent: "var(--purple)", glyph: "≶" },
-  { id: "sky", name: "Skyscrapers", tagline: "Count the towers you can see", accent: "var(--teal)", glyph: "⌂" },
-  { id: "hitori", name: "Hitori", tagline: "Shade out the duplicates", accent: "var(--indigo)", glyph: "▩" },
-  { id: "nurikabe", name: "Nurikabe", tagline: "Islands in a connected sea", accent: "var(--coral)", glyph: "◍" },
-  { id: "hashi", name: "Bridges", tagline: "Link every island, no crossings", accent: "var(--olive)", glyph: "☰" },
-  { id: "kenken", name: "KenKen", tagline: "Cages with arithmetic", accent: "var(--blue)", glyph: "⊞" },
-  { id: "kropki", name: "Kropki", tagline: "Dots join neighbours and doubles", accent: "var(--rose)", glyph: "◉" },
-  { id: "stars", name: "Star Battle", tagline: "Two stars everywhere, never touching", accent: "var(--amber)", glyph: "★" },
-  { id: "flow", name: "Flow", tagline: "Pipe every pair, fill the grid", accent: "var(--teal)", glyph: "∿" },
-  { id: "tents", name: "Tents & Trees", tagline: "Pitch a tent by every tree", accent: "var(--green)", glyph: "△" },
-  { id: "shikaku", name: "Shikaku", tagline: "Box every number by its area", accent: "var(--purple)", glyph: "▭" },
-  { id: "ships", name: "Battleships", tagline: "Find the hidden fleet", accent: "var(--indigo)", glyph: "▬" },
-  { id: "slither", name: "Slitherlink", tagline: "One loop around the clues", accent: "var(--coral)", glyph: "◇" },
-  { id: "kakuro", name: "Kakuro", tagline: "Crossword sums, digits 1–9", accent: "var(--olive)", glyph: "Σ" },
-  { id: "mastermind", name: "Mastermind", tagline: "Crack the colour code", accent: "var(--rose)", glyph: "◒" },
-  { id: "hanoi", name: "Towers of Hanoi", tagline: "Rebuild the tower, one disk at a time", accent: "var(--blue)", glyph: "≣" },
-  { id: "klondike", name: "Solitaire", tagline: "Classic Klondike, tap to move", accent: "var(--green)", glyph: "♠" }
+  { id: "word", name: "Word Guess", tagline: "Six tries, five letters", accent: "var(--green)", glyph: "A", cat: "words" },
+  { id: "hangman", name: "Hangman", tagline: "Six lives, one word", accent: "var(--amber)", glyph: "?", cat: "words" },
+  { id: "wordsearch", name: "Word Search", tagline: "Hidden words, eight directions", accent: "var(--teal)", glyph: "⌕", cat: "words" },
+
+  { id: "sudoku", name: "Sudoku", tagline: "Fill the grid, no repeats", accent: "var(--blue)", glyph: "9", cat: "numbers" },
+  { id: "futoshiki", name: "Futoshiki", tagline: "Fill the grid, obey the arrows", accent: "var(--purple)", glyph: "≶", cat: "numbers" },
+  { id: "sky", name: "Skyscrapers", tagline: "Count the towers you can see", accent: "var(--teal)", glyph: "⌂", cat: "numbers" },
+  { id: "kenken", name: "KenKen", tagline: "Cages with arithmetic", accent: "var(--blue)", glyph: "⊞", cat: "numbers" },
+  { id: "kropki", name: "Kropki", tagline: "Dots join neighbours and doubles", accent: "var(--rose)", glyph: "◉", cat: "numbers" },
+  { id: "kakuro", name: "Kakuro", tagline: "Crossword sums, digits 1–9", accent: "var(--olive)", glyph: "Σ", cat: "numbers" },
+
+  { id: "picross", name: "Picross", tagline: "Reveal the hidden picture", accent: "var(--rose)", glyph: "▦", cat: "logic" },
+  { id: "queens", name: "Queens", tagline: "One crown per colour, none touching", accent: "var(--indigo)", glyph: "♛", cat: "logic" },
+  { id: "stars", name: "Star Battle", tagline: "Two stars everywhere, never touching", accent: "var(--amber)", glyph: "★", cat: "logic" },
+  { id: "tango", name: "Suns & Moons", tagline: "Balance the board, no three in a row", accent: "var(--coral)", glyph: "☾", cat: "logic" },
+  { id: "zip", name: "Zip", tagline: "One line, every square, in order", accent: "var(--olive)", glyph: "⤳", cat: "logic" },
+  { id: "flow", name: "Flow", tagline: "Pipe every pair, fill the grid", accent: "var(--teal)", glyph: "∿", cat: "logic" },
+  { id: "hitori", name: "Hitori", tagline: "Shade out the duplicates", accent: "var(--indigo)", glyph: "▩", cat: "logic" },
+  { id: "nurikabe", name: "Nurikabe", tagline: "Islands in a connected sea", accent: "var(--coral)", glyph: "◍", cat: "logic" },
+  { id: "hashi", name: "Bridges", tagline: "Link every island, no crossings", accent: "var(--olive)", glyph: "☰", cat: "logic" },
+  { id: "tents", name: "Tents & Trees", tagline: "Pitch a tent by every tree", accent: "var(--green)", glyph: "△", cat: "logic" },
+  { id: "shikaku", name: "Shikaku", tagline: "Box every number by its area", accent: "var(--purple)", glyph: "▭", cat: "logic" },
+  { id: "ships", name: "Battleships", tagline: "Find the hidden fleet", accent: "var(--indigo)", glyph: "▬", cat: "logic" },
+  { id: "slither", name: "Slitherlink", tagline: "One loop around the clues", accent: "var(--coral)", glyph: "◇", cat: "logic" },
+
+  { id: "mines", name: "Minesweeper", tagline: "First tap is always safe", accent: "var(--purple)", glyph: "✹", cat: "classic" },
+  { id: "lights", name: "Lights Out", tagline: "Flip them all off", accent: "var(--amber)", glyph: "◉", cat: "classic" },
+  { id: "2048", name: "2048", tagline: "Merge tiles, double up", accent: "var(--amber)", glyph: "⊞", cat: "classic" },
+  { id: "fifteen", name: "Fifteen", tagline: "Slide the tiles into order", accent: "var(--blue)", glyph: "⇆", cat: "classic" },
+  { id: "memory", name: "Pairs", tagline: "Flip two, find the match", accent: "var(--rose)", glyph: "❖", cat: "classic" },
+  { id: "mastermind", name: "Mastermind", tagline: "Crack the colour code", accent: "var(--rose)", glyph: "◒", cat: "classic" },
+  { id: "hanoi", name: "Towers of Hanoi", tagline: "Rebuild the tower, disk by disk", accent: "var(--blue)", glyph: "≣", cat: "classic" },
+  { id: "klondike", name: "Solitaire", tagline: "Classic Klondike, tap to move", accent: "var(--green)", glyph: "♠", cat: "classic" }
 ];
 
 type Progress = "fresh" | "started" | "done";
@@ -90,6 +103,32 @@ const STATE_LABEL: Record<Progress, string> = {
   started: "Continue →",
   done: "Play again →"
 };
+
+function Card({ card, index, onOpen }: { card: CardInfo; index: number; onOpen: () => void }) {
+  const stats = loadStats(card.id);
+  const progress = progressOf(card.id);
+  return (
+    <button
+      className={`card is-${progress}`}
+      style={{ "--accent": card.accent, "--i": Math.min(index, 8) } as CSSProperties}
+      onClick={onOpen}
+    >
+      <span className="card-glyph" aria-hidden="true">
+        {card.glyph}
+      </span>
+      <span className="card-body">
+        <span className="card-name">{card.name}</span>
+        <span className="card-tag">{card.tagline}</span>
+      </span>
+      <span className="card-meta">
+        <span className="card-state">{STATE_LABEL[progress]}</span>
+        {stats.won > 0 && (
+          <span className="card-solved">✓ {stats.won} solved</span>
+        )}
+      </span>
+    </button>
+  );
+}
 
 export default function App() {
   const [view, setView] = useState<View>("hub");
@@ -127,6 +166,9 @@ export default function App() {
     );
   }
 
+  const inProgress = CARDS.filter((c) => progressOf(c.id) === "started");
+  const categories: Category[] = ["words", "numbers", "logic", "classic"];
+
   return (
     <div className="hub">
       <header className="ticket" aria-label="PuzzleBox">
@@ -138,34 +180,27 @@ export default function App() {
         </p>
       </header>
 
-      <main className="cards">
-        {CARDS.map((card, i) => {
-          const stats = loadStats(card.id);
-          const progress = progressOf(card.id);
-          return (
-            <button
-              key={card.id}
-              className={`card is-${progress}`}
-              style={{ "--accent": card.accent, "--i": i } as CSSProperties}
-              onClick={() => setView(card.id)}
-            >
-              <span className="card-glyph" aria-hidden="true">
-                {card.glyph}
-              </span>
-              <span className="card-body">
-                <span className="card-name">{card.name}</span>
-                <span className="card-tag">{card.tagline}</span>
-              </span>
-              <span className="card-meta">
-                <span className="card-state">{STATE_LABEL[progress]}</span>
-                {stats.won > 0 && (
-                  <span className="card-solved">✓ {stats.won} solved</span>
-                )}
-              </span>
-            </button>
-          );
-        })}
-      </main>
+      {inProgress.length > 0 && (
+        <section className="cards-section">
+          <h2>Jump back in</h2>
+          <div className="cards">
+            {inProgress.map((card, i) => (
+              <Card key={card.id} card={card} index={i} onOpen={() => setView(card.id)} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {categories.map((cat) => (
+        <section key={cat} className="cards-section">
+          <h2>{CATEGORY_LABEL[cat]}</h2>
+          <div className="cards">
+            {CARDS.filter((c) => c.cat === cat).map((card, i) => (
+              <Card key={card.id} card={card} index={i} onOpen={() => setView(card.id)} />
+            ))}
+          </div>
+        </section>
+      ))}
 
       <footer className="hub-footer">
         Puzzles are generated on your device — no connection needed.

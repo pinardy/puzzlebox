@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
-import { makeRng, newSeed } from "../lib/rng";
+import { useEffect } from "react";
+import { makeRng } from "../lib/rng";
 import { ANSWERS } from "../lib/words";
-import { loadSlot, saveSlot, recordResult } from "../lib/storage";
+import { recordResult } from "../lib/storage";
+import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { Result } from "./ui";
 
 const LIVES = 6;
 const KEY_ROWS = ["qwertyuiop", "asdfghjkl", "zxcvbnm"];
@@ -13,21 +15,16 @@ interface SavedState {
   won: boolean;
 }
 
-const FRESH: SavedState = { guessed: [], done: false, won: false };
-
 function answerFor(seed: string): string {
   return ANSWERS[Math.floor(makeRng(`hangman-${seed}`)() * ANSWERS.length)].toUpperCase();
 }
 
 export default function Hangman({ onExit }: { onExit: () => void }) {
-  const [seed, setSeed] = useState(
-    () => loadSlot<SavedState>("hangman")?.seed ?? newSeed()
+  const { seed, saved, commit, newPuzzle, playMs } = useGame<SavedState>(
+    "hangman",
+    () => ({ guessed: [], done: false, won: false })
   );
   const answer = answerFor(seed);
-  const [saved, setSaved] = useState<SavedState>(
-    () => loadSlot<SavedState>("hangman")?.state ?? FRESH
-  );
-  const [toast, setToast] = useState<string | null>(null);
 
   const wrong = saved.guessed.filter((g) => !answer.includes(g));
   const livesLeft = LIVES - wrong.length;
@@ -35,19 +32,10 @@ export default function Hangman({ onExit }: { onExit: () => void }) {
   function guess(letter: string) {
     if (saved.done || saved.guessed.includes(letter)) return;
     const guessed = [...saved.guessed, letter];
-    const hit = answer.includes(letter);
     const won = [...answer].every((c) => guessed.includes(c));
-    const lost = !hit && guessed.filter((g) => !answer.includes(g)).length >= LIVES;
-    const next = { guessed, done: won || lost, won };
-    setSaved(next);
-    saveSlot("hangman", seed, next);
-    if (won) {
-      recordResult("hangman", true);
-      setToast(`Saved with ${LIVES - guessed.filter((g) => !answer.includes(g)).length} ♥ to spare!`);
-    } else if (lost) {
-      recordResult("hangman", false);
-      setToast(`The word was ${answer}`);
-    }
+    const lost = guessed.filter((g) => !answer.includes(g)).length >= LIVES;
+    commit({ guessed, done: won || lost, won });
+    if (won || lost) recordResult("hangman", won);
   }
 
   useEffect(() => {
@@ -58,17 +46,9 @@ export default function Hangman({ onExit }: { onExit: () => void }) {
     return () => window.removeEventListener("keydown", h);
   });
 
-  function newPuzzle() {
-    const s = newSeed();
-    setSeed(s);
-    setSaved(FRESH);
-    saveSlot("hangman", s, FRESH);
-    setToast(null);
-  }
-
   return (
     <div className="game game-hangman">
-      <GameHeader title="Hangman" onExit={onExit} onNew={newPuzzle} />
+      <GameHeader title="Hangman" onExit={onExit} onNew={() => newPuzzle()} />
       <p className="game-hint">
         Guess the 5-letter word one letter at a time — {LIVES} misses and it's
         gone.
@@ -100,8 +80,6 @@ export default function Hangman({ onExit }: { onExit: () => void }) {
         </div>
       </div>
 
-      {toast && <div className="toast">{toast}</div>}
-
       <div className="keyboard">
         {KEY_ROWS.map((row) => (
           <div className="key-row" key={row}>
@@ -123,6 +101,22 @@ export default function Hangman({ onExit }: { onExit: () => void }) {
           </div>
         ))}
       </div>
+
+      {saved.done && (
+        <Result
+          key={seed}
+          game="hangman"
+          won={saved.won}
+          message={
+            saved.won
+              ? `Saved with ${livesLeft} ♥ to spare!`
+              : `The word was ${answer}`
+          }
+          playMs={playMs}
+          onNew={() => newPuzzle()}
+          onExit={onExit}
+        />
+      )}
     </div>
   );
 }

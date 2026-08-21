@@ -1,19 +1,21 @@
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
-import { makeRng, newSeed } from "../lib/rng";
-import { loadSlot, saveSlot, recordResult } from "../lib/storage";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { makeRng } from "../lib/rng";
+import { recordResult, Diff } from "../lib/storage";
+import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { GameTools, Result } from "./ui";
 
 type Mark = 0 | 1 | 2; // empty | filled | crossed
 
-const SIZE = 10;
+const SIZE: Record<Diff, number> = { easy: 8, medium: 10, hard: 12 };
+const HELP =
+  "Each number lists the runs of filled squares in that row or column, in " +
+  "order, with at least one gap between runs. Satisfied clues dim. Drag to " +
+  "fill several squares in one stroke.";
 
 interface SavedState {
   marks: Mark[];
   done: boolean;
-}
-
-function fresh(): SavedState {
-  return { marks: Array(SIZE * SIZE).fill(0) as Mark[], done: false };
 }
 
 function runsOf(line: number[]): number[] {
@@ -41,36 +43,36 @@ function buildTarget(seed: string, size: number): number[] {
 }
 
 export default function Picross({ onExit }: { onExit: () => void }) {
-  const [seed, setSeed] = useState(
-    () => loadSlot<SavedState>("picross")?.seed ?? newSeed()
-  );
-  const target = useMemo(() => buildTarget(`picross-${seed}`, SIZE), [seed]);
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
+    useGame<SavedState>("picross", (_s, d) => ({
+      marks: Array(SIZE[d] * SIZE[d]).fill(0) as Mark[],
+      done: false
+    }));
+  const size = SIZE[diff];
+  const target = useMemo(() => buildTarget(`picross-${seed}`, size), [seed, size]);
 
   const rowClues = useMemo(
     () =>
-      Array.from({ length: SIZE }, (_, r) =>
-        runsOf(target.slice(r * SIZE, r * SIZE + SIZE))
+      Array.from({ length: size }, (_, r) =>
+        runsOf(target.slice(r * size, r * size + size))
       ),
-    [target]
+    [target, size]
   );
   const colClues = useMemo(
     () =>
-      Array.from({ length: SIZE }, (_, c) =>
-        runsOf(Array.from({ length: SIZE }, (_, r) => target[r * SIZE + c]))
+      Array.from({ length: size }, (_, c) =>
+        runsOf(Array.from({ length: size }, (_, r) => target[r * size + c]))
       ),
-    [target]
+    [target, size]
   );
 
-  const [saved, setSaved] = useState<SavedState>(
-    () => loadSlot<SavedState>("picross")?.state ?? fresh()
-  );
   const [mode, setMode] = useState<1 | 2>(1); // fill | cross
-  const [toast, setToast] = useState<string | null>(null);
+  const paint = useRef<Mark | null>(null);
 
   const playerRow = (r: number) =>
-    saved.marks.slice(r * SIZE, r * SIZE + SIZE).map((m) => (m === 1 ? 1 : 0));
+    saved.marks.slice(r * size, r * size + size).map((m) => (m === 1 ? 1 : 0));
   const playerCol = (c: number) =>
-    Array.from({ length: SIZE }, (_, r) => (saved.marks[r * SIZE + c] === 1 ? 1 : 0));
+    Array.from({ length: size }, (_, r) => (saved.marks[r * size + c] === 1 ? 1 : 0));
 
   const rowDone = useMemo(
     () => rowClues.map(
@@ -87,48 +89,45 @@ export default function Picross({ onExit }: { onExit: () => void }) {
 
   useEffect(() => {
     if (!saved.done && rowDone.every(Boolean) && colDone.every(Boolean)) {
-      const next = { ...saved, done: true };
-      setSaved(next);
-      saveSlot("picross", seed, next);
+      commit({ ...saved, done: true }, { undoable: false });
       recordResult("picross", true);
-      setToast("Picture complete!");
     }
-  }, [rowDone, colDone, saved, seed]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rowDone, colDone, saved]);
 
-  function tap(i: number) {
-    if (saved.done) return;
+  function apply(i: number, v: Mark, undoable: boolean) {
     const marks = saved.marks.slice() as Mark[];
-    marks[i] = marks[i] === mode ? 0 : mode;
-    const next = { ...saved, marks };
-    setSaved(next);
-    saveSlot("picross", seed, next);
+    marks[i] = v;
+    commit({ ...saved, marks }, { undoable });
   }
 
-  function newPuzzle() {
-    const s = newSeed();
-    setSeed(s);
-    setSaved(fresh());
-    saveSlot("picross", s, fresh());
-    setToast(null);
+  function cellFromPoint(x: number, y: number): number | null {
+    const el = document.elementFromPoint(x, y)?.closest("[data-pic-idx]");
+    const v = el instanceof HTMLElement ? el.dataset.picIdx : undefined;
+    return v === undefined ? null : Number(v);
   }
-
-  const maxRowClue = Math.max(...rowClues.map((c) => c.length));
-  const maxColClue = Math.max(...colClues.map((c) => c.length));
 
   return (
     <div className="game game-picross">
-      <GameHeader title="Picross" onExit={onExit} onNew={newPuzzle} />
+      <GameHeader title="Picross" onExit={onExit} onNew={() => newPuzzle()} />
       <p className="game-hint">
         Numbers are runs of filled squares in that row or column, in order.
       </p>
+      <GameTools
+        diff={diff}
+        onDiff={newPuzzle}
+        help={HELP}
+        onUndo={undo}
+        canUndo={canUndo && !saved.done}
+      />
 
       <div
         className="picross-wrap"
         style={
           {
-            "--n": SIZE,
-            "--rowclue": maxRowClue,
-            "--colclue": maxColClue
+            "--n": size,
+            "--rowclue": Math.max(...rowClues.map((c) => c.length)),
+            "--colclue": Math.max(...colClues.map((c) => c.length))
           } as CSSProperties
         }
       >
@@ -151,20 +150,39 @@ export default function Picross({ onExit }: { onExit: () => void }) {
             </div>
           ))}
         </div>
-        <div className="picross-grid">
+        <div
+          className="picross-grid drag-paint"
+          onPointerDown={(e) => {
+            if (saved.done) return;
+            (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+            const i = cellFromPoint(e.clientX, e.clientY);
+            if (i === null) return;
+            const v = (saved.marks[i] === mode ? 0 : mode) as Mark;
+            paint.current = v;
+            apply(i, v, true);
+          }}
+          onPointerMove={(e) => {
+            if (paint.current === null) return;
+            const i = cellFromPoint(e.clientX, e.clientY);
+            if (i !== null && saved.marks[i] !== paint.current)
+              apply(i, paint.current, false); // whole stroke = one undo step
+          }}
+          onPointerUp={() => { paint.current = null; }}
+          onPointerCancel={() => { paint.current = null; }}
+        >
           {saved.marks.map((m, i) => {
-            const r = Math.floor(i / SIZE);
-            const c = i % SIZE;
+            const r = Math.floor(i / size);
+            const c = i % size;
             return (
               <button
                 key={i}
+                data-pic-idx={i}
                 className={[
                   "pic-cell",
                   m === 1 ? "fill" : m === 2 ? "cross" : "",
-                  c % 5 === 4 && c !== SIZE - 1 ? "br" : "",
-                  r % 5 === 4 && r !== SIZE - 1 ? "bb" : ""
+                  c % 5 === 4 && c !== size - 1 ? "br" : "",
+                  r % 5 === 4 && r !== size - 1 ? "bb" : ""
                 ].join(" ")}
-                onClick={() => tap(i)}
                 aria-label={`Row ${r + 1} column ${c + 1}`}
               >
                 {m === 2 ? "×" : ""}
@@ -173,8 +191,6 @@ export default function Picross({ onExit }: { onExit: () => void }) {
           })}
         </div>
       </div>
-
-      {toast && <div className="toast">{toast}</div>}
 
       <div className="picross-tools">
         <button
@@ -192,6 +208,18 @@ export default function Picross({ onExit }: { onExit: () => void }) {
           × Mark empty
         </button>
       </div>
+
+      {saved.done && (
+        <Result
+          key={seed}
+          game="picross"
+          won
+          message="Picture complete!"
+          playMs={playMs}
+          onNew={() => newPuzzle()}
+          onExit={onExit}
+        />
+      )}
     </div>
   );
 }

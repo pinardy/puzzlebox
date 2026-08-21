@@ -1,10 +1,17 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
-import { newSeed } from "../lib/rng";
 import { generateLatin } from "../lib/latin";
-import { loadSlot, saveSlot, recordResult } from "../lib/storage";
+import { recordResult, Diff } from "../lib/storage";
+import { useGame } from "../lib/useGame";
+import { useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
+import { GameTools, Result } from "./ui";
 
-const N = 5;
+const SIZE: Record<Diff, number> = { easy: 4, medium: 5, hard: 6 };
+const HELP =
+  "Every cell holds a tower, heights 1 up to the grid size, each height " +
+  "once per row and column. An edge clue counts how many towers are " +
+  "visible looking in from that edge — taller towers hide everything " +
+  "shorter behind them. Clues turn green when their line works.";
 
 /** Towers visible along a line of heights: each new maximum is visible. */
 function visible(line: number[]): number {
@@ -22,15 +29,15 @@ interface Clues {
   right: number[];
 }
 
-function generateClues(seed: string): Clues {
-  const sol = generateLatin(`sky-${seed}`, N);
-  const col = (c: number) => Array.from({ length: N }, (_, r) => sol[r * N + c]);
-  const row = (r: number) => Array.from({ length: N }, (_, c) => sol[r * N + c]);
+function generateClues(seed: string, n: number): Clues {
+  const sol = generateLatin(`sky-${seed}`, n);
+  const col = (c: number) => Array.from({ length: n }, (_, r) => sol[r * n + c]);
+  const row = (r: number) => Array.from({ length: n }, (_, c) => sol[r * n + c]);
   return {
-    top: Array.from({ length: N }, (_, c) => visible(col(c))),
-    bottom: Array.from({ length: N }, (_, c) => visible(col(c).reverse())),
-    left: Array.from({ length: N }, (_, r) => visible(row(r))),
-    right: Array.from({ length: N }, (_, r) => visible(row(r).reverse()))
+    top: Array.from({ length: n }, (_, c) => visible(col(c))),
+    bottom: Array.from({ length: n }, (_, c) => visible(col(c).reverse())),
+    left: Array.from({ length: n }, (_, r) => visible(row(r))),
+    right: Array.from({ length: n }, (_, r) => visible(row(r).reverse()))
   };
 }
 
@@ -39,42 +46,37 @@ interface SavedState {
   done: boolean;
 }
 
-function fresh(): SavedState {
-  return { entries: Array(N * N).fill(0), done: false };
-}
-
 export default function Skyscrapers({ onExit }: { onExit: () => void }) {
-  const [seed, setSeed] = useState(
-    () => loadSlot<SavedState>("sky")?.seed ?? newSeed()
-  );
-  const clues = useMemo(() => generateClues(seed), [seed]);
-  const [saved, setSaved] = useState<SavedState>(
-    () => loadSlot<SavedState>("sky")?.state ?? fresh()
-  );
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
+    useGame<SavedState>("sky", (_s, d) => ({
+      entries: Array(SIZE[d] * SIZE[d]).fill(0),
+      done: false
+    }));
+  const n = SIZE[diff];
+  const clues = useMemo(() => generateClues(seed, n), [seed, n]);
   const [selected, setSelected] = useState<number | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
 
   const board = saved.entries;
 
   const conflicts = useMemo(() => {
     const bad = new Set<number>();
-    for (let i = 0; i < N * N; i++) {
+    for (let i = 0; i < n * n; i++) {
       const v = board[i];
       if (v === 0) continue;
-      const r = Math.floor(i / N), c = i % N;
-      for (let k = 0; k < N; k++) {
-        const row = r * N + k, col = k * N + c;
+      const r = Math.floor(i / n), c = i % n;
+      for (let k = 0; k < n; k++) {
+        const row = r * n + k, col = k * n + c;
         if (row !== i && board[row] === v) bad.add(i);
         if (col !== i && board[col] === v) bad.add(i);
       }
     }
     return bad;
-  }, [board]);
+  }, [board, n]);
 
   /** null while the line is incomplete; then whether the clue holds. */
   const clueOk = useMemo(() => {
-    const col = (c: number) => Array.from({ length: N }, (_, r) => board[r * N + c]);
-    const row = (r: number) => Array.from({ length: N }, (_, c) => board[r * N + c]);
+    const col = (c: number) => Array.from({ length: n }, (_, r) => board[r * n + c]);
+    const row = (r: number) => Array.from({ length: n }, (_, c) => board[r * n + c]);
     const judge = (line: number[], want: number): boolean | null =>
       line.some((v) => v === 0) ? null : visible(line) === want;
     return {
@@ -83,7 +85,7 @@ export default function Skyscrapers({ onExit }: { onExit: () => void }) {
       left: clues.left.map((w, r) => judge(row(r), w)),
       right: clues.right.map((w, r) => judge(row(r).reverse(), w))
     };
-  }, [board, clues]);
+  }, [board, clues, n]);
 
   useEffect(() => {
     const allOk =
@@ -93,44 +95,45 @@ export default function Skyscrapers({ onExit }: { onExit: () => void }) {
         (ok) => ok === true
       );
     if (!saved.done && allOk) {
-      const next = { ...saved, done: true };
-      setSaved(next);
-      saveSlot("sky", seed, next);
+      commit({ ...saved, done: true }, { undoable: false });
       recordResult("sky", true);
-      setToast("Skyline complete!");
     }
-  }, [board, conflicts, clueOk, saved, seed]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [board, conflicts, clueOk, saved]);
 
   function setCell(idx: number, val: number) {
     if (saved.done) return;
     const entries = saved.entries.slice();
     entries[idx] = entries[idx] === val ? 0 : val;
-    const next = { ...saved, entries };
-    setSaved(next);
-    saveSlot("sky", seed, next);
+    commit({ ...saved, entries });
   }
 
-  function newPuzzle() {
-    const s = newSeed();
-    setSeed(s);
-    setSaved(fresh());
-    saveSlot("sky", s, fresh());
+  function startNew(d?: Diff) {
+    newPuzzle(d);
     setSelected(null);
-    setToast(null);
   }
+
+  useGridKeys({ cols: n, rows: n, max: n, selected, setSelected, setCell });
 
   const clueClass = (ok: boolean | null) =>
     `sky-clue${ok === true ? " ok" : ok === false ? " bad" : ""}`;
 
-  const G = N + 2;
+  const G = n + 2;
 
   return (
     <div className="game game-sky">
-      <GameHeader title="Skyscrapers" onExit={onExit} onNew={newPuzzle} />
+      <GameHeader title="Skyscrapers" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
-        Heights 1–{N} once per row and column. Edge numbers count the towers
-        visible from that side — taller ones hide shorter ones.
+        Heights 1–{n} once per row and column. Edge numbers count the towers
+        visible from that side.
       </p>
+      <GameTools
+        diff={diff}
+        onDiff={startNew}
+        help={HELP}
+        onUndo={undo}
+        canUndo={canUndo && !saved.done}
+      />
 
       <div
         className="sky-grid"
@@ -140,9 +143,9 @@ export default function Skyscrapers({ onExit }: { onExit: () => void }) {
       >
         {Array.from({ length: G * G }).map((_, k) => {
           const gr = Math.floor(k / G), gc = k % G;
-          const inner = gr > 0 && gr <= N && gc > 0 && gc <= N;
+          const inner = gr > 0 && gr <= n && gc > 0 && gc <= n;
           if (inner) {
-            const i = (gr - 1) * N + (gc - 1);
+            const i = (gr - 1) * n + (gc - 1);
             return (
               <button
                 key={k}
@@ -158,22 +161,20 @@ export default function Skyscrapers({ onExit }: { onExit: () => void }) {
               </button>
             );
           }
-          if (gr === 0 && gc > 0 && gc <= N)
+          if (gr === 0 && gc > 0 && gc <= n)
             return <span key={k} className={clueClass(clueOk.top[gc - 1])}>{clues.top[gc - 1]}</span>;
-          if (gr === G - 1 && gc > 0 && gc <= N)
+          if (gr === G - 1 && gc > 0 && gc <= n)
             return <span key={k} className={clueClass(clueOk.bottom[gc - 1])}>{clues.bottom[gc - 1]}</span>;
-          if (gc === 0 && gr > 0 && gr <= N)
+          if (gc === 0 && gr > 0 && gr <= n)
             return <span key={k} className={clueClass(clueOk.left[gr - 1])}>{clues.left[gr - 1]}</span>;
-          if (gc === G - 1 && gr > 0 && gr <= N)
+          if (gc === G - 1 && gr > 0 && gr <= n)
             return <span key={k} className={clueClass(clueOk.right[gr - 1])}>{clues.right[gr - 1]}</span>;
           return <span key={k} />;
         })}
       </div>
 
-      {toast && <div className="toast">{toast}</div>}
-
       <div className="numpad numpad-5">
-        {[1, 2, 3, 4, 5].map((d) => (
+        {Array.from({ length: n }, (_, d) => d + 1).map((d) => (
           <button
             key={d}
             className="num-key"
@@ -189,6 +190,18 @@ export default function Skyscrapers({ onExit }: { onExit: () => void }) {
           ⌫
         </button>
       </div>
+
+      {saved.done && (
+        <Result
+          key={seed}
+          game="sky"
+          won
+          message="Skyline complete!"
+          playMs={playMs}
+          onNew={() => startNew()}
+          onExit={onExit}
+        />
+      )}
     </div>
   );
 }

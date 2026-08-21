@@ -1,35 +1,34 @@
-import { useEffect, useMemo, useState } from "react";
-import { newSeed } from "../lib/rng";
-import { generateKakuro, KAKURO_G } from "../lib/kakuro";
-import { loadSlot, saveSlot, recordResult } from "../lib/storage";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { generateKakuro } from "../lib/kakuro";
+import { recordResult, Diff } from "../lib/storage";
+import { useGame } from "../lib/useGame";
+import { useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
+import { GameTools, Result } from "./ui";
 
-const G = KAKURO_G;
+const SIZE: Record<Diff, number> = { easy: 6, medium: 7, hard: 8 };
+const HELP =
+  "Like a crossword with digits: each run of white cells adds up to its " +
+  "clue — across clues sit top-right of a black cell, down clues " +
+  "bottom-left — and a digit never repeats within a run. Digits are 1–9.";
 
 interface SavedState {
-  entries: number[]; // per board cell; 0 = empty (black cells unused)
+  entries: number[];
   done: boolean;
 }
 
-function fresh(): SavedState {
-  return { entries: Array(G * G).fill(0), done: false };
-}
-
 export default function Kakuro({ onExit }: { onExit: () => void }) {
-  const [seed, setSeed] = useState(
-    () => loadSlot<SavedState>("kakuro")?.seed ?? newSeed()
-  );
-  const puzzle = useMemo(() => generateKakuro(`kakuro-${seed}`), [seed]);
-  const [saved, setSaved] = useState<SavedState>(
-    () => loadSlot<SavedState>("kakuro")?.state ?? fresh()
-  );
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
+    useGame<SavedState>("kakuro", (_s, d) => ({
+      entries: Array(SIZE[d] * SIZE[d]).fill(0),
+      done: false
+    }));
+  const G = SIZE[diff];
+  const puzzle = useMemo(() => generateKakuro(`kakuro-${seed}`, G), [seed, G]);
   const [selected, setSelected] = useState<number | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
 
   const board = saved.entries;
 
-  /** Cells breaking a rule: duplicates in a run, or a completed run whose
-   *  sum is off. */
   const conflicts = useMemo(() => {
     const bad = new Set<number>();
     for (const run of puzzle.runs) {
@@ -51,41 +50,55 @@ export default function Kakuro({ onExit }: { onExit: () => void }) {
       run.cells.every((i) => board[i] !== 0)
     );
     if (!saved.done && complete && conflicts.size === 0) {
-      const next = { ...saved, done: true };
-      setSaved(next);
-      saveSlot("kakuro", seed, next);
+      commit({ ...saved, done: true }, { undoable: false });
       recordResult("kakuro", true);
-      setToast("All sums add up!");
     }
-  }, [board, conflicts, puzzle, saved, seed]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [board, conflicts, puzzle, saved]);
 
   function setCell(idx: number, val: number) {
     if (saved.done || puzzle.black[idx]) return;
     const entries = saved.entries.slice();
     entries[idx] = entries[idx] === val ? 0 : val;
-    const next = { ...saved, entries };
-    setSaved(next);
-    saveSlot("kakuro", seed, next);
+    commit({ ...saved, entries });
   }
 
-  function newPuzzle() {
-    const s = newSeed();
-    setSeed(s);
-    setSaved(fresh());
-    saveSlot("kakuro", s, fresh());
+  function startNew(d?: Diff) {
+    newPuzzle(d);
     setSelected(null);
-    setToast(null);
   }
+
+  useGridKeys({
+    cols: G,
+    rows: G,
+    max: 9,
+    selected,
+    setSelected,
+    setCell,
+    isCell: (i) => !puzzle.black[i]
+  });
 
   return (
     <div className="game game-kakuro">
-      <GameHeader title="Kakuro" onExit={onExit} onNew={newPuzzle} />
+      <GameHeader title="Kakuro" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
-        Runs of digits 1–9, no repeats within a run, adding to the clue —
-        across on the top-right, down on the bottom-left.
+        Runs of digits 1–9, no repeats, adding to the clue — across top-right,
+        down bottom-left.
       </p>
+      <GameTools
+        diff={diff}
+        onDiff={startNew}
+        help={HELP}
+        onUndo={undo}
+        canUndo={canUndo && !saved.done}
+      />
 
-      <div className="kakuro-grid" role="grid" aria-label="Kakuro board">
+      <div
+        className="kakuro-grid"
+        style={{ "--n": G } as CSSProperties}
+        role="grid"
+        aria-label="Kakuro board"
+      >
         {Array.from({ length: G * G }).map((_, i) => {
           if (puzzle.black[i]) {
             const a = puzzle.across.get(i);
@@ -114,8 +127,6 @@ export default function Kakuro({ onExit }: { onExit: () => void }) {
         })}
       </div>
 
-      {toast && <div className="toast">{toast}</div>}
-
       <div className="numpad numpad-9">
         {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((dgt) => (
           <button
@@ -133,6 +144,18 @@ export default function Kakuro({ onExit }: { onExit: () => void }) {
           ⌫
         </button>
       </div>
+
+      {saved.done && (
+        <Result
+          key={seed}
+          game="kakuro"
+          won
+          message="All sums add up!"
+          playMs={playMs}
+          onNew={() => startNew()}
+          onExit={onExit}
+        />
+      )}
     </div>
   );
 }

@@ -1,10 +1,19 @@
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
-import { makeRng, newSeed, shuffled } from "../lib/rng";
-import { loadSlot, saveSlot, recordResult } from "../lib/storage";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { makeRng, shuffled } from "../lib/rng";
+import { recordResult, Diff } from "../lib/storage";
+import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { GameTools, Result } from "./ui";
 
-const N = 9;
-const MINE_COUNT = 13;
+const LEVELS: Record<Diff, [number, number]> = {
+  easy: [8, 9],
+  medium: [9, 13],
+  hard: [12, 26]
+};
+const HELP =
+  "Numbers count mines in the eight touching squares; the first tap is " +
+  "always safe. Long-press to plant a flag, and tap a satisfied number to " +
+  "reveal its remaining neighbours at once.";
 
 function neighbours(idx: number, n: number): number[] {
   const r = Math.floor(idx / n), c = idx % n;
@@ -40,52 +49,48 @@ interface SavedState {
   won: boolean;
 }
 
-function fresh(): SavedState {
+function fresh(n: number): SavedState {
   return {
     firstTap: null,
-    revealed: Array(N * N).fill(false),
-    flagged: Array(N * N).fill(false),
+    revealed: Array(n * n).fill(false),
+    flagged: Array(n * n).fill(false),
     done: false,
     won: false
   };
 }
 
 export default function Mines({ onExit }: { onExit: () => void }) {
-  const [seed, setSeed] = useState(
-    () => loadSlot<SavedState>("mines")?.seed ?? newSeed()
-  );
-  const [saved, setSaved] = useState<SavedState>(
-    () => loadSlot<SavedState>("mines")?.state ?? fresh()
-  );
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
+    useGame<SavedState>("mines", (_s, d) => fresh(LEVELS[d][0]));
+  const [n, mineCount] = LEVELS[diff];
   const [flagMode, setFlagMode] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
+  const pressTimer = useRef<number | null>(null);
+  const longPressed = useRef(false);
 
   const isMine = useMemo(
     () =>
       saved.firstTap === null
         ? null
-        : layMines(seed, N, MINE_COUNT, saved.firstTap),
-    [saved.firstTap, seed]
+        : layMines(seed, n, mineCount, saved.firstTap),
+    [saved.firstTap, seed, n, mineCount]
   );
 
   const counts = useMemo(() => {
     if (!isMine) return null;
     return isMine.map((_, i) =>
-      neighbours(i, N).filter((j) => isMine[j]).length
+      neighbours(i, n).filter((j) => isMine[j]).length
     );
-  }, [isMine]);
+  }, [isMine, n]);
 
   useEffect(() => {
     if (!isMine || saved.done) return;
     const allClear = saved.revealed.every((r, i) => r || isMine[i]);
     if (allClear) {
-      const next = { ...saved, done: true, won: true };
-      setSaved(next);
-      saveSlot("mines", seed, next);
+      commit({ ...saved, done: true, won: true }, { undoable: false });
       recordResult("mines", true);
-      setToast("Field cleared!");
     }
-  }, [saved, isMine, seed]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [saved, isMine]);
 
   function floodReveal(start: number, mines: boolean[], cnts: number[], revealed: boolean[]) {
     const stack = [start];
@@ -93,80 +98,90 @@ export default function Mines({ onExit }: { onExit: () => void }) {
       const i = stack.pop()!;
       if (revealed[i] || mines[i]) continue;
       revealed[i] = true;
-      if (cnts[i] === 0) for (const j of neighbours(i, N)) if (!revealed[j]) stack.push(j);
+      if (cnts[i] === 0) for (const j of neighbours(i, n)) if (!revealed[j]) stack.push(j);
     }
+  }
+
+  function toggleFlag(idx: number) {
+    if (saved.done || saved.revealed[idx]) return;
+    const flagged = saved.flagged.slice();
+    flagged[idx] = !flagged[idx];
+    commit({ ...saved, flagged });
+  }
+
+  /** Reveal several cells; a mine among them ends the game. */
+  function revealCells(targets: number[]) {
+    if (!isMine || !counts) return;
+    if (targets.some((i) => isMine[i])) {
+      const revealed = saved.revealed.map((r, i) => r || isMine[i]);
+      commit({ ...saved, revealed, done: true, won: false });
+      recordResult("mines", false);
+      return;
+    }
+    const revealed = saved.revealed.slice();
+    for (const i of targets) floodReveal(i, isMine, counts, revealed);
+    commit({ ...saved, revealed });
   }
 
   function tap(idx: number) {
-    if (saved.done) return;
+    if (saved.done || longPressed.current) return;
 
     if (flagMode) {
-      if (saved.revealed[idx]) return;
-      const flagged = saved.flagged.slice();
-      flagged[idx] = !flagged[idx];
-      const next = { ...saved, flagged };
-      setSaved(next);
-      saveSlot("mines", seed, next);
+      toggleFlag(idx);
       return;
     }
 
-    if (saved.flagged[idx] || saved.revealed[idx]) return;
+    // Chord: tapping a satisfied number opens its unflagged neighbours.
+    if (saved.revealed[idx]) {
+      if (!counts || counts[idx] === 0) return;
+      const around = neighbours(idx, n);
+      const flags = around.filter((j) => saved.flagged[j]).length;
+      if (flags !== counts[idx]) return;
+      const targets = around.filter((j) => !saved.flagged[j] && !saved.revealed[j]);
+      if (targets.length) revealCells(targets);
+      return;
+    }
+
+    if (saved.flagged[idx]) return;
 
     // First tap: fix the mine layout with a safe zone, then flood.
     if (saved.firstTap === null) {
-      const mines = layMines(seed, N, MINE_COUNT, idx);
+      const mines = layMines(seed, n, mineCount, idx);
       const cnts = mines.map((_, i) =>
-        neighbours(i, N).filter((j) => mines[j]).length
+        neighbours(i, n).filter((j) => mines[j]).length
       );
       const revealed = saved.revealed.slice();
       floodReveal(idx, mines, cnts, revealed);
-      const next = { ...saved, firstTap: idx, revealed };
-      setSaved(next);
-      saveSlot("mines", seed, next);
+      commit({ ...saved, firstTap: idx, revealed });
       return;
     }
 
-    if (isMine![idx]) {
-      const revealed = saved.revealed.map((r, i) => r || isMine![i]);
-      const next = { ...saved, revealed, done: true, won: false };
-      setSaved(next);
-      saveSlot("mines", seed, next);
-      recordResult("mines", false);
-      setToast("Boom — try a new field");
-      return;
-    }
-
-    const revealed = saved.revealed.slice();
-    floodReveal(idx, isMine!, counts!, revealed);
-    const next = { ...saved, revealed };
-    setSaved(next);
-    saveSlot("mines", seed, next);
-  }
-
-  function newPuzzle() {
-    const s = newSeed();
-    setSeed(s);
-    setSaved(fresh());
-    saveSlot("mines", s, fresh());
-    setToast(null);
+    revealCells([idx]);
   }
 
   const flagsUsed = saved.flagged.filter(Boolean).length;
 
   return (
     <div className="game game-mines">
-      <GameHeader title="Minesweeper" onExit={onExit} onNew={newPuzzle} />
+      <GameHeader title="Minesweeper" onExit={onExit} onNew={() => newPuzzle()} />
       <p className="game-hint">
-        Numbers count mines in touching squares. Your first tap is always safe.
+        First tap is always safe. Long-press (or use 🚩 mode) to flag.
       </p>
+      <GameTools
+        diff={diff}
+        onDiff={newPuzzle}
+        help={HELP}
+        onUndo={undo}
+        canUndo={canUndo && !saved.done}
+      />
 
       <div className="lights-meta">
-        <span>🚩 {flagsUsed} / {MINE_COUNT}</span>
+        <span>🚩 {flagsUsed} / {mineCount}</span>
       </div>
 
       <div
         className="mines-grid"
-        style={{ "--n": N } as CSSProperties}
+        style={{ "--n": n } as CSSProperties}
         role="grid"
         aria-label="Minefield"
       >
@@ -184,14 +199,29 @@ export default function Mines({ onExit }: { onExit: () => void }) {
                 rev && !mine && cnt > 0 ? `c${cnt}` : ""
               ].join(" ")}
               onClick={() => tap(i)}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                toggleFlag(i);
+              }}
+              onPointerDown={() => {
+                longPressed.current = false;
+                pressTimer.current = window.setTimeout(() => {
+                  longPressed.current = true;
+                  toggleFlag(i);
+                }, 420);
+              }}
+              onPointerUp={() => {
+                if (pressTimer.current !== null) clearTimeout(pressTimer.current);
+              }}
+              onPointerLeave={() => {
+                if (pressTimer.current !== null) clearTimeout(pressTimer.current);
+              }}
             >
               {rev ? (mine ? "✹" : cnt > 0 ? cnt : "") : saved.flagged[i] ? "🚩" : ""}
             </button>
           );
         })}
       </div>
-
-      {toast && <div className="toast">{toast}</div>}
 
       <div className="picross-tools">
         <button
@@ -209,6 +239,18 @@ export default function Mines({ onExit }: { onExit: () => void }) {
           🚩 Flag
         </button>
       </div>
+
+      {saved.done && (
+        <Result
+          key={seed}
+          game="mines"
+          won={saved.won}
+          message={saved.won ? "Field cleared!" : "Boom — that was a mine"}
+          playMs={playMs}
+          onNew={() => newPuzzle()}
+          onExit={onExit}
+        />
+      )}
     </div>
   );
 }

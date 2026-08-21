@@ -1,10 +1,17 @@
-import { useEffect, useMemo, useState } from "react";
-import { makeRng, newSeed, shuffled } from "../lib/rng";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { makeRng, shuffled } from "../lib/rng";
 import { generateLatin } from "../lib/latin";
-import { loadSlot, saveSlot, recordResult } from "../lib/storage";
+import { recordResult, Diff } from "../lib/storage";
+import { useGame } from "../lib/useGame";
+import { useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
+import { GameTools, Result } from "./ui";
 
-const N = 5;
+const SIZE: Record<Diff, number> = { easy: 4, medium: 5, hard: 6 };
+const HELP =
+  "Fill each row and column with 1 up to the grid size, no repeats. Each " +
+  "outlined cage shows a target and an operation — its cells must combine " +
+  "to that target (subtraction and division work in either order).";
 
 interface Cage {
   cells: number[];
@@ -17,13 +24,13 @@ interface Puzzle {
   cageOf: number[]; // cell → cage index
 }
 
-function generateKenKen(seed: string): Puzzle {
-  const sol = generateLatin(`kenken-${seed}`, N);
+function generateKenKen(seed: string, n: number): Puzzle {
+  const sol = generateLatin(`kenken-${seed}`, n);
   const rng = makeRng(`kenken-cages-${seed}`);
 
-  const cageOf = Array(N * N).fill(-1);
+  const cageOf = Array(n * n).fill(-1);
   const cages: Cage[] = [];
-  for (const start of shuffled([...Array(N * N).keys()], rng)) {
+  for (const start of shuffled([...Array(n * n).keys()], rng)) {
     if (cageOf[start] !== -1) continue;
     const id = cages.length;
     const cells = [start];
@@ -31,12 +38,12 @@ function generateKenKen(seed: string): Puzzle {
     const want = 2 + Math.floor(rng() * 2); // 2–3 cells; singles only when boxed in
     while (cells.length < want) {
       const frontier = cells.flatMap((i) => {
-        const r = Math.floor(i / N), c = i % N;
+        const r = Math.floor(i / n), c = i % n;
         const out: number[] = [];
-        if (r > 0 && cageOf[i - N] === -1) out.push(i - N);
-        if (r < N - 1 && cageOf[i + N] === -1) out.push(i + N);
+        if (r > 0 && cageOf[i - n] === -1) out.push(i - n);
+        if (r < n - 1 && cageOf[i + n] === -1) out.push(i + n);
         if (c > 0 && cageOf[i - 1] === -1) out.push(i - 1);
-        if (c < N - 1 && cageOf[i + 1] === -1) out.push(i + 1);
+        if (c < n - 1 && cageOf[i + 1] === -1) out.push(i + 1);
         return out;
       });
       if (!frontier.length) break;
@@ -90,31 +97,26 @@ interface SavedState {
   done: boolean;
 }
 
-function fresh(): SavedState {
-  return { entries: Array(N * N).fill(0), done: false };
-}
-
 export default function KenKen({ onExit }: { onExit: () => void }) {
-  const [seed, setSeed] = useState(
-    () => loadSlot<SavedState>("kenken")?.seed ?? newSeed()
-  );
-  const { cages, cageOf } = useMemo(() => generateKenKen(seed), [seed]);
-  const [saved, setSaved] = useState<SavedState>(
-    () => loadSlot<SavedState>("kenken")?.state ?? fresh()
-  );
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
+    useGame<SavedState>("kenken", (_s, d) => ({
+      entries: Array(SIZE[d] * SIZE[d]).fill(0),
+      done: false
+    }));
+  const n = SIZE[diff];
+  const { cages, cageOf } = useMemo(() => generateKenKen(seed, n), [seed, n]);
   const [selected, setSelected] = useState<number | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
 
   const board = saved.entries;
 
   const conflicts = useMemo(() => {
     const bad = new Set<number>();
-    for (let i = 0; i < N * N; i++) {
+    for (let i = 0; i < n * n; i++) {
       const v = board[i];
       if (v === 0) continue;
-      const r = Math.floor(i / N), c = i % N;
-      for (let k = 0; k < N; k++) {
-        const row = r * N + k, col = k * N + c;
+      const r = Math.floor(i / n), c = i % n;
+      for (let k = 0; k < n; k++) {
+        const row = r * n + k, col = k * n + c;
         if (row !== i && board[row] === v) bad.add(i);
         if (col !== i && board[col] === v) bad.add(i);
       }
@@ -123,7 +125,7 @@ export default function KenKen({ onExit }: { onExit: () => void }) {
       if (cageSatisfied(cage, board) === false)
         cage.cells.forEach((i) => bad.add(i));
     return bad;
-  }, [board, cages]);
+  }, [board, cages, n]);
 
   useEffect(() => {
     if (
@@ -132,33 +134,26 @@ export default function KenKen({ onExit }: { onExit: () => void }) {
       conflicts.size === 0 &&
       cages.every((c) => cageSatisfied(c, board) === true)
     ) {
-      const next = { ...saved, done: true };
-      setSaved(next);
-      saveSlot("kenken", seed, next);
+      commit({ ...saved, done: true }, { undoable: false });
       recordResult("kenken", true);
-      setToast("All cages check out!");
     }
-  }, [board, conflicts, cages, saved, seed]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [board, conflicts, cages, saved]);
 
   function setCell(idx: number, val: number) {
     if (saved.done) return;
     const entries = saved.entries.slice();
     entries[idx] = entries[idx] === val ? 0 : val;
-    const next = { ...saved, entries };
-    setSaved(next);
-    saveSlot("kenken", seed, next);
+    commit({ ...saved, entries });
   }
 
-  function newPuzzle() {
-    const s = newSeed();
-    setSeed(s);
-    setSaved(fresh());
-    saveSlot("kenken", s, fresh());
+  function startNew(d?: Diff) {
+    newPuzzle(d);
     setSelected(null);
-    setToast(null);
   }
 
-  /** The clue sits in the cage's top-left-most cell. */
+  useGridKeys({ cols: n, rows: n, max: n, selected, setSelected, setCell });
+
   const clueCell = useMemo(
     () => new Map(cages.map((c) => [Math.min(...c.cells), c])),
     [cages]
@@ -166,15 +161,27 @@ export default function KenKen({ onExit }: { onExit: () => void }) {
 
   return (
     <div className="game game-kenken">
-      <GameHeader title="KenKen" onExit={onExit} onNew={newPuzzle} />
+      <GameHeader title="KenKen" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
-        1–{N} once per row and column; each outlined cage must make its
+        1–{n} once per row and column; each outlined cage must make its
         number with its operation.
       </p>
+      <GameTools
+        diff={diff}
+        onDiff={startNew}
+        help={HELP}
+        onUndo={undo}
+        canUndo={canUndo && !saved.done}
+      />
 
-      <div className="kenken-grid" role="grid" aria-label="KenKen board">
+      <div
+        className="kenken-grid"
+        style={{ "--n": n } as CSSProperties}
+        role="grid"
+        aria-label="KenKen board"
+      >
         {board.map((v, i) => {
-          const r = Math.floor(i / N), c = i % N;
+          const r = Math.floor(i / n), c = i % n;
           const clue = clueCell.get(i);
           return (
             <button
@@ -184,7 +191,7 @@ export default function KenKen({ onExit }: { onExit: () => void }) {
                 "kenken-cell",
                 selected === i ? "selected" : "",
                 conflicts.has(i) ? "conflict" : "",
-                r > 0 && cageOf[i - N] !== cageOf[i] ? "cage-t" : "",
+                r > 0 && cageOf[i - n] !== cageOf[i] ? "cage-t" : "",
                 c > 0 && cageOf[i - 1] !== cageOf[i] ? "cage-l" : ""
               ].join(" ")}
               onClick={() => setSelected(i)}
@@ -201,10 +208,8 @@ export default function KenKen({ onExit }: { onExit: () => void }) {
         })}
       </div>
 
-      {toast && <div className="toast">{toast}</div>}
-
       <div className="numpad numpad-5">
-        {[1, 2, 3, 4, 5].map((d) => (
+        {Array.from({ length: n }, (_, d) => d + 1).map((d) => (
           <button
             key={d}
             className="num-key"
@@ -220,6 +225,18 @@ export default function KenKen({ onExit }: { onExit: () => void }) {
           ⌫
         </button>
       </div>
+
+      {saved.done && (
+        <Result
+          key={seed}
+          game="kenken"
+          won
+          message="All cages check out!"
+          playMs={playMs}
+          onNew={() => startNew()}
+          onExit={onExit}
+        />
+      )}
     </div>
   );
 }

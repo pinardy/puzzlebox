@@ -44,17 +44,28 @@ export function recordResult(game: GameId, won: boolean): Stats {
   return next;
 }
 
-/** The current puzzle for a game: the seed it was generated from plus the
- *  player's in-progress state, so leaving and returning resumes it. */
+export type Diff = "easy" | "medium" | "hard";
+
+/** The current puzzle for a game: the seed and difficulty it was generated
+ *  from plus the player's in-progress state and active play time, so
+ *  leaving and returning resumes it. */
 export interface Slot<T> {
   seed: string;
   state: T;
+  diff?: Diff;
+  playMs?: number;
 }
 
 export function loadSlot<T>(game: GameId): Slot<T> | null {
   return load<Slot<T> | null>(`current:${game}`, null);
 }
 
-export function saveSlot<T>(game: GameId, seed: string, state: T): void {
-  save(`current:${game}`, { seed, state });
+export function saveSlot<T>(
+  game: GameId,
+  seed: string,
+  state: T,
+  diff?: Diff,
+  playMs?: number
+): void {
+  save(`current:${game}`, { seed, state, diff, playMs });
 }

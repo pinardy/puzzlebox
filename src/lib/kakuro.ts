@@ -1,13 +1,12 @@
 import { makeRng, shuffled } from "./rng";
 
-export const KAKURO_G = 7; // board incl. the clue border row/column
-
 export interface KakuroRun {
   cells: number[];
   sum: number;
 }
 
 export interface KakuroPuzzle {
+  g: number; // board side incl. the clue border row/column
   black: boolean[]; // clue/blocked cells (row 0 and column 0 always are)
   across: Map<number, number>; // black cell → sum of the run to its right
   down: Map<number, number>; // black cell → sum of the run below it
@@ -15,11 +14,10 @@ export interface KakuroPuzzle {
 }
 
 /** Generate a Kakuro board: pick a black-cell pattern whose runs are all
- *  2–6 cells, fill the white cells with digits unique within each run,
+ *  2–5 cells, fill the white cells with digits unique within each run,
  *  then read the sums off. Any digit assignment matching the sums and
  *  uniqueness rule wins. */
-export function generateKakuro(seed: string): KakuroPuzzle {
-  const G = KAKURO_G;
+export function generateKakuro(seed: string, G: number): KakuroPuzzle {
   const rng = makeRng(seed);
 
   for (;;) {
@@ -48,7 +46,7 @@ export function generateKakuro(seed: string): KakuroPuzzle {
       scan(Array.from({ length: G - 1 }, (_, k) => (k + 1) * G + c));
     if (!ok) continue;
     const whiteCount = black.filter((b) => !b).length;
-    if (whiteCount < 16) continue;
+    if (whiteCount < Math.floor((G - 1) * (G - 1) * 0.45)) continue;
 
     // Runs through each white cell, for the uniqueness constraint.
     const runsOf = new Map<number, number[][]>();
@@ -84,6 +82,6 @@ export function generateKakuro(seed: string): KakuroPuzzle {
       if (horizontal) across.set(run[0] - 1, sum);
       else down.set(run[0] - G, sum);
     }
-    return { black, across, down, runs: outRuns };
+    return { g: G, black, across, down, runs: outRuns };
   }
 }

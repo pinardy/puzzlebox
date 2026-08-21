@@ -1,33 +1,31 @@
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
-import { newSeed } from "../lib/rng";
+import { useEffect, useMemo, type CSSProperties } from "react";
 import { generateTango, tangoInvalid, T } from "../lib/tango";
-import { loadSlot, saveSlot, recordResult } from "../lib/storage";
+import { recordResult, Diff } from "../lib/storage";
+import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { GameTools, Result } from "./ui";
 
-const REMOVALS = 26;
+const REMOVALS: Record<Diff, number> = { easy: 22, medium: 26, hard: 30 };
+const HELP =
+  "Fill the board with suns and moons: three of each in every row and " +
+  "column, and never three of the same symbol in a row, across or down. " +
+  "Given cells are fixed.";
 
 interface SavedState {
   entries: number[]; // player cells: 0 empty, 1 sun, 2 moon
   done: boolean;
 }
 
-function fresh(): SavedState {
-  return { entries: Array(T * T).fill(0), done: false };
-}
-
 export default function Tango({ onExit }: { onExit: () => void }) {
-  const [seed, setSeed] = useState(
-    () => loadSlot<SavedState>("tango")?.seed ?? newSeed()
-  );
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
+    useGame<SavedState>("tango", () => ({
+      entries: Array(T * T).fill(0),
+      done: false
+    }));
   const { givens, solution } = useMemo(
-    () => generateTango(`tango-${seed}`, REMOVALS),
-    [seed]
+    () => generateTango(`tango-${seed}`, REMOVALS[diff]),
+    [seed, diff]
   );
-
-  const [saved, setSaved] = useState<SavedState>(
-    () => loadSlot<SavedState>("tango")?.state ?? fresh()
-  );
-  const [toast, setToast] = useState<string | null>(null);
 
   const board = useMemo(
     () => givens.map((v, i) => (v !== 0 ? v : saved.entries[i])),
@@ -52,38 +50,33 @@ export default function Tango({ onExit }: { onExit: () => void }) {
       board.every((v) => v !== 0) &&
       board.every((v, i) => v === solution[i])
     ) {
-      const next = { ...saved, done: true };
-      setSaved(next);
-      saveSlot("tango", seed, next);
+      commit({ ...saved, done: true }, { undoable: false });
       recordResult("tango", true);
-      setToast("Perfectly balanced!");
     }
-  }, [board, solution, saved, seed]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [board, solution, saved]);
 
   function tap(idx: number) {
     if (saved.done || givens[idx] !== 0) return;
     const entries = saved.entries.slice();
     entries[idx] = (entries[idx] + 1) % 3; // empty → sun → moon → empty
-    const next = { ...saved, entries };
-    setSaved(next);
-    saveSlot("tango", seed, next);
-  }
-
-  function newPuzzle() {
-    const s = newSeed();
-    setSeed(s);
-    setSaved(fresh());
-    saveSlot("tango", s, fresh());
-    setToast(null);
+    commit({ ...saved, entries });
   }
 
   return (
     <div className="game game-tango">
-      <GameHeader title="Suns & Moons" onExit={onExit} onNew={newPuzzle} />
+      <GameHeader title="Suns & Moons" onExit={onExit} onNew={() => newPuzzle()} />
       <p className="game-hint">
         Three of each per row and column, never three in a row. Tap to cycle
         ☀ → ☾ → empty.
       </p>
+      <GameTools
+        diff={diff}
+        onDiff={newPuzzle}
+        help={HELP}
+        onUndo={undo}
+        canUndo={canUndo && !saved.done}
+      />
 
       <div
         className="tango-grid"
@@ -108,7 +101,17 @@ export default function Tango({ onExit }: { onExit: () => void }) {
         ))}
       </div>
 
-      {toast && <div className="toast">{toast}</div>}
+      {saved.done && (
+        <Result
+          key={seed}
+          game="tango"
+          won
+          message="Perfectly balanced!"
+          playMs={playMs}
+          onNew={() => newPuzzle()}
+          onExit={onExit}
+        />
+      )}
     </div>
   );
 }

@@ -1,9 +1,15 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
-import { makeRng, newSeed } from "../lib/rng";
-import { loadSlot, saveSlot, recordResult } from "../lib/storage";
+import { makeRng } from "../lib/rng";
+import { recordResult, Diff } from "../lib/storage";
+import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { GameTools, Result } from "./ui";
 
-const N = 8;
+const SIZE: Record<Diff, number> = { easy: 6, medium: 8, hard: 10 };
+const HELP =
+  "Split the whole grid into rectangles. Each rectangle must contain " +
+  "exactly one number, and that number is its area. Tap two opposite " +
+  "corners to draw a box; tap a finished box to remove it.";
 
 interface Rect {
   r0: number;
@@ -12,17 +18,18 @@ interface Rect {
   c1: number;
 }
 
-const cellsOf = (t: Rect): number[] => {
+const area = (t: Rect) => (t.r1 - t.r0 + 1) * (t.c1 - t.c0 + 1);
+
+function cellsOf(t: Rect, n: number): number[] {
   const out: number[] = [];
   for (let r = t.r0; r <= t.r1; r++)
-    for (let c = t.c0; c <= t.c1; c++) out.push(r * N + c);
+    for (let c = t.c0; c <= t.c1; c++) out.push(r * n + c);
   return out;
-};
-const area = (t: Rect) => (t.r1 - t.r0 + 1) * (t.c1 - t.c0 + 1);
+}
 
 /** Recursively split the board into rectangles, then put each rectangle's
  *  area clue on one of its cells. */
-function generateShikaku(seed: string): Map<number, number> {
+function generateShikaku(seed: string, n: number): Map<number, number> {
   const rng = makeRng(seed);
   const rects: Rect[] = [];
   const split = (t: Rect) => {
@@ -41,11 +48,11 @@ function generateShikaku(seed: string): Map<number, number> {
       split({ ...t, r0: cut });
     }
   };
-  split({ r0: 0, c0: 0, r1: N - 1, c1: N - 1 });
+  split({ r0: 0, c0: 0, r1: n - 1, c1: n - 1 });
 
   const clues = new Map<number, number>();
   for (const t of rects) {
-    const cells = cellsOf(t);
+    const cells = cellsOf(t, n);
     clues.set(cells[Math.floor(rng() * cells.length)], area(t));
   }
   return clues;
@@ -56,99 +63,85 @@ interface SavedState {
   done: boolean;
 }
 
-const FRESH: SavedState = { rects: [], done: false };
-
 export default function Shikaku({ onExit }: { onExit: () => void }) {
-  const [seed, setSeed] = useState(
-    () => loadSlot<SavedState>("shikaku")?.seed ?? newSeed()
-  );
-  const clues = useMemo(() => generateShikaku(`shikaku-${seed}`), [seed]);
-  const [saved, setSaved] = useState<SavedState>(
-    () => loadSlot<SavedState>("shikaku")?.state ?? FRESH
-  );
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
+    useGame<SavedState>("shikaku", () => ({ rects: [], done: false }));
+  const n = SIZE[diff];
+  const clues = useMemo(() => generateShikaku(`shikaku-${seed}`, n), [seed, n]);
   const [anchor, setAnchor] = useState<number | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
 
   /** cell → index of the player rect covering it */
   const rectAt = useMemo(() => {
     const map = new Map<number, number>();
-    saved.rects.forEach((t, k) => cellsOf(t).forEach((i) => map.set(i, k)));
+    saved.rects.forEach((t, k) => cellsOf(t, n).forEach((i) => map.set(i, k)));
     return map;
-  }, [saved.rects]);
+  }, [saved.rects, n]);
 
   useEffect(() => {
-    if (saved.done) return;
-    if (rectAt.size !== N * N) return;
+    if (saved.done || rectAt.size !== n * n) return;
     const ok = saved.rects.every((t) => {
-      const inside = cellsOf(t).filter((i) => clues.has(i));
+      const inside = cellsOf(t, n).filter((i) => clues.has(i));
       return inside.length === 1 && clues.get(inside[0]) === area(t);
     });
     if (ok) {
-      const next = { ...saved, done: true };
-      setSaved(next);
-      saveSlot("shikaku", seed, next);
+      commit({ ...saved, done: true }, { undoable: false });
       recordResult("shikaku", true);
-      setToast("Perfectly boxed!");
     }
-  }, [rectAt, saved, clues, seed]);
-
-  function commit(rects: Rect[]) {
-    const next = { ...saved, rects };
-    setSaved(next);
-    saveSlot("shikaku", seed, next);
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rectAt, saved, clues, n]);
 
   function tap(idx: number) {
     if (saved.done) return;
     if (anchor === null) {
-      // Tapping an existing box removes it; otherwise start a new one.
       const at = rectAt.get(idx);
       if (at !== undefined) {
-        commit(saved.rects.filter((_, k) => k !== at));
+        commit({ ...saved, rects: saved.rects.filter((_, k) => k !== at) });
         return;
       }
       setAnchor(idx);
       return;
     }
     const t: Rect = {
-      r0: Math.min(Math.floor(anchor / N), Math.floor(idx / N)),
-      r1: Math.max(Math.floor(anchor / N), Math.floor(idx / N)),
-      c0: Math.min(anchor % N, idx % N),
-      c1: Math.max(anchor % N, idx % N)
+      r0: Math.min(Math.floor(anchor / n), Math.floor(idx / n)),
+      r1: Math.max(Math.floor(anchor / n), Math.floor(idx / n)),
+      c0: Math.min(anchor % n, idx % n),
+      c1: Math.max(anchor % n, idx % n)
     };
     setAnchor(null);
-    if (cellsOf(t).some((i) => rectAt.has(i))) return; // overlaps
-    commit([...saved.rects, t]);
+    if (cellsOf(t, n).some((i) => rectAt.has(i))) return; // overlaps
+    commit({ ...saved, rects: [...saved.rects, t] });
   }
 
-  function newPuzzle() {
-    const s = newSeed();
-    setSeed(s);
-    setSaved(FRESH);
-    saveSlot("shikaku", s, FRESH);
+  function startNew(d?: Diff) {
+    newPuzzle(d);
     setAnchor(null);
-    setToast(null);
   }
 
   return (
     <div className="game game-shikaku">
-      <GameHeader title="Shikaku" onExit={onExit} onNew={newPuzzle} />
+      <GameHeader title="Shikaku" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
-        Divide the grid into boxes, each holding exactly one number equal to
-        its area. Tap two opposite corners to draw a box; tap a box to remove
-        it.
+        Box every number: tap two opposite corners; each box's area must
+        match its number.
       </p>
+      <GameTools
+        diff={diff}
+        onDiff={startNew}
+        help={HELP}
+        onUndo={undo}
+        canUndo={canUndo && !saved.done}
+      />
 
       <div
         className="shikaku-grid"
-        style={{ "--n": N } as CSSProperties}
+        style={{ "--n": n } as CSSProperties}
         role="grid"
         aria-label="Shikaku board"
       >
-        {Array.from({ length: N * N }).map((_, i) => {
+        {Array.from({ length: n * n }).map((_, i) => {
           const k = rectAt.get(i);
           const t = k !== undefined ? saved.rects[k] : null;
-          const r = Math.floor(i / N), c = i % N;
+          const r = Math.floor(i / n), c = i % n;
           return (
             <button
               key={i}
@@ -170,17 +163,30 @@ export default function Shikaku({ onExit }: { onExit: () => void }) {
         })}
       </div>
 
-      {toast && <div className="toast">{toast}</div>}
-
       <div className="lights-meta">
-        <span>{rectAt.size} / {N * N} covered</span>
+        <span>{rectAt.size} / {n * n} covered</span>
         <button
           className="mini-btn"
-          onClick={() => { commit([]); setAnchor(null); }}
+          onClick={() => {
+            commit({ ...saved, rects: [] });
+            setAnchor(null);
+          }}
         >
           Clear
         </button>
       </div>
+
+      {saved.done && (
+        <Result
+          key={seed}
+          game="shikaku"
+          won
+          message="Perfectly boxed!"
+          playMs={playMs}
+          onNew={() => startNew()}
+          onExit={onExit}
+        />
+      )}
     </div>
   );
 }

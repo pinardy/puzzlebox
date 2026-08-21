@@ -44,10 +44,31 @@ random seeds, so nothing is ever fetched at runtime.
 | **Towers of Hanoi** | Rebuild the tower, big never on small | 5–7 disks by seed |
 | **Solitaire** | Klondike, draw-1, tap-to-move | Seeded deals |
 
-The current puzzle of each game (its seed plus your progress) persists in
-`localStorage`, so leaving and returning resumes where you left off.
-**New** in a game's header deals a fresh board; solve counts accumulate
-per game.
+The current puzzle of each game (its seed, difficulty, progress, and play
+time) persists in `localStorage`, so leaving and returning resumes where
+you left off. **New** in a game's header deals a fresh board; solve
+counts accumulate per game.
+
+## UX features
+
+- **Undo** (20 steps) in every game where it makes sense, via a shared
+  `useGame` hook that also tracks active play time.
+- **Difficulty picker** (Easy / Medium / Hard) on 24 of the 30 games —
+  board sizes, clue counts, and fleets scale with it.
+- **Win banner** with time, lifetime stats, haptic feedback, and
+  New puzzle / All games actions.
+- **Drag-to-paint** in Picross, Nurikabe, Tents, Battleships, and Hitori
+  (a whole stroke is one undo step).
+- **Keyboard play** on desktop: digits, arrows, and Backspace in all six
+  number-grid games; arrows/letters in 2048, Word Guess, Hangman.
+- **Minesweeper**: long-press (or right-click) to flag, chording on
+  satisfied numbers.
+- **2048**: animated tile slides, merges, and spawns via identity-keyed
+  tiles.
+- **Solitaire**: one-tap auto-finish once everything is face-up.
+- **Rules help** (`? Rules`) on every logic puzzle, a categorised hub
+  with a "Jump back in" row, dictionary-checked Word Guess guesses, and
+  full dark-mode support via `prefers-color-scheme`.
 
 ## Run it
 

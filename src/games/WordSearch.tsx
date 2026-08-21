@@ -1,11 +1,16 @@
 import { useMemo, useState, type CSSProperties } from "react";
-import { makeRng, newSeed, shuffled } from "../lib/rng";
+import { makeRng, shuffled } from "../lib/rng";
 import { ANSWERS } from "../lib/words";
-import { loadSlot, saveSlot, recordResult } from "../lib/storage";
+import { recordResult, Diff } from "../lib/storage";
+import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { GameTools, Result } from "./ui";
 
 const GRID = 10;
-const WORD_COUNT = 7;
+const WORDS: Record<Diff, number> = { easy: 6, medium: 7, hard: 9 };
+const HELP =
+  "Words hide in straight lines — across, down, or diagonal, forwards or " +
+  "backwards. Tap a word's first letter, then its last; found words light up.";
 
 const DIRS = [
   [0, 1], [1, 0], [1, 1], [1, -1],
@@ -76,22 +81,17 @@ interface SavedState {
   done: boolean;
 }
 
-const FRESH: SavedState = { found: [], done: false };
-
 export default function WordSearch({ onExit }: { onExit: () => void }) {
-  const [seed, setSeed] = useState(
-    () => loadSlot<SavedState>("wordsearch")?.seed ?? newSeed()
+  const { seed, diff, saved, commit, newPuzzle, playMs } = useGame<SavedState>(
+    "wordsearch",
+    () => ({ found: [], done: false })
   );
   const { letters, placed } = useMemo(
-    () => buildPuzzle(`wordsearch-${seed}`, WORD_COUNT),
-    [seed]
+    () => buildPuzzle(`wordsearch-${seed}`, WORDS[diff]),
+    [seed, diff]
   );
 
-  const [saved, setSaved] = useState<SavedState>(
-    () => loadSlot<SavedState>("wordsearch")?.state ?? FRESH
-  );
   const [anchor, setAnchor] = useState<number | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
 
   const foundCells = useMemo(() => {
     const s = new Set<number>();
@@ -115,30 +115,22 @@ export default function WordSearch({ onExit }: { onExit: () => void }) {
     if (!hit) return;
     const found = [...saved.found, hit.word];
     const done = found.length === placed.length;
-    const next = { found, done };
-    setSaved(next);
-    saveSlot("wordsearch", seed, next);
-    if (done) {
-      recordResult("wordsearch", true);
-      setToast("All words found!");
-    }
+    commit({ found, done });
+    if (done) recordResult("wordsearch", true);
   }
 
-  function newPuzzle() {
-    const s = newSeed();
-    setSeed(s);
-    setSaved(FRESH);
-    saveSlot("wordsearch", s, FRESH);
+  function startNew(d?: Diff) {
+    newPuzzle(d);
     setAnchor(null);
-    setToast(null);
   }
 
   return (
     <div className="game game-wordsearch">
-      <GameHeader title="Word Search" onExit={onExit} onNew={newPuzzle} />
+      <GameHeader title="Word Search" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
         Tap the first letter of a word, then its last letter.
       </p>
+      <GameTools diff={diff} onDiff={startNew} help={HELP} />
 
       <div
         className="ws-grid"
@@ -162,8 +154,6 @@ export default function WordSearch({ onExit }: { onExit: () => void }) {
         ))}
       </div>
 
-      {toast && <div className="toast">{toast}</div>}
-
       <div className="ws-words">
         {placed.map((p) => (
           <span
@@ -174,6 +164,18 @@ export default function WordSearch({ onExit }: { onExit: () => void }) {
           </span>
         ))}
       </div>
+
+      {saved.done && (
+        <Result
+          key={seed}
+          game="wordsearch"
+          won
+          message="All words found!"
+          playMs={playMs}
+          onNew={() => startNew()}
+          onExit={onExit}
+        />
+      )}
     </div>
   );
 }

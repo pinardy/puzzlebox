@@ -1,7 +1,9 @@
-import { useMemo, useState, type CSSProperties } from "react";
-import { makeRng, newSeed, shuffled } from "../lib/rng";
-import { loadSlot, saveSlot, recordResult } from "../lib/storage";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { makeRng, shuffled } from "../lib/rng";
+import { recordResult } from "../lib/storage";
+import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { GameTools, Result } from "./ui";
 
 // Card id 0–51: suit = id % 4 (♠ ♥ ♦ ♣), rank = 1 (ace) … 13 (king).
 const SUITS = ["♠", "♥", "♦", "♣"];
@@ -10,6 +12,11 @@ const rank = (id: number) => Math.floor(id / 4) + 1;
 const suit = (id: number) => id % 4;
 const isRed = (id: number) => suit(id) === 1 || suit(id) === 2;
 const label = (id: number) => `${RANKS[rank(id) - 1]}${SUITS[suit(id)]}`;
+const HELP =
+  "Build the four foundations up from ace to king by suit. In the columns, " +
+  "stack downward in alternating colours; only kings may move to an empty " +
+  "column. Tap the deck to draw. Tap a card, then its destination — or tap " +
+  "a selected card again to send it to a foundation.";
 
 interface SavedState {
   tableau: number[][]; // bottom → top
@@ -46,14 +53,17 @@ type Sel =
   | null;
 
 export default function Klondike({ onExit }: { onExit: () => void }) {
-  const [seed, setSeed] = useState(
-    () => loadSlot<SavedState>("klondike")?.seed ?? newSeed()
-  );
-  const [saved, setSaved] = useState<SavedState>(
-    () => loadSlot<SavedState>("klondike")?.state ?? deal(seed)
-  );
+  const { seed, saved, commit, undo, canUndo, newPuzzle, playMs } =
+    useGame<SavedState>("klondike", (s) => deal(s));
   const [sel, setSel] = useState<Sel>(null);
-  const [toast, setToast] = useState<string | null>(null);
+  const autoTimer = useRef<number | null>(null);
+
+  useEffect(
+    () => () => {
+      if (autoTimer.current !== null) clearTimeout(autoTimer.current);
+    },
+    []
+  );
 
   const selCards = useMemo((): number[] => {
     if (!sel) return [];
@@ -62,15 +72,13 @@ export default function Klondike({ onExit }: { onExit: () => void }) {
     return saved.tableau[sel.pile].slice(sel.index);
   }, [sel, saved]);
 
-  function commit(next: SavedState, moved: boolean) {
-    if (moved) next.moves++;
+  function finish(next: SavedState) {
+    next.moves++;
     if (!next.done && next.foundations.every((f) => f === 13)) {
       next.done = true;
       recordResult("klondike", true);
-      setToast(`Cleared in ${next.moves} moves!`);
     }
-    setSaved(next);
-    saveSlot("klondike", seed, next);
+    commit(next);
     setSel(null);
   }
 
@@ -105,7 +113,7 @@ export default function Klondike({ onExit }: { onExit: () => void }) {
       next.stock = next.waste.reverse();
       next.waste = [];
     } else return;
-    commit(next, true);
+    finish(next);
   }
 
   function tryFoundation() {
@@ -118,7 +126,7 @@ export default function Klondike({ onExit }: { onExit: () => void }) {
     const next = clone();
     takeSelection(next);
     next.foundations[suit(card)]++;
-    commit(next, true);
+    finish(next);
   }
 
   function tapTableau(pile: number, index: number | null) {
@@ -126,7 +134,6 @@ export default function Klondike({ onExit }: { onExit: () => void }) {
     const cards = saved.tableau[pile];
 
     if (sel) {
-      // Attempt to drop the selection on this pile.
       const run = selCards;
       if (!run.length) { setSel(null); return; }
       const first = run[0];
@@ -137,10 +144,8 @@ export default function Klondike({ onExit }: { onExit: () => void }) {
           : cards.length > saved.faceDown[pile] &&
             rank(first) === rank(top) - 1 &&
             isRed(first) !== isRed(top);
-      const sameSpot =
-        sel.from === "tableau" && sel.pile === pile;
+      const sameSpot = sel.from === "tableau" && sel.pile === pile;
       if (sameSpot) {
-        // Tapping the selected card again sends a single card up if it fits.
         setSel(null);
         if (run.length === 1) tryFoundation();
         return;
@@ -149,11 +154,10 @@ export default function Klondike({ onExit }: { onExit: () => void }) {
       const next = clone();
       const moved = takeSelection(next);
       next.tableau[pile].push(...moved);
-      commit(next, true);
+      finish(next);
       return;
     }
 
-    // Select a face-up card (and everything on top of it).
     if (index === null || index < saved.faceDown[pile]) return;
     setSel({ from: "tableau", pile, index });
   }
@@ -168,13 +172,49 @@ export default function Klondike({ onExit }: { onExit: () => void }) {
     setSel({ from: "waste" });
   }
 
-  function newPuzzle() {
-    const s = newSeed();
-    setSeed(s);
-    setSaved(deal(s));
-    saveSlot("klondike", s, deal(s));
+  /** With everything face-up and the deck empty, the endgame is rote —
+   *  auto-play one card to a foundation per tick. */
+  const canAutoFinish =
+    !saved.done &&
+    saved.stock.length === 0 &&
+    saved.waste.length === 0 &&
+    saved.faceDown.every((v) => v === 0) &&
+    saved.tableau.some((p) => p.length > 0);
+
+  function autoStep() {
+    const next = clone();
+    let moved = false;
+    for (let p = 0; p < 7 && !moved; p++) {
+      const pile = next.tableau[p];
+      if (!pile.length) continue;
+      const top = pile[pile.length - 1];
+      if (rank(top) === next.foundations[suit(top)] + 1) {
+        pile.pop();
+        next.foundations[suit(top)]++;
+        moved = true;
+      }
+    }
+    if (!moved) return;
+    finish(next);
+  }
+
+  const autoRunning = useRef(false);
+
+  useEffect(() => {
+    if (!autoRunning.current || saved.done) return;
+    autoTimer.current = window.setTimeout(autoStep, 130);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [saved]);
+
+  function startAuto() {
+    autoRunning.current = true;
+    autoStep();
+  }
+
+  function startNew() {
+    autoRunning.current = false;
+    newPuzzle();
     setSel(null);
-    setToast(null);
   }
 
   const isSelected = (pile: number, index: number) =>
@@ -182,11 +222,11 @@ export default function Klondike({ onExit }: { onExit: () => void }) {
 
   return (
     <div className="game game-klondike">
-      <GameHeader title="Solitaire" onExit={onExit} onNew={newPuzzle} />
+      <GameHeader title="Solitaire" onExit={onExit} onNew={startNew} />
       <p className="game-hint">
-        Tap a card, then where it goes. Build down in alternating colours;
-        aces start the foundations — tap a selected card again to send it up.
+        Tap a card, then where it goes; tap it again to send it up.
       </p>
+      <GameTools help={HELP} onUndo={undo} canUndo={canUndo && !saved.done} />
 
       <div className="kl-top">
         <button className="kl-card kl-back" onClick={tapStock} aria-label="Stock">
@@ -247,11 +287,26 @@ export default function Klondike({ onExit }: { onExit: () => void }) {
         ))}
       </div>
 
-      {toast && <div className="toast">{toast}</div>}
-
       <div className="lights-meta">
         <span>Moves: {saved.moves}</span>
+        {canAutoFinish && (
+          <button className="mini-btn" onClick={startAuto}>
+            Auto-finish ✨
+          </button>
+        )}
       </div>
+
+      {saved.done && (
+        <Result
+          key={seed}
+          game="klondike"
+          won
+          message={`Cleared in ${saved.moves} moves!`}
+          playMs={playMs}
+          onNew={startNew}
+          onExit={onExit}
+        />
+      )}
     </div>
   );
 }

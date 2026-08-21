@@ -1,12 +1,14 @@
-import { useState } from "react";
-import { makeRng, newSeed } from "../lib/rng";
-import { loadSlot, saveSlot, recordResult } from "../lib/storage";
+import { useEffect, useState } from "react";
+import { recordResult, Diff } from "../lib/storage";
+import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { GameTools, Result } from "./ui";
 
-/** Disk count varies 5–7 with the seed. */
-function diskCount(seed: string): number {
-  return 5 + Math.floor(makeRng(`hanoi-${seed}`)() * 3);
-}
+const DISKS: Record<Diff, number> = { easy: 5, medium: 6, hard: 8 };
+const HELP =
+  "Move the whole tower to the rightmost peg, one disk at a time. A disk " +
+  "may never sit on a smaller one. Tap a peg to lift its top disk, then " +
+  "tap where it should go. The optimal solve takes 2ⁿ−1 moves.";
 
 interface SavedState {
   pegs: number[][]; // each peg: disk sizes, bottom → top
@@ -23,16 +25,18 @@ function fresh(disks: number): SavedState {
 }
 
 export default function Hanoi({ onExit }: { onExit: () => void }) {
-  const [seed, setSeed] = useState(
-    () => loadSlot<SavedState>("hanoi")?.seed ?? newSeed()
-  );
-  const disks = diskCount(seed);
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
+    useGame<SavedState>("hanoi", (_s, d) => fresh(DISKS[d]));
+  const disks = DISKS[diff];
   const optimal = 2 ** disks - 1;
-  const [saved, setSaved] = useState<SavedState>(
-    () => loadSlot<SavedState>("hanoi")?.state ?? fresh(disks)
-  );
-  const [picked, setPicked] = useState<number | null>(null); // source peg
-  const [toast, setToast] = useState<string | null>(null);
+  const [picked, setPicked] = useState<number | null>(null);
+
+  // A save from before disk count was difficulty-driven may not match.
+  useEffect(() => {
+    if (saved.pegs.flat().length !== disks)
+      commit(fresh(disks), { undoable: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [disks]);
 
   function tap(peg: number) {
     if (saved.done) return;
@@ -53,45 +57,37 @@ export default function Hanoi({ onExit }: { onExit: () => void }) {
     pegs[peg].push(disk);
     setPicked(null);
     const done = pegs[2].length === disks;
-    const next = { pegs, moves: saved.moves + 1, done };
-    setSaved(next);
-    saveSlot("hanoi", seed, next);
-    if (done) {
-      recordResult("hanoi", true);
-      setToast(
-        next.moves === optimal
-          ? `Perfect — ${optimal} moves!`
-          : `Solved in ${next.moves} (optimal ${optimal})`
-      );
-    }
+    commit({ pegs, moves: saved.moves + 1, done });
+    if (done) recordResult("hanoi", true);
   }
 
-  function newPuzzle() {
-    const s = newSeed();
-    setSeed(s);
-    setSaved(fresh(diskCount(s)));
-    saveSlot("hanoi", s, fresh(diskCount(s)));
+  function startNew(d?: Diff) {
+    newPuzzle(d);
     setPicked(null);
-    setToast(null);
   }
 
   return (
     <div className="game game-hanoi">
-      <GameHeader title="Towers of Hanoi" onExit={onExit} onNew={newPuzzle} />
+      <GameHeader title="Towers of Hanoi" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
-        Move the whole tower to the right peg, one disk at a time — never a
-        bigger disk on a smaller one. Optimal: {optimal} moves.
+        Rebuild the tower on the right peg — never a bigger disk on a smaller
+        one. Optimal: {optimal} moves.
       </p>
+      <GameTools
+        diff={diff}
+        onDiff={startNew}
+        help={HELP}
+        onUndo={undo}
+        canUndo={canUndo && !saved.done}
+      />
 
       <div className="lights-meta">
         <span>Moves: {saved.moves}</span>
         <button
           className="mini-btn"
           onClick={() => {
-            setSaved(fresh(disks));
-            saveSlot("hanoi", seed, fresh(disks));
+            commit(fresh(disks));
             setPicked(null);
-            setToast(null);
           }}
         >
           Restart
@@ -125,7 +121,21 @@ export default function Hanoi({ onExit }: { onExit: () => void }) {
         ))}
       </div>
 
-      {toast && <div className="toast">{toast}</div>}
+      {saved.done && (
+        <Result
+          key={seed}
+          game="hanoi"
+          won
+          message={
+            saved.moves === optimal
+              ? `Perfect — ${optimal} moves!`
+              : `Solved in ${saved.moves} (optimal ${optimal})`
+          }
+          playMs={playMs}
+          onNew={() => startNew()}
+          onExit={onExit}
+        />
+      )}
     </div>
   );
 }
