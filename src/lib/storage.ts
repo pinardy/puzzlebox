@@ -23,7 +23,9 @@ export type GameId =
   | "2048" | "memory" | "fifteen" | "hangman" | "futoshiki" | "sky"
   | "hitori" | "nurikabe" | "hashi"
   | "kenken" | "kropki" | "stars" | "flow" | "tents" | "shikaku"
-  | "ships" | "slither" | "kakuro" | "mastermind" | "hanoi" | "klondike";
+  | "ships" | "slither" | "kakuro" | "mastermind" | "hanoi" | "klondike"
+  | "freecell" | "spider" | "anagram" | "masyu" | "akari" | "dominoes"
+  | "thermo" | "suguru" | "sokoban" | "pegs" | "yahtzee";
 
 export interface Stats {
   played: number;

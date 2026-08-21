@@ -32,6 +32,17 @@ const Kakuro = lazy(() => import("./games/Kakuro"));
 const Mastermind = lazy(() => import("./games/Mastermind"));
 const Hanoi = lazy(() => import("./games/Hanoi"));
 const Klondike = lazy(() => import("./games/Klondike"));
+const FreeCell = lazy(() => import("./games/FreeCell"));
+const Spider = lazy(() => import("./games/Spider"));
+const Anagram = lazy(() => import("./games/Anagram"));
+const Masyu = lazy(() => import("./games/Masyu"));
+const Akari = lazy(() => import("./games/Akari"));
+const Dominoes = lazy(() => import("./games/Dominoes"));
+const Thermometers = lazy(() => import("./games/Thermometers"));
+const Suguru = lazy(() => import("./games/Suguru"));
+const Sokoban = lazy(() => import("./games/Sokoban"));
+const PegSolitaire = lazy(() => import("./games/PegSolitaire"));
+const Yahtzee = lazy(() => import("./games/Yahtzee"));
 import { GameId, loadStats, loadSlot } from "./lib/storage";
 
 type View = "hub" | GameId;
@@ -58,6 +69,7 @@ const CARDS: CardInfo[] = [
   { id: "word", name: "Word Guess", tagline: "Six tries, five letters", accent: "var(--green)", glyph: "A", cat: "words" },
   { id: "hangman", name: "Hangman", tagline: "Six lives, one word", accent: "var(--amber)", glyph: "?", cat: "words" },
   { id: "wordsearch", name: "Word Search", tagline: "Hidden words, eight directions", accent: "var(--teal)", glyph: "⌕", cat: "words" },
+  { id: "anagram", name: "Anagram", tagline: "Unscramble the letters", accent: "var(--coral)", glyph: "⇄", cat: "words" },
 
   { id: "sudoku", name: "Sudoku", tagline: "Fill the grid, no repeats", accent: "var(--blue)", glyph: "9", cat: "numbers" },
   { id: "futoshiki", name: "Futoshiki", tagline: "Fill the grid, obey the arrows", accent: "var(--purple)", glyph: "≶", cat: "numbers" },
@@ -79,6 +91,11 @@ const CARDS: CardInfo[] = [
   { id: "shikaku", name: "Shikaku", tagline: "Box every number by its area", accent: "var(--purple)", glyph: "▭", cat: "logic" },
   { id: "ships", name: "Battleships", tagline: "Find the hidden fleet", accent: "var(--indigo)", glyph: "▬", cat: "logic" },
   { id: "slither", name: "Slitherlink", tagline: "One loop around the clues", accent: "var(--coral)", glyph: "◇", cat: "logic" },
+  { id: "masyu", name: "Masyu", tagline: "One loop through the pearls", accent: "var(--blue)", glyph: "◐", cat: "logic" },
+  { id: "akari", name: "Light Up", tagline: "Bulbs that never blind each other", accent: "var(--amber)", glyph: "☼", cat: "logic" },
+  { id: "dominoes", name: "Dominoes", tagline: "Re-draw the hidden set", accent: "var(--teal)", glyph: "⠿", cat: "logic" },
+  { id: "thermo", name: "Thermometers", tagline: "Fill mercury to match the counts", accent: "var(--rose)", glyph: "▮", cat: "logic" },
+  { id: "suguru", name: "Suguru", tagline: "Small regions, no touching twins", accent: "var(--green)", glyph: "⌗", cat: "logic" },
 
   { id: "mines", name: "Minesweeper", tagline: "First tap is always safe", accent: "var(--purple)", glyph: "✹", cat: "classic" },
   { id: "lights", name: "Lights Out", tagline: "Flip them all off", accent: "var(--amber)", glyph: "◉", cat: "classic" },
@@ -87,7 +104,12 @@ const CARDS: CardInfo[] = [
   { id: "memory", name: "Pairs", tagline: "Flip two, find the match", accent: "var(--rose)", glyph: "❖", cat: "classic" },
   { id: "mastermind", name: "Mastermind", tagline: "Crack the colour code", accent: "var(--rose)", glyph: "◒", cat: "classic" },
   { id: "hanoi", name: "Towers of Hanoi", tagline: "Rebuild the tower, disk by disk", accent: "var(--blue)", glyph: "≣", cat: "classic" },
-  { id: "klondike", name: "Solitaire", tagline: "Classic Klondike, tap to move", accent: "var(--green)", glyph: "♠", cat: "classic" }
+  { id: "klondike", name: "Solitaire", tagline: "Classic Klondike, tap to move", accent: "var(--green)", glyph: "♠", cat: "classic" },
+  { id: "freecell", name: "FreeCell", tagline: "All cards up, four spare cells", accent: "var(--indigo)", glyph: "♣", cat: "classic" },
+  { id: "spider", name: "Spider", tagline: "One suit, eight runs to clear", accent: "var(--purple)", glyph: "♤", cat: "classic" },
+  { id: "sokoban", name: "Sokoban", tagline: "Push every crate onto a goal", accent: "var(--olive)", glyph: "▣", cat: "classic" },
+  { id: "pegs", name: "Peg Solitaire", tagline: "Jump pegs down to one", accent: "var(--teal)", glyph: "✛", cat: "classic" },
+  { id: "yahtzee", name: "Yahtzee", tagline: "Thirteen rounds of dice", accent: "var(--coral)", glyph: "⚄", cat: "classic" }
 ];
 
 type Progress = "fresh" | "started" | "done";
@@ -157,7 +179,10 @@ export default function App() {
       kenken: KenKen, kropki: Kropki, stars: Stars, flow: Flow,
       tents: Tents, shikaku: Shikaku, ships: Battleships,
       slither: Slitherlink, kakuro: Kakuro, mastermind: Mastermind,
-      hanoi: Hanoi, klondike: Klondike
+      hanoi: Hanoi, klondike: Klondike, freecell: FreeCell, spider: Spider,
+      anagram: Anagram, masyu: Masyu, akari: Akari, dominoes: Dominoes,
+      thermo: Thermometers, suguru: Suguru, sokoban: Sokoban,
+      pegs: PegSolitaire, yahtzee: Yahtzee
     }[view];
     return (
       <Suspense fallback={<div className="game" />}>
@@ -175,7 +200,7 @@ export default function App() {
         <h1>PuzzleBox</h1>
         <p className="ticket-note">
           {online
-            ? "Thirty puzzles, endless boards — pick one."
+            ? "Forty-one puzzles, endless boards — pick one."
             : "Offline — puzzles still work."}
         </p>
       </header>

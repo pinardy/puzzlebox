@@ -5,13 +5,10 @@ export interface SlitherPuzzle {
   clues: (number | null)[]; // per cell: boundary-edge count, or hidden
 }
 
-/** Generate a Slitherlink board: grow a blob of cells whose boundary is a
- *  single simple loop (connected, hole-free, no corner pinches), then show
- *  a subset of the per-cell boundary-edge counts. The blob's boundary is a
- *  solution, so the puzzle is solvable by construction; any valid loop
- *  matching the clues is accepted. */
-export function generateSlither(seed: string, n: number): SlitherPuzzle {
-  const rng = makeRng(seed);
+/** Grow a random blob of cells whose boundary is one simple loop —
+ *  connected, hole-free, and never pinched at a corner. Shared by
+ *  Slitherlink (loop on the lattice) and Masyu (loop through cells). */
+export function growBlob(rng: () => number, n: number): Set<number> {
   const inGrid = (r: number, c: number) => r >= 0 && r < n && c >= 0 && c < n;
 
   const validAfterAdd = (blob: Set<number>): boolean => {
@@ -63,6 +60,16 @@ export function generateSlither(seed: string, n: number): SlitherPuzzle {
     }
     if (!grown) break;
   }
+  return blob;
+}
+
+/** Generate a Slitherlink board: the blob's boundary is a solution, so the
+ *  puzzle is solvable by construction; any valid loop matching the shown
+ *  per-cell boundary-edge counts is accepted. */
+export function generateSlither(seed: string, n: number): SlitherPuzzle {
+  const rng = makeRng(seed);
+  const inGrid = (r: number, c: number) => r >= 0 && r < n && c >= 0 && c < n;
+  const blob = growBlob(rng, n);
 
   const inBlob = (r: number, c: number) => inGrid(r, c) && blob.has(r * n + c);
   const clues: (number | null)[] = [];

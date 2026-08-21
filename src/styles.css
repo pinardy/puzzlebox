@@ -1592,7 +1592,7 @@ button { font-family: inherit; color: inherit; }
 .kl-gap { flex: 1; }
 
 .kl-card {
-  width: calc((min(100vw - 28px, 440px) - 36px) / 7);
+  width: calc((min(100vw - 28px, 440px) - (var(--cols, 7) - 1) * 6px) / var(--cols, 7));
   aspect-ratio: 5 / 7;
   border: 1.5px solid var(--ink);
   border-radius: 6px;
@@ -1646,6 +1646,281 @@ button { font-family: inherit; color: inherit; }
   width: 100%;
 }
 
+
+/* ---------- Spider ---------- */
+
+.spider-done { display: flex; gap: 4px; align-items: center; font-size: 18px; }
+.spider-done .run-done { color: var(--green); }
+.spider-done .run-todo { color: var(--grid-line); }
+.game-spider .kl-card { font-size: clamp(9px, 2.4vw, 13px); }
+.game-spider .kl-card.kl-stacked { top: calc(var(--stack) * clamp(13px, 3.4vw, 20px)); }
+
+/* ---------- Anagram ---------- */
+
+.anagram-slots { margin: auto 0 12px; }
+.anagram-slots.shake { animation: shake 380ms ease; }
+
+.anagram-rack {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: auto;
+}
+.anagram-tile {
+  flex: 0 0 auto;
+  width: 52px;
+  height: 58px;
+  max-width: none;
+  font-size: 22px;
+}
+.anagram-tile:disabled { opacity: 0.25; box-shadow: none; }
+
+/* ---------- Peg Solitaire ---------- */
+
+.pegs-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  gap: 6px;
+  align-self: center;
+  width: min(100%, 380px);
+  aspect-ratio: 1;
+  margin: auto 0;
+}
+
+.peg-hole {
+  border: 2px solid var(--grid-line);
+  border-radius: 50%;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+.peg-hole.center { border-style: dashed; }
+.peg-hole.peg {
+  background: var(--teal);
+  border-color: var(--ink);
+  box-shadow: var(--shadow);
+}
+.peg-hole.picked { outline: 3px solid var(--amber); outline-offset: 2px; }
+.peg-hole.target { border-color: var(--amber); border-style: dashed; background: rgba(224, 162, 59, 0.15); }
+
+/* ---------- Yahtzee ---------- */
+
+.yz-dice {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 4px;
+}
+.yz-die {
+  width: 52px;
+  height: 52px;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  font-size: 40px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  cursor: pointer;
+  color: var(--ink);
+}
+.yz-die.held { background: #fdf3d9; border-color: var(--amber); transform: translateY(4px); }
+.yz-die.rolling { animation: tile-pop 200ms ease; }
+.yz-roll { margin-left: 6px; }
+
+.yz-sheet {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin: 8px 0 auto;
+}
+.yz-cat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  border: 1.5px solid var(--ink);
+  border-radius: 8px;
+  background: var(--card);
+  padding: 8px 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.yz-cat b { font-family: var(--mono); font-size: 15px; }
+.yz-cat.scored { background: var(--grid-line); color: var(--ink-soft); cursor: default; box-shadow: none; }
+.yz-cat.good b { color: var(--green); }
+.yz-cat.scored b { color: var(--ink); }
+.yz-cat:disabled { opacity: 0.9; }
+.yz-total {
+  grid-column: 1 / -1;
+  background: var(--ink);
+  color: var(--paper);
+  cursor: default;
+}
+.yz-total b { font-size: 17px; }
+
+/* ---------- Sokoban ---------- */
+
+.soko-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--card);
+  align-self: center;
+  width: min(100%, 420px);
+  aspect-ratio: 1;
+  margin: 6px 0 auto;
+}
+.soko-cell {
+  border: 0.5px solid var(--grid-line);
+  background: var(--card);
+  font-size: clamp(13px, 3.8vw, 22px);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  cursor: pointer;
+}
+.soko-cell.wall {
+  background: var(--ink);
+  border-color: #33424f;
+  cursor: default;
+}
+.soko-cell.goal { background: #f3ecd9; }
+.soko-cell.box.on-goal { background: #dff0d3; }
+
+/* ---------- Light Up ---------- */
+
+.akari-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--card);
+  align-self: center;
+  width: min(100%, 420px);
+  aspect-ratio: 1;
+  margin: 6px 0;
+}
+.akari-cell {
+  border: 0.5px solid var(--grid-line);
+  background: var(--card);
+  font-size: clamp(12px, 3.6vw, 20px);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  cursor: pointer;
+  color: var(--ink-soft);
+}
+.akari-cell.lit { background: #fdf6da; }
+.akari-cell.conflict { background: #fbe6ef; }
+.akari-wall {
+  display: grid;
+  place-items: center;
+  background: var(--ink);
+  border: 0.5px solid #33424f;
+  color: var(--paper);
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: clamp(13px, 3.8vw, 20px);
+}
+
+/* ---------- Masyu ---------- */
+
+.masyu-grid {
+  display: grid;
+  gap: 0;
+  align-self: center;
+  width: min(100%, 420px);
+  aspect-ratio: 1;
+  margin: 6px 0;
+}
+.masyu-cell {
+  display: grid;
+  place-items: center;
+  font-size: clamp(18px, 5.4vw, 28px);
+  color: var(--grid-line);
+}
+.masyu-cell.pearl-black { color: var(--ink); }
+.masyu-cell.pearl-white { color: var(--ink); }
+
+/* ---------- Dominoes ---------- */
+
+.dom-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), 1fr);
+  align-self: center;
+  width: min(100%, 440px);
+  aspect-ratio: calc(var(--cols) / var(--rows));
+  margin: 6px 0;
+  gap: 4px;
+}
+.dom-cell {
+  border: 1.5px dashed var(--ink-soft);
+  border-radius: 8px;
+  background: var(--card);
+  font-family: var(--mono);
+  font-size: clamp(15px, 4.4vw, 22px);
+  font-weight: 700;
+  color: var(--ink);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  cursor: pointer;
+}
+.dom-cell.anchor { outline: 2.5px solid var(--teal); outline-offset: -2.5px; }
+.dom-cell.paired { border-style: solid; border-color: var(--ink); background: #eaf4f1; }
+.dom-cell.paired.conflict { background: #fbe6ef; border-color: var(--rose); }
+.dom-cell.join-r { border-top-right-radius: 0; border-bottom-right-radius: 0; border-right: none; margin-right: -2px; }
+.dom-cell.join-l { border-top-left-radius: 0; border-bottom-left-radius: 0; border-left: none; margin-left: -2px; }
+.dom-cell.join-d { border-bottom-left-radius: 0; border-bottom-right-radius: 0; border-bottom: none; margin-bottom: -2px; }
+.dom-cell.join-u { border-top-left-radius: 0; border-top-right-radius: 0; border-top: none; margin-top: -2px; }
+.dom-tray { margin-top: 6px; }
+.ws-word.dup { background: var(--rose); border-color: var(--rose); color: #fff; }
+
+/* ---------- Thermometers ---------- */
+
+.thermo-grid .thermo-cell {
+  position: relative;
+  border: 1px solid var(--grid-line);
+  border-radius: 6px;
+  background: var(--card);
+  padding: 0;
+  cursor: pointer;
+}
+.th-core {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 42%;
+  height: 42%;
+  border: 2px solid var(--ink-soft);
+  border-radius: 50%;
+  background: var(--card);
+  z-index: 1;
+}
+.thermo-cell.bulb .th-core { width: 62%; height: 62%; }
+.th-arm {
+  position: absolute;
+  background: var(--card);
+  border: 2px solid var(--ink-soft);
+  z-index: 0;
+}
+.th-arm.arm-l { left: 0; top: 50%; transform: translateY(-50%); width: 55%; height: 30%; border-right: none; border-left: none; }
+.th-arm.arm-r { right: 0; top: 50%; transform: translateY(-50%); width: 55%; height: 30%; border-left: none; border-right: none; }
+.th-arm.arm-u { top: 0; left: 50%; transform: translateX(-50%); height: 55%; width: 30%; border-bottom: none; border-top: none; }
+.th-arm.arm-d { bottom: 0; left: 50%; transform: translateX(-50%); height: 55%; width: 30%; border-top: none; border-bottom: none; }
+.thermo-cell.filled .th-core,
+.thermo-cell.filled .th-arm { background: var(--coral); border-color: var(--coral); }
+.edge-count.ok { color: var(--green); }
+.edge-count.bad { color: var(--rose); }
+
 /* ---------- Wider screens: tablet & desktop ---------- */
 
 @media (min-width: 700px) {
@@ -1685,10 +1960,13 @@ button { font-family: inherit; color: inherit; }
   .futo-grid, .memory-grid { width: min(100%, 480px); }
   .t2048-grid, .fifteen-grid { width: min(100%, 440px); }
   .tents-grid, .shikaku-grid, .kakuro-grid { width: min(100%, 540px); }
+  .akari-grid, .soko-grid, .masyu-grid, .dom-grid { width: min(100%, 500px); }
+  .pegs-grid { width: min(100%, 440px); }
+  .yz-sheet { max-width: 560px; width: 100%; align-self: center; }
   .kenken-grid, .flow-grid, .slither-grid, .stars-grid { width: min(100%, 500px); }
   .hanoi-board { width: min(100%, 560px); }
   .kl-top, .kl-tableau { width: min(100%, 520px); }
-  .kl-card { width: calc((520px - 36px) / 7); }
+  .kl-card { width: calc((520px - (var(--cols, 7) - 1) * 6px) / var(--cols, 7)); }
 
   /* Boards absorb leftover height with auto margins, so tall viewports
      spread the space around the board instead of leaving one big hole
@@ -1711,6 +1989,9 @@ button { font-family: inherit; color: inherit; }
   .nuri-grid,
   .hashi-grid,
   .kenken-grid,
+  .akari-grid,
+  .masyu-grid,
+  .dom-grid,
   .tents-grid,
   .shikaku-grid,
   .flow-grid,
@@ -1804,5 +2085,14 @@ button { font-family: inherit; color: inherit; }
       #0b0e12;
   }
   .kk-cell.selected { background: #2a3322; }
+  .akari-cell.lit { background: #3a3420; }
+  .akari-cell.conflict { background: #45222f; }
+  .akari-wall { background: #0b0e12; border-color: #2b3540; }
+  .soko-cell.wall { background: #0b0e12; border-color: #2b3540; }
+  .soko-cell.goal { background: #3a3420; }
+  .soko-cell.box.on-goal { background: #26331e; }
+  .dom-cell.paired { background: #1e3230; }
+  .dom-cell.paired.conflict { background: #45222f; }
+  .yz-die.held { background: #3a3420; }
   .result-backdrop { background: rgba(0, 0, 0, 0.55); }
 }
