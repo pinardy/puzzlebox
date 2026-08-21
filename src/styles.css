@@ -1010,6 +1010,471 @@ button { font-family: inherit; color: inherit; }
 .hashi-island.full { background: #eef4e2; border-color: var(--olive); color: var(--olive); }
 .hashi-island.over { background: #fbe6ef; border-color: var(--rose); color: var(--rose); }
 
+/* ---------- Mastermind ---------- */
+
+.mm-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-self: center;
+  width: min(100%, 320px);
+  margin: auto 0;
+}
+
+.mm-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mm-peg {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 2px solid var(--ink);
+  flex-shrink: 0;
+  padding: 0;
+}
+.mm-slot { background: var(--card); cursor: pointer; }
+.mm-current .mm-peg { border-style: dashed; }
+.mm-answer { opacity: 0.85; }
+
+.mm-feedback {
+  font-family: var(--mono);
+  font-size: 15px;
+  letter-spacing: 2px;
+  margin-left: auto;
+  color: var(--ink);
+}
+.mm-count { color: var(--ink-soft); font-size: 13px; letter-spacing: 0; }
+
+.mm-palette {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.mm-pick { cursor: pointer; box-shadow: var(--shadow); }
+.mm-pick:active { transform: translateY(2px); box-shadow: none; }
+
+/* ---------- Towers of Hanoi ---------- */
+
+.hanoi-board {
+  display: flex;
+  gap: 10px;
+  align-self: center;
+  width: min(100%, 460px);
+  margin: auto 0;
+}
+
+.hanoi-peg {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  height: 220px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0 2px;
+}
+.hanoi-peg.picked { outline: 3px solid var(--blue); outline-offset: 2px; border-radius: 10px; }
+
+.hanoi-pole {
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  transform: translateX(-50%);
+  width: 8px;
+  height: 190px;
+  background: var(--grid-line);
+  border: 1.5px solid var(--ink);
+  border-radius: 4px;
+}
+
+.hanoi-stack {
+  position: relative;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: 2px;
+  padding-bottom: 10px;
+}
+
+.hanoi-disk {
+  height: 20px;
+  border: 1.5px solid var(--ink);
+  border-radius: 8px;
+  background: var(--blue);
+  box-shadow: var(--shadow);
+}
+.hanoi-disk:nth-child(2n) { background: var(--teal); }
+.hanoi-disk:nth-child(3n) { background: var(--amber); }
+.hanoi-disk.lifted { transform: translateY(-6px); }
+
+.hanoi-base {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 8px;
+  background: var(--ink);
+  border-radius: 4px;
+}
+
+/* ---------- KenKen ---------- */
+
+.kenken-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  border: 2.5px solid var(--ink);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--card);
+  align-self: center;
+  width: min(100%, 420px);
+  aspect-ratio: 1;
+  margin: 6px 0;
+}
+
+.kenken-cell {
+  position: relative;
+  border: 0.5px solid var(--grid-line);
+  background: var(--card);
+  font-family: var(--mono);
+  font-size: clamp(17px, 5vw, 26px);
+  font-weight: 600;
+  color: var(--blue);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  cursor: pointer;
+}
+.kenken-cell.cage-t { border-top: 2.5px solid var(--ink); }
+.kenken-cell.cage-l { border-left: 2.5px solid var(--ink); }
+.kenken-cell.selected { background: #dbe7fb; outline: 2px solid var(--blue); outline-offset: -2px; }
+.kenken-cell.conflict { color: var(--rose); background: #fbe6ef; }
+
+.kenken-clue {
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  font-size: clamp(9px, 2.4vw, 12px);
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+/* ---------- Kropki ---------- */
+
+.kropki-dot {
+  display: grid;
+  place-items: center;
+  font-size: clamp(11px, 3vw, 15px);
+  color: var(--ink);
+}
+.kropki-cell { color: var(--rose); }
+.kropki-cell.selected { outline-color: var(--rose); }
+
+/* ---------- Tents & Battleships shared board ---------- */
+
+.tents-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--gn), 1fr);
+  align-self: center;
+  width: min(100%, 440px);
+  aspect-ratio: 1;
+  margin: 6px 0;
+  gap: 2px;
+}
+
+.edge-count {
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-size: clamp(12px, 3.2vw, 16px);
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.tents-cell {
+  border: 1.5px solid var(--ink);
+  border-radius: 6px;
+  background: var(--card);
+  font-size: clamp(13px, 3.6vw, 20px);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  cursor: pointer;
+}
+.tents-cell.tree { background: #e6f2e2; cursor: default; }
+.tents-cell.tent { background: #fdf3d9; }
+.tents-cell.grass { color: var(--ink-soft); }
+.tents-cell.conflict { background: #fbe6ef; }
+
+.ships-cell {
+  border: 1.5px solid var(--ink);
+  border-radius: 6px;
+  background: var(--card);
+  font-size: clamp(13px, 3.6vw, 20px);
+  font-family: var(--mono);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  cursor: pointer;
+  color: var(--indigo);
+}
+.ships-cell.ship { background: #e2e4f5; }
+.ships-cell.water { color: var(--teal); }
+.ships-cell.given { background: #f1f3f6; cursor: default; }
+.ships-cell.given.ship { background: var(--indigo); color: #fff; }
+
+/* ---------- Shikaku ---------- */
+
+.shikaku-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--card);
+  align-self: center;
+  width: min(100%, 440px);
+  aspect-ratio: 1;
+  margin: 6px 0;
+}
+
+.shikaku-cell {
+  border: 0.5px solid var(--grid-line);
+  background: var(--card);
+  font-family: var(--mono);
+  font-size: clamp(13px, 3.8vw, 19px);
+  font-weight: 700;
+  color: var(--ink);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  cursor: pointer;
+}
+.shikaku-cell.anchor { outline: 2.5px solid var(--purple); outline-offset: -2.5px; }
+.shikaku-cell.hue-0 { background: #f5e5e3; }
+.shikaku-cell.hue-1 { background: #e0eaf7; }
+.shikaku-cell.hue-2 { background: #e2f0e3; }
+.shikaku-cell.hue-3 { background: #f7f0d8; }
+.shikaku-cell.hue-4 { background: #ece3f5; }
+.shikaku-cell.hue-5 { background: #dff0ef; }
+.shikaku-cell.boxed.et { border-top: 2px solid var(--ink); }
+.shikaku-cell.boxed.eb { border-bottom: 2px solid var(--ink); }
+.shikaku-cell.boxed.el { border-left: 2px solid var(--ink); }
+.shikaku-cell.boxed.er { border-right: 2px solid var(--ink); }
+
+/* ---------- Flow ---------- */
+
+.flow-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--card);
+  align-self: center;
+  width: min(100%, 420px);
+  aspect-ratio: 1;
+  margin: 6px 0;
+  touch-action: none;
+  user-select: none;
+}
+
+.flow-cell {
+  position: relative;
+  border: 0.5px solid var(--grid-line);
+  display: grid;
+  place-items: center;
+}
+.flow-fill {
+  position: absolute;
+  inset: 12%;
+  border-radius: 22%;
+  background: var(--pipe);
+  opacity: 0.45;
+}
+.flow-dot {
+  position: relative;
+  width: 58%;
+  height: 58%;
+  border-radius: 50%;
+  border: 2px solid rgba(27, 39, 51, 0.4);
+}
+
+/* ---------- Slitherlink ---------- */
+
+.slither-grid {
+  display: grid;
+  align-self: center;
+  width: min(100%, 420px);
+  aspect-ratio: 1;
+  margin: 6px 0;
+}
+
+.slither-dot {
+  background: var(--ink);
+  border-radius: 50%;
+  width: 8px;
+  height: 8px;
+  place-self: center;
+}
+
+.slither-edge {
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  position: relative;
+  display: grid;
+  place-items: center;
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+.slither-edge::before {
+  content: "";
+  position: absolute;
+  background: var(--grid-line);
+  border-radius: 2px;
+}
+.slither-edge.h::before { left: 0; right: 0; height: 3px; }
+.slither-edge.v::before { top: 0; bottom: 0; width: 3px; }
+.slither-edge.line::before { background: var(--coral); }
+.slither-edge.h.line::before { height: 5px; }
+.slither-edge.v.line::before { width: 5px; }
+.slither-edge.off::before { background: transparent; }
+
+.slither-cell {
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-size: clamp(16px, 4.6vw, 24px);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* ---------- Kakuro ---------- */
+
+.kakuro-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--card);
+  align-self: center;
+  width: min(100%, 440px);
+  aspect-ratio: 1;
+  margin: 6px 0;
+}
+
+.kk-black {
+  position: relative;
+  background: var(--ink);
+  border: 0.5px solid #33424f;
+}
+.kk-black.clued {
+  background:
+    linear-gradient(to bottom right, transparent calc(50% - 1px), #5b6a78 calc(50% - 1px), #5b6a78 calc(50% + 1px), transparent calc(50% + 1px)),
+    var(--ink);
+}
+.kk-black i {
+  position: absolute;
+  font-style: normal;
+  font-family: var(--mono);
+  font-size: clamp(10px, 2.8vw, 14px);
+  font-weight: 700;
+  color: var(--paper);
+}
+.kk-across { top: 6%; right: 8%; }
+.kk-down { bottom: 6%; left: 8%; }
+
+.kk-cell {
+  border: 0.5px solid var(--grid-line);
+  background: var(--card);
+  font-family: var(--mono);
+  font-size: clamp(15px, 4.4vw, 22px);
+  font-weight: 600;
+  color: var(--olive);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  cursor: pointer;
+}
+.kk-cell.selected { background: #eef2e2; outline: 2px solid var(--olive); outline-offset: -2px; }
+.kk-cell.conflict { color: var(--rose); background: #fbe6ef; }
+
+.numpad-9 { grid-template-columns: repeat(5, 1fr); }
+
+/* ---------- Solitaire ---------- */
+
+.kl-top {
+  display: flex;
+  gap: 6px;
+  align-self: center;
+  width: min(100%, 440px);
+  margin-top: 6px;
+}
+.kl-gap { flex: 1; }
+
+.kl-card {
+  width: calc((min(100vw - 28px, 440px) - 36px) / 7);
+  aspect-ratio: 5 / 7;
+  border: 1.5px solid var(--ink);
+  border-radius: 6px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  font-family: var(--mono);
+  font-size: clamp(11px, 3vw, 16px);
+  font-weight: 700;
+  color: var(--ink);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.kl-card.red { color: #c33b3b; }
+.kl-card.kl-back {
+  background: var(--indigo);
+  background-image: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.25) 12%, transparent 13%);
+  background-size: 10px 10px;
+  color: #fff;
+}
+.kl-card.kl-empty {
+  background: transparent;
+  border-style: dashed;
+  box-shadow: none;
+  color: var(--ink-soft);
+}
+.kl-card.selected { outline: 3px solid var(--blue); outline-offset: 1px; }
+
+.kl-tableau {
+  display: flex;
+  gap: 6px;
+  align-self: center;
+  width: min(100%, 440px);
+  flex: 1;
+  margin-top: 4px;
+}
+
+.kl-pile {
+  position: relative;
+  flex: 1;
+  min-height: 120px;
+  border-radius: 6px;
+}
+
+.kl-card.kl-stacked {
+  position: absolute;
+  top: calc(var(--stack) * clamp(16px, 4.5vw, 24px));
+  left: 0;
+  width: 100%;
+}
+
 /* ---------- Wider screens: tablet & desktop ---------- */
 
 @media (min-width: 700px) {
@@ -1048,6 +1513,11 @@ button { font-family: inherit; color: inherit; }
   .nuri-grid, .hashi-grid, .hitori-grid, .sky-grid { width: min(100%, 520px); }
   .futo-grid, .memory-grid { width: min(100%, 480px); }
   .t2048-grid, .fifteen-grid { width: min(100%, 440px); }
+  .tents-grid, .shikaku-grid, .kakuro-grid { width: min(100%, 540px); }
+  .kenken-grid, .flow-grid, .slither-grid, .stars-grid { width: min(100%, 500px); }
+  .hanoi-board { width: min(100%, 560px); }
+  .kl-top, .kl-tableau { width: min(100%, 520px); }
+  .kl-card { width: calc((520px - 36px) / 7); }
 
   /* Boards absorb leftover height with auto margins, so tall viewports
      spread the space around the board instead of leaving one big hole
@@ -1068,7 +1538,13 @@ button { font-family: inherit; color: inherit; }
   .sky-grid,
   .hitori-grid,
   .nuri-grid,
-  .hashi-grid {
+  .hashi-grid,
+  .kenken-grid,
+  .tents-grid,
+  .shikaku-grid,
+  .flow-grid,
+  .slither-grid,
+  .kakuro-grid {
     margin-top: auto;
     margin-bottom: auto;
   }

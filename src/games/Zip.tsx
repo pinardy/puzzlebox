@@ -84,7 +84,8 @@ export default function Zip({ onExit }: { onExit: () => void }) {
   }
 
   function cellFromPoint(x: number, y: number): number | null {
-    const el = document.elementFromPoint(x, y);
+    // The checkpoint number span sits on top of the cell — climb to it.
+    const el = document.elementFromPoint(x, y)?.closest("[data-zip-idx]");
     const v = el instanceof HTMLElement ? el.dataset.zipIdx : undefined;
     return v === undefined ? null : Number(v);
   }

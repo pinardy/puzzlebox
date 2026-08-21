@@ -20,6 +20,18 @@ const Skyscrapers = lazy(() => import("./games/Skyscrapers"));
 const Hitori = lazy(() => import("./games/Hitori"));
 const Nurikabe = lazy(() => import("./games/Nurikabe"));
 const Hashi = lazy(() => import("./games/Hashi"));
+const KenKen = lazy(() => import("./games/KenKen"));
+const Kropki = lazy(() => import("./games/Kropki"));
+const Stars = lazy(() => import("./games/Stars"));
+const Flow = lazy(() => import("./games/Flow"));
+const Tents = lazy(() => import("./games/Tents"));
+const Shikaku = lazy(() => import("./games/Shikaku"));
+const Battleships = lazy(() => import("./games/Battleships"));
+const Slitherlink = lazy(() => import("./games/Slitherlink"));
+const Kakuro = lazy(() => import("./games/Kakuro"));
+const Mastermind = lazy(() => import("./games/Mastermind"));
+const Hanoi = lazy(() => import("./games/Hanoi"));
+const Klondike = lazy(() => import("./games/Klondike"));
 import { GameId, loadStats, loadSlot } from "./lib/storage";
 
 type View = "hub" | GameId;
@@ -50,7 +62,19 @@ const CARDS: CardInfo[] = [
   { id: "sky", name: "Skyscrapers", tagline: "Count the towers you can see", accent: "var(--teal)", glyph: "⌂" },
   { id: "hitori", name: "Hitori", tagline: "Shade out the duplicates", accent: "var(--indigo)", glyph: "▩" },
   { id: "nurikabe", name: "Nurikabe", tagline: "Islands in a connected sea", accent: "var(--coral)", glyph: "◍" },
-  { id: "hashi", name: "Bridges", tagline: "Link every island, no crossings", accent: "var(--olive)", glyph: "☰" }
+  { id: "hashi", name: "Bridges", tagline: "Link every island, no crossings", accent: "var(--olive)", glyph: "☰" },
+  { id: "kenken", name: "KenKen", tagline: "Cages with arithmetic", accent: "var(--blue)", glyph: "⊞" },
+  { id: "kropki", name: "Kropki", tagline: "Dots join neighbours and doubles", accent: "var(--rose)", glyph: "◉" },
+  { id: "stars", name: "Star Battle", tagline: "Two stars everywhere, never touching", accent: "var(--amber)", glyph: "★" },
+  { id: "flow", name: "Flow", tagline: "Pipe every pair, fill the grid", accent: "var(--teal)", glyph: "∿" },
+  { id: "tents", name: "Tents & Trees", tagline: "Pitch a tent by every tree", accent: "var(--green)", glyph: "△" },
+  { id: "shikaku", name: "Shikaku", tagline: "Box every number by its area", accent: "var(--purple)", glyph: "▭" },
+  { id: "ships", name: "Battleships", tagline: "Find the hidden fleet", accent: "var(--indigo)", glyph: "▬" },
+  { id: "slither", name: "Slitherlink", tagline: "One loop around the clues", accent: "var(--coral)", glyph: "◇" },
+  { id: "kakuro", name: "Kakuro", tagline: "Crossword sums, digits 1–9", accent: "var(--olive)", glyph: "Σ" },
+  { id: "mastermind", name: "Mastermind", tagline: "Crack the colour code", accent: "var(--rose)", glyph: "◒" },
+  { id: "hanoi", name: "Towers of Hanoi", tagline: "Rebuild the tower, one disk at a time", accent: "var(--blue)", glyph: "≣" },
+  { id: "klondike", name: "Solitaire", tagline: "Classic Klondike, tap to move", accent: "var(--green)", glyph: "♠" }
 ];
 
 type Progress = "fresh" | "started" | "done";
@@ -90,7 +114,11 @@ export default function App() {
       queens: Queens, tango: Tango, zip: Zip,
       "2048": Game2048, memory: Memory, fifteen: Fifteen,
       hangman: Hangman, futoshiki: Futoshiki, sky: Skyscrapers,
-      hitori: Hitori, nurikabe: Nurikabe, hashi: Hashi
+      hitori: Hitori, nurikabe: Nurikabe, hashi: Hashi,
+      kenken: KenKen, kropki: Kropki, stars: Stars, flow: Flow,
+      tents: Tents, shikaku: Shikaku, ships: Battleships,
+      slither: Slitherlink, kakuro: Kakuro, mastermind: Mastermind,
+      hanoi: Hanoi, klondike: Klondike
     }[view];
     return (
       <Suspense fallback={<div className="game" />}>
@@ -105,7 +133,7 @@ export default function App() {
         <h1>PuzzleBox</h1>
         <p className="ticket-note">
           {online
-            ? "Eighteen puzzles, endless boards — pick one."
+            ? "Thirty puzzles, endless boards — pick one."
             : "Offline — puzzles still work."}
         </p>
       </header>

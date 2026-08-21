@@ -1,11 +1,13 @@
 # PuzzleBox
 
-A puzzle PWA — eighteen games, endless boards: word guess, sudoku,
+A puzzle PWA — thirty games, endless boards: word guess, sudoku,
 picross, word search, lights out, minesweeper, queens, suns & moons,
 zip, 2048, pairs, fifteen, hangman, futoshiki, skyscrapers, hitori,
-nurikabe, and bridges. Pick any game, play as many rounds as you like.
-Fully offline: puzzles are generated **on-device** from random seeds,
-so nothing is ever fetched at runtime.
+nurikabe, bridges, kenken, kropki, star battle, flow, tents & trees,
+shikaku, battleships, slitherlink, kakuro, mastermind, towers of
+hanoi, and klondike solitaire. Pick any game, play as many rounds as
+you like. Fully offline: puzzles are generated **on-device** from
+random seeds, so nothing is ever fetched at runtime.
 
 ## Games
 
@@ -29,6 +31,18 @@ so nothing is ever fetched at runtime.
 | **Hitori** | Shade duplicates: no touching, rest connected | 6×6; built from a Latin square |
 | **Nurikabe** | Fill a connected sea around sized islands | 7×7; constraint-repair generator |
 | **Bridges** | Link islands with 1–2 bridges, no crossings | 7×7, ~9 islands; connected by construction |
+| **KenKen** | Latin square with arithmetic cages | 5×5, cages of 1–3 cells |
+| **Kropki** | Latin square with consecutive/double dots | 5×5, full negative constraint |
+| **Star Battle** | 2 stars per row/column/region, none touching | 8×8, 8 regions; carved around a placed solution |
+| **Flow** | Join dot pairs, fill every square | 6×6, 6 pipes; cut from one Hamiltonian path |
+| **Tents & Trees** | Tent beside every tree, none touching | 8×8, 10 tents; matching-verified win |
+| **Shikaku** | Boxes matching their area clue | 8×8; recursive rectangle partition |
+| **Battleships** | Find the straight, non-touching fleet | 8×8, fleet 4·33·22·111, 4 revealed cells |
+| **Slitherlink** | One loop matching edge-count clues | 5×5; loop = boundary of a grown blob |
+| **Kakuro** | Crossword sums, unique digits per run | 7×7, runs of 2–5 |
+| **Mastermind** | Crack the colour code from peg feedback | 6 colours, length 4, 10 guesses |
+| **Towers of Hanoi** | Rebuild the tower, big never on small | 5–7 disks by seed |
+| **Solitaire** | Klondike, draw-1, tap-to-move | Seeded deals |
 
 The current puzzle of each game (its seed plus your progress) persists in
 `localStorage`, so leaving and returning resumes where you left off.

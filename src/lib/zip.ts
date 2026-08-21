@@ -23,8 +23,9 @@ function neighbours(idx: number, n: number): number[] {
 }
 
 /** Random Hamiltonian path via Warnsdorff's heuristic (fewest onward
- *  moves first, seeded tie-breaks). Retries with a fresh start if stuck. */
-function hamiltonianPath(n: number, rng: () => number): number[] {
+ *  moves first, seeded tie-breaks). Retries with a fresh start if stuck.
+ *  Also reused by Flow, which cuts one path into coloured segments. */
+export function hamiltonianPath(n: number, rng: () => number): number[] {
   for (;;) {
     const visited = Array(n * n).fill(false);
     const path: number[] = [];

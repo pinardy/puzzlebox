@@ -21,7 +21,9 @@ export type GameId =
   | "word" | "sudoku" | "picross" | "wordsearch" | "lights" | "mines"
   | "queens" | "tango" | "zip"
   | "2048" | "memory" | "fifteen" | "hangman" | "futoshiki" | "sky"
-  | "hitori" | "nurikabe" | "hashi";
+  | "hitori" | "nurikabe" | "hashi"
+  | "kenken" | "kropki" | "stars" | "flow" | "tents" | "shikaku"
+  | "ships" | "slither" | "kakuro" | "mastermind" | "hanoi" | "klondike";
 
 export interface Stats {
   played: number;
