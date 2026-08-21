@@ -56,6 +56,27 @@ const CATEGORY_LABEL: Record<Category, string> = {
   classic: "Classics & arcade"
 };
 
+const CATEGORY_META: Record<Category, { glyph: string; accent: string; tagline: string }> = {
+  words: { glyph: "A", accent: "var(--green)", tagline: "Guess, search, unscramble" },
+  numbers: { glyph: "9", accent: "var(--blue)", tagline: "Sudoku and its cousins" },
+  logic: { glyph: "▦", accent: "var(--purple)", tagline: "Loops, islands, fleets, stars" },
+  classic: { glyph: "♠", accent: "var(--coral)", tagline: "Cards, dice, and arcade" }
+};
+
+/** Narrow screens get a two-level hub: categories first, then games. */
+function useIsWide(): boolean {
+  const [wide, setWide] = useState(
+    () => window.matchMedia("(min-width: 700px)").matches
+  );
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 700px)");
+    const h = (e: MediaQueryListEvent) => setWide(e.matches);
+    mq.addEventListener("change", h);
+    return () => mq.removeEventListener("change", h);
+  }, []);
+  return wide;
+}
+
 interface CardInfo {
   id: GameId;
   name: string;
@@ -155,6 +176,8 @@ function Card({ card, index, onOpen }: { card: CardInfo; index: number; onOpen: 
 export default function App() {
   const [view, setView] = useState<View>("hub");
   const [online, setOnline] = useState(navigator.onLine);
+  const [openCat, setOpenCat] = useState<Category | null>(null);
+  const wide = useIsWide();
 
   useEffect(() => {
     const on = () => setOnline(true);
@@ -194,6 +217,55 @@ export default function App() {
   const inProgress = CARDS.filter((c) => progressOf(c.id) === "started");
   const categories: Category[] = ["words", "numbers", "logic", "classic"];
 
+  const jumpBackIn = inProgress.length > 0 && (
+    <section className="cards-section">
+      <h2>Jump back in</h2>
+      <div className="cards">
+        {inProgress.map((card, i) => (
+          <Card key={card.id} card={card} index={i} onOpen={() => setView(card.id)} />
+        ))}
+      </div>
+    </section>
+  );
+
+  const gamesOf = (cat: Category) => (
+    <div className="cards">
+      {CARDS.filter((c) => c.cat === cat).map((card, i) => (
+        <Card key={card.id} card={card} index={i} onOpen={() => setView(card.id)} />
+      ))}
+    </div>
+  );
+
+  // Narrow screens drill into one category at a time — no endless scroll.
+  if (!wide && openCat !== null) {
+    const meta = CATEGORY_META[openCat];
+    return (
+      <div className="hub">
+        <header className="cat-head">
+          <button
+            className="back-btn"
+            onClick={() => setOpenCat(null)}
+            aria-label="Back to categories"
+          >
+            ←
+          </button>
+          <h2>{CATEGORY_LABEL[openCat]}</h2>
+          <span
+            className="card-glyph cat-head-glyph"
+            style={{ "--accent": meta.accent } as CSSProperties}
+            aria-hidden="true"
+          >
+            {meta.glyph}
+          </span>
+        </header>
+        {gamesOf(openCat)}
+        <footer className="hub-footer">
+          Puzzles are generated on your device — no connection needed.
+        </footer>
+      </div>
+    );
+  }
+
   return (
     <div className="hub">
       <header className="ticket" aria-label="PuzzleBox">
@@ -205,27 +277,51 @@ export default function App() {
         </p>
       </header>
 
-      {inProgress.length > 0 && (
+      {jumpBackIn}
+
+      {wide ? (
+        categories.map((cat) => (
+          <section key={cat} className="cards-section">
+            <h2>{CATEGORY_LABEL[cat]}</h2>
+            {gamesOf(cat)}
+          </section>
+        ))
+      ) : (
         <section className="cards-section">
-          <h2>Jump back in</h2>
+          <h2>Pick a category</h2>
           <div className="cards">
-            {inProgress.map((card, i) => (
-              <Card key={card.id} card={card} index={i} onOpen={() => setView(card.id)} />
-            ))}
+            {categories.map((cat, i) => {
+              const meta = CATEGORY_META[cat];
+              const games = CARDS.filter((c) => c.cat === cat);
+              const started = games.filter((c) => progressOf(c.id) === "started").length;
+              return (
+                <button
+                  key={cat}
+                  className="card cat-card"
+                  style={{ "--accent": meta.accent, "--i": i } as CSSProperties}
+                  onClick={() => setOpenCat(cat)}
+                >
+                  <span className="card-glyph" aria-hidden="true">
+                    {meta.glyph}
+                  </span>
+                  <span className="card-body">
+                    <span className="card-name">{CATEGORY_LABEL[cat]}</span>
+                    <span className="card-tag">{meta.tagline}</span>
+                  </span>
+                  <span className="card-meta">
+                    <span className="card-state">
+                      {games.length} games →
+                    </span>
+                    {started > 0 && (
+                      <span className="card-solved">{started} in progress</span>
+                    )}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </section>
       )}
-
-      {categories.map((cat) => (
-        <section key={cat} className="cards-section">
-          <h2>{CATEGORY_LABEL[cat]}</h2>
-          <div className="cards">
-            {CARDS.filter((c) => c.cat === cat).map((card, i) => (
-              <Card key={card.id} card={card} index={i} onOpen={() => setView(card.id)} />
-            ))}
-          </div>
-        </section>
-      ))}
 
       <footer className="hub-footer">
         Puzzles are generated on your device — no connection needed.

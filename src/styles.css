@@ -82,6 +82,22 @@ button { font-family: inherit; color: inherit; }
 
 .cards { display: flex; flex-direction: column; gap: 12px; }
 
+.cat-card { padding: 20px 16px; }
+
+.cat-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.cat-head h2 {
+  margin: 0;
+  flex: 1;
+  font-family: var(--display);
+  font-size: 22px;
+  font-weight: 800;
+}
+.cat-head-glyph { width: 40px; height: 40px; font-size: 20px; }
+
 .cards-section h2 {
   margin: 6px 2px 8px;
   font-family: var(--display);
