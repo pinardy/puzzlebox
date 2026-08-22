@@ -23,6 +23,7 @@ interface Ineq {
 interface Puzzle {
   givens: number[]; // 0 = player cell
   ineqs: Ineq[];
+  solution: number[];
 }
 
 function generateFutoshiki(seed: string, n: number, clues: number, givenCount: number): Puzzle {
@@ -42,7 +43,7 @@ function generateFutoshiki(seed: string, n: number, clues: number, givenCount: n
   const givens = Array(n * n).fill(0);
   for (const idx of shuffled([...Array(n * n).keys()], rng).slice(0, givenCount))
     givens[idx] = sol[idx];
-  return { givens, ineqs };
+  return { givens, ineqs, solution: sol };
 }
 
 interface SavedState {
@@ -51,13 +52,13 @@ interface SavedState {
 }
 
 export default function Futoshiki({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
+  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
     useGame<SavedState>("futoshiki", (_s, d) => ({
       entries: Array(SIZE[d] * SIZE[d]).fill(0),
       done: false
     }));
   const n = SIZE[diff];
-  const { givens, ineqs } = useMemo(
+  const { givens, ineqs, solution } = useMemo(
     () => generateFutoshiki(seed, n, CLUES[diff], GIVENS[diff]),
     [seed, n, diff]
   );
@@ -103,6 +104,20 @@ export default function Futoshiki({ onExit }: { onExit: () => void }) {
     commit({ ...saved, entries });
   }
 
+  function hint() {
+    const open = (i: number) => givens[i] === 0 && board[i] !== solution[i];
+    const cands = [...Array(n * n).keys()].filter(open);
+    if (!cands.length) return;
+    const idx =
+      selected !== null && open(selected)
+        ? selected
+        : cands[Math.floor(Math.random() * cands.length)];
+    const entries = saved.entries.slice();
+    entries[idx] = solution[idx];
+    commitHint({ ...saved, entries });
+    setSelected(idx);
+  }
+
   function startNew(d?: Diff) {
     newPuzzle(d);
     setSelected(null);
@@ -135,6 +150,7 @@ export default function Futoshiki({ onExit }: { onExit: () => void }) {
         help={HELP}
         onUndo={undo}
         canUndo={canUndo && !saved.done}
+        onHint={saved.done ? undefined : hint}
       />
 
       <div

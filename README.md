@@ -1,13 +1,16 @@
 # PuzzleBox
 
-A puzzle PWA — forty-eight games, endless boards: word guess, sudoku,
+A puzzle PWA — sixty games, endless boards: word guess, sudoku,
 picross, word search, lights out, minesweeper, queens, suns & moons,
 zip, 2048, pairs, fifteen, hangman, futoshiki, skyscrapers, hitori,
 nurikabe, bridges, kenken, kropki, star battle, flow, tents & trees,
 shikaku, battleships, slitherlink, kakuro, mastermind, towers of
 hanoi, klondike, freecell, spider, anagram, masyu, light up,
 dominoes, thermometers, suguru, sokoban, peg solitaire, yahtzee,
-tripeaks, aquarium, galaxies, pipes, ball sort, samegame, and math 24. Pick any game, play as many rounds as
+tripeaks, aquarium, galaxies, pipes, ball sort, samegame, math 24,
+killer sudoku, equation guess, fill-a-pix, fillomino, yin-yang,
+unblock, pyramid, golf, farkle, cryptogram, word ladder, and a mini
+crossword. Pick any game, play as many rounds as
 you like. Fully offline: puzzles are generated **on-device** from
 random seeds, so nothing is ever fetched at runtime.
 
@@ -63,6 +66,18 @@ random seeds, so nothing is ever fetched at runtime.
 | **Ball Sort** | Pour tubes to one colour each | Seeded deals, two spare tubes |
 | **SameGame** | Pop groups, chase the clear bonus | Seeded boards, (n−2)² scoring |
 | **Math 24** | Reach 24 with +−×÷ | Brute-force-verified solvable deals |
+| **Killer Sudoku** | Sudoku with dotted sum cages | 9×9; cages grown over a solved grid |
+| **Equation** | Guess the 8-char equation, wordle-style | Generated + verified per seed |
+| **Fill-a-Pix** | Clues count painted cells in their 3×3 | 8–12 px; smoothed random picture |
+| **Fillomino** | Same-number groups sized to match | Region growth + same-size merge repair |
+| **Yin-Yang** | Two connected colours, no 2×2 | Tree-polyomino growth, always valid |
+| **Unblock** | Slide the red car out | BFS-graded deals; par shown |
+| **Pyramid** | Pair to 13, kings alone | Seeded deals; redeals scale with difficulty |
+| **Golf** | Rank up/down onto the waste | Seeded 7×5 course; A–K wrap on Easy |
+| **Farkle** | Bank dice points before you bust | Seeded dice; target score by difficulty |
+| **Cryptogram** | Crack a substitution cipher | 100 bundled proverbs, deranged mapping |
+| **Word Ladder** | Morph one word into another | BFS over a 1,500-word list; par + 2 moves |
+| **Mini Crossword** | 5×5 clued crossword | MRV backtracking fill, ~1,000 clued words |
 
 The current puzzle of each game (its seed, difficulty, progress, and play
 time) persists in `localStorage`, so leaving and returning resumes where
@@ -73,6 +88,22 @@ counts accumulate per game.
 
 - **Undo** (20 steps) in every game where it makes sense, via a shared
   `useGame` hook that also tracks active play time.
+- **Hints** (💡) in the solution-backed games — Sudoku, Killer Sudoku,
+  Picross, Fill-a-Pix, Fillomino, Futoshiki, Skyscrapers, KenKen,
+  Kropki, Kakuro, Suguru, Cryptogram, and the Mini Crossword — reveal
+  one cell; hinted solves still count, but never set a best time or
+  extend a streak.
+- **Streaks & best times**: per-game win streaks, longest streak, a
+  fastest-solve time per difficulty, and per-difficulty play splits —
+  all surfaced on the win banner ("★ New best time!").
+- **Back-button navigation & deep links**: the view lives in the URL
+  hash (`#/game/sudoku`, `#/cat/logic`), so Android/browser back
+  returns to the hub instead of closing the app, and any game can be
+  bookmarked.
+- **Search** across all 60 games from the hub, by name or tagline.
+- **Sound effects** — tiny WebAudio jingles on win/lose/hint, no audio
+  assets so the app stays fully offline; mute toggle in the hub header,
+  remembered across visits.
 - **Difficulty picker** (Easy / Medium / Hard) on 24 of the 30 games —
   board sizes, clue counts, and fleets scale with it.
 - **Win banner** with time, lifetime stats, haptic feedback, and
@@ -97,6 +128,8 @@ npm install
 npm run dev        # local dev server
 npm run build      # production build in dist/
 npm run preview    # serve the production build locally
+npm run lint       # ESLint (also runs in CI before deploys)
+npm run format     # Prettier over src/
 ```
 
 > **PWA note:** service workers require a secure context. `npm run preview`
