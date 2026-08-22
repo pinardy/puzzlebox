@@ -205,13 +205,13 @@ const STATE_LABEL: Record<Progress, string> = {
   done: "Play again →"
 };
 
-function Card({ card, index, onOpen }: { card: CardInfo; index: number; onOpen: () => void }) {
+function Card({ card, onOpen }: { card: CardInfo; onOpen: () => void }) {
   const stats = loadStats(card.id);
   const progress = progressOf(card.id);
   return (
     <button
       className={`card is-${progress}`}
-      style={{ "--accent": card.accent, "--i": Math.min(index, 8) } as CSSProperties}
+      style={{ "--accent": card.accent } as CSSProperties}
       onClick={onOpen}
     >
       <span className="card-glyph" aria-hidden="true">
@@ -304,8 +304,8 @@ export default function App() {
     <section className="cards-section">
       <h2>Jump back in</h2>
       <div className="cards">
-        {inProgress.map((card, i) => (
-          <Card key={card.id} card={card} index={i} onOpen={() => open(card.id)} />
+        {inProgress.map((card) => (
+          <Card key={card.id} card={card} onOpen={() => open(card.id)} />
         ))}
       </div>
     </section>
@@ -313,8 +313,8 @@ export default function App() {
 
   const gamesOf = (cat: Category) => (
     <div className="cards">
-      {CARDS.filter((c) => c.cat === cat).map((card, i) => (
-        <Card key={card.id} card={card} index={i} onOpen={() => open(card.id)} />
+      {CARDS.filter((c) => c.cat === cat).map((card) => (
+        <Card key={card.id} card={card} onOpen={() => open(card.id)} />
       ))}
     </div>
   );
@@ -392,8 +392,8 @@ export default function App() {
               : "No matches"}
           </h2>
           <div className="cards">
-            {matches.map((card, i) => (
-              <Card key={card.id} card={card} index={i} onOpen={() => open(card.id)} />
+            {matches.map((card) => (
+              <Card key={card.id} card={card} onOpen={() => open(card.id)} />
             ))}
           </div>
         </section>
@@ -412,7 +412,7 @@ export default function App() {
             <section className="cards-section">
               <h2>Pick a category</h2>
               <div className="cards">
-                {CATEGORIES.map((cat, i) => {
+                {CATEGORIES.map((cat) => {
                   const meta = CATEGORY_META[cat];
                   const games = CARDS.filter((c) => c.cat === cat);
                   const started = games.filter((c) => progressOf(c.id) === "started").length;
@@ -420,7 +420,7 @@ export default function App() {
                     <button
                       key={cat}
                       className="card cat-card"
-                      style={{ "--accent": meta.accent, "--i": i } as CSSProperties}
+                      style={{ "--accent": meta.accent } as CSSProperties}
                       onClick={() => navigate(`/cat/${cat}`)}
                     >
                       <span className="card-glyph" aria-hidden="true">
