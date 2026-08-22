@@ -1,6 +1,6 @@
 import { useMemo, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult } from "../lib/storage";
+import { recordResult, Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -10,11 +10,13 @@ const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"]
 const rank = (id: number) => Math.floor(id / 4) + 1;
 const isRed = (id: number) => id % 4 === 1 || id % 4 === 2;
 const label = (id: number) => `${RANKS[rank(id) - 1]}${SUITS[id % 4]}`;
+const WRAP: Record<Diff, boolean> = { easy: true, medium: false, hard: false };
+const STOCK: Record<Diff, number> = { easy: 23, medium: 23, hard: 20 };
 const HELP =
   "Clear all three peaks. You may take any uncovered card that is one rank " +
-  "above or below the waste card — aces and kings wrap around. Stuck? Flip " +
-  "a new card from the deck. The game ends when the deck runs dry with no " +
-  "plays left.";
+  "above or below the waste card — on Easy, aces and kings wrap around. " +
+  "Stuck? Flip a new card from the deck; Hard deals a three-card-shorter " +
+  "deck. The game ends when the deck runs dry with no plays left.";
 
 /** The 28 tableau spots: row, x position (in card widths), and the two
  *  spots that must be cleared before this one is exposed. */
@@ -47,12 +49,12 @@ interface SavedState {
   won: boolean;
 }
 
-function deal(seed: string): SavedState {
+function deal(seed: string, diff: Diff): SavedState {
   const deck = shuffled([...Array(52).keys()], makeRng(`tripeaks-${seed}`));
   return {
     tableau: deck.slice(0, 28),
     removed: Array(28).fill(false),
-    stock: deck.slice(28, 51),
+    stock: deck.slice(28, 28 + STOCK[diff]),
     waste: [deck[51]],
     done: false,
     won: false
@@ -64,14 +66,15 @@ const exposed = (removed: boolean[], i: number): boolean => {
   return !removed[i] && (covers === null || (removed[covers[0]] && removed[covers[1]]));
 };
 
-const playable = (a: number, b: number): boolean => {
+const playable = (a: number, b: number, wrap: boolean): boolean => {
   const d = Math.abs(rank(a) - rank(b));
-  return d === 1 || d === 12;
+  return d === 1 || (wrap && d === 12);
 };
 
 export default function TriPeaks({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("tripeaks", (s) => deal(s));
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
+    useGame<SavedState>("tripeaks", (s, d) => deal(s, d));
+  const wrap = WRAP[diff];
 
   const wasteTop = saved.waste[saved.waste.length - 1];
   const left = useMemo(
@@ -89,7 +92,7 @@ export default function TriPeaks({ onExit }: { onExit: () => void }) {
     }
     const top = next.waste[next.waste.length - 1];
     const anyPlay = next.tableau.some(
-      (card, i) => exposed(next.removed, i) && playable(card, top)
+      (card, i) => exposed(next.removed, i) && playable(card, top, wrap)
     );
     if (!anyPlay && next.stock.length === 0) {
       next.done = true;
@@ -99,7 +102,7 @@ export default function TriPeaks({ onExit }: { onExit: () => void }) {
 
   function tapCard(i: number) {
     if (saved.done || !exposed(saved.removed, i)) return;
-    if (!playable(saved.tableau[i], wasteTop)) return;
+    if (!playable(saved.tableau[i], wasteTop, wrap)) return;
     const removed = saved.removed.slice();
     removed[i] = true;
     const next: SavedState = {
@@ -124,15 +127,22 @@ export default function TriPeaks({ onExit }: { onExit: () => void }) {
     <div className="game game-tripeaks">
       <GameHeader title="TriPeaks" onExit={onExit} onNew={() => newPuzzle()} />
       <p className="game-hint">
-        Take cards one rank up or down from the waste; clear all three peaks.
+        Take cards one rank up or down from the waste
+        {wrap ? " — A and K wrap" : ""}; clear all three peaks.
       </p>
-      <GameTools help={HELP} onUndo={undo} canUndo={canUndo && !saved.done} />
+      <GameTools
+        diff={diff}
+        onDiff={newPuzzle}
+        help={HELP}
+        onUndo={undo}
+        canUndo={canUndo && !saved.done}
+      />
 
       <div className="tp-board" role="group" aria-label="TriPeaks board">
         {saved.tableau.map((card, i) => {
           if (saved.removed[i]) return null;
           const open = exposed(saved.removed, i);
-          const hot = open && playable(card, wasteTop);
+          const hot = open && playable(card, wasteTop, wrap);
           return (
             <button
               key={card}

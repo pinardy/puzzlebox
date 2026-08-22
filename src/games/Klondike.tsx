@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult } from "../lib/storage";
+import { recordResult, Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -12,11 +12,16 @@ const rank = (id: number) => Math.floor(id / 4) + 1;
 const suit = (id: number) => id % 4;
 const isRed = (id: number) => suit(id) === 1 || suit(id) === 2;
 const label = (id: number) => `${RANKS[rank(id) - 1]}${SUITS[suit(id)]}`;
+const DRAW: Record<Diff, number> = { easy: 1, medium: 3, hard: 3 };
+// Hard is Vegas-style: three passes through the deck in total.
+const REDEALS: Record<Diff, number> = { easy: -1, medium: -1, hard: 2 };
 const HELP =
   "Build the four foundations up from ace to king by suit. In the columns, " +
   "stack downward in alternating colours; only kings may move to an empty " +
-  "column. Tap the deck to draw. Tap a card, then its destination — or tap " +
-  "a selected card again to send it to a foundation.";
+  "column. Tap the deck to draw — one card on Easy, three on Medium and " +
+  "Hard, and Hard allows only three passes through the deck. Tap a card, " +
+  "then its destination — or tap a selected card again to send it to a " +
+  "foundation.";
 
 interface SavedState {
   tableau: number[][]; // bottom → top
@@ -25,10 +30,11 @@ interface SavedState {
   waste: number[]; // top = last
   foundations: number[]; // per suit: highest rank placed (0 = empty)
   moves: number;
+  redeals: number; // recycles left; -1 = unlimited
   done: boolean;
 }
 
-function deal(seed: string): SavedState {
+function deal(seed: string, diff: Diff): SavedState {
   const deck = shuffled([...Array(52).keys()], makeRng(`klondike-${seed}`));
   const tableau: number[][] = [];
   let at = 0;
@@ -43,6 +49,7 @@ function deal(seed: string): SavedState {
     waste: [],
     foundations: [0, 0, 0, 0],
     moves: 0,
+    redeals: REDEALS[diff],
     done: false
   };
 }
@@ -53,9 +60,11 @@ type Sel =
   | null;
 
 export default function Klondike({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("klondike", (s) => deal(s));
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
+    useGame<SavedState>("klondike", (s, d) => deal(s, d));
   const [sel, setSel] = useState<Sel>(null);
+  // Saves from before draw modes lack the redeal counter.
+  const redeals = saved.redeals ?? -1;
   const autoTimer = useRef<number | null>(null);
 
   useEffect(
@@ -108,10 +117,13 @@ export default function Klondike({ onExit }: { onExit: () => void }) {
   function tapStock() {
     if (saved.done) return;
     const next = clone();
-    if (next.stock.length) next.waste.push(next.stock.pop()!);
-    else if (next.waste.length) {
+    if (next.stock.length) {
+      for (let k = 0; k < DRAW[diff] && next.stock.length; k++)
+        next.waste.push(next.stock.pop()!);
+    } else if (next.waste.length && redeals !== 0) {
       next.stock = next.waste.reverse();
       next.waste = [];
+      if (redeals > 0) next.redeals = redeals - 1;
     } else return;
     finish(next);
   }
@@ -211,9 +223,9 @@ export default function Klondike({ onExit }: { onExit: () => void }) {
     autoStep();
   }
 
-  function startNew() {
+  function startNew(d?: Diff) {
     autoRunning.current = false;
-    newPuzzle();
+    newPuzzle(d);
     setSel(null);
   }
 
@@ -222,25 +234,42 @@ export default function Klondike({ onExit }: { onExit: () => void }) {
 
   return (
     <div className="game game-klondike">
-      <GameHeader title="Solitaire" onExit={onExit} onNew={startNew} />
+      <GameHeader title="Solitaire" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
         Tap a card, then where it goes; tap it again to send it up.
       </p>
-      <GameTools help={HELP} onUndo={undo} canUndo={canUndo && !saved.done} />
+      <GameTools
+        diff={diff}
+        onDiff={startNew}
+        help={HELP}
+        onUndo={undo}
+        canUndo={canUndo && !saved.done}
+      />
 
       <div className="kl-top">
         <button className="kl-card kl-back" onClick={tapStock} aria-label="Stock">
-          {saved.stock.length ? saved.stock.length : "↻"}
+          {saved.stock.length ? saved.stock.length : redeals !== 0 ? "↻" : "—"}
         </button>
-        <button
-          className={`kl-card${saved.waste.length ? "" : " kl-empty"}${
-            sel?.from === "waste" ? " selected" : ""
-          }${saved.waste.length && isRed(saved.waste[saved.waste.length - 1]) ? " red" : ""}`}
-          onClick={tapWaste}
-          aria-label="Waste"
-        >
-          {saved.waste.length ? label(saved.waste[saved.waste.length - 1]) : ""}
-        </button>
+        <span className="kl-fan">
+          {(saved.waste.length ? saved.waste.slice(-DRAW[diff]) : [null]).map(
+            (card, i, fan) => {
+              const isTop = i === fan.length - 1;
+              return (
+                <button
+                  key={card ?? "empty"}
+                  className={`kl-card${card === null ? " kl-empty" : ""}${
+                    isTop && sel?.from === "waste" ? " selected" : ""
+                  }${card !== null && isRed(card) ? " red" : ""}`}
+                  onClick={isTop ? tapWaste : undefined}
+                  tabIndex={isTop ? 0 : -1}
+                  aria-label={isTop ? "Waste" : undefined}
+                >
+                  {card !== null ? label(card) : ""}
+                </button>
+              );
+            }
+          )}
+        </span>
         <span className="kl-gap" />
         {saved.foundations.map((f, s) => (
           <button

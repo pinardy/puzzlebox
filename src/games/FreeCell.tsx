@@ -1,6 +1,6 @@
 import { useMemo, useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult } from "../lib/storage";
+import { recordResult, Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -11,11 +11,13 @@ const rank = (id: number) => Math.floor(id / 4) + 1;
 const suit = (id: number) => id % 4;
 const isRed = (id: number) => suit(id) === 1 || suit(id) === 2;
 const label = (id: number) => `${RANKS[rank(id) - 1]}${SUITS[suit(id)]}`;
+const CELLS: Record<Diff, number> = { easy: 4, medium: 3, hard: 2 };
 const HELP =
   "Everything is face-up. Build the foundations up by suit from ace to " +
-  "king. Cascades stack down in alternating colours; the four free cells " +
-  "each hold one card. You can move a run only if enough free cells and " +
-  "empty cascades exist to move it card by card.";
+  "king. Cascades stack down in alternating colours; each free cell holds " +
+  "one card — four on Easy, three on Medium, two on Hard. You can move a " +
+  "run only if enough free cells and empty cascades exist to move it card " +
+  "by card.";
 
 interface SavedState {
   cascades: number[][];
@@ -25,7 +27,7 @@ interface SavedState {
   done: boolean;
 }
 
-function deal(seed: string): SavedState {
+function deal(seed: string, diff: Diff): SavedState {
   const deck = shuffled([...Array(52).keys()], makeRng(`freecell-${seed}`));
   const cascades: number[][] = [];
   let at = 0;
@@ -36,7 +38,7 @@ function deal(seed: string): SavedState {
   }
   return {
     cascades,
-    free: [null, null, null, null],
+    free: Array(CELLS[diff]).fill(null),
     foundations: [0, 0, 0, 0],
     moves: 0,
     done: false
@@ -49,8 +51,8 @@ type Sel =
   | null;
 
 export default function FreeCell({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("freecell", (s) => deal(s));
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
+    useGame<SavedState>("freecell", (s, d) => deal(s, d));
   const [sel, setSel] = useState<Sel>(null);
 
   const selCards = useMemo((): number[] => {
@@ -184,7 +186,7 @@ export default function FreeCell({ onExit }: { onExit: () => void }) {
     let count = 0;
     while (moved) {
       moved = false;
-      for (let s = 0; s < 4; s++) {
+      for (let s = 0; s < next.free.length; s++) {
         const c = next.free[s];
         if (c !== null && rank(c) === next.foundations[suit(c)] + 1) {
           next.free[s] = null;
@@ -207,8 +209,8 @@ export default function FreeCell({ onExit }: { onExit: () => void }) {
     if (count > 0) finish(next);
   }
 
-  function startNew() {
-    newPuzzle();
+  function startNew(d?: Diff) {
+    newPuzzle(d);
     setSel(null);
   }
 
@@ -217,12 +219,18 @@ export default function FreeCell({ onExit }: { onExit: () => void }) {
 
   return (
     <div className="game game-freecell" style={{ "--cols": 8 } as CSSProperties}>
-      <GameHeader title="FreeCell" onExit={onExit} onNew={startNew} />
+      <GameHeader title="FreeCell" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
         Tap a run, then where it goes; tap a selected card again to send it
         up.
       </p>
-      <GameTools help={HELP} onUndo={undo} canUndo={canUndo && !saved.done} />
+      <GameTools
+        diff={diff}
+        onDiff={startNew}
+        help={HELP}
+        onUndo={undo}
+        canUndo={canUndo && !saved.done}
+      />
 
       <div className="kl-top">
         {saved.free.map((c, s) => (
