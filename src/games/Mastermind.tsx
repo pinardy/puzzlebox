@@ -86,7 +86,7 @@ export default function Mastermind({ onExit }: { onExit: () => void }) {
           return (
             <div key={i} className="mm-row">
               {g.map((c, j) => (
-                <span key={j} className="mm-peg" style={{ background: ALL_COLORS[c] }} />
+                <span key={j} className="mm-peg" data-c={c + 1} style={{ background: ALL_COLORS[c] }} />
               ))}
               <span className="mm-feedback">
                 {"●".repeat(exact)}
@@ -101,6 +101,7 @@ export default function Mastermind({ onExit }: { onExit: () => void }) {
               <button
                 key={j}
                 className="mm-peg mm-slot"
+                data-c={current[j] !== undefined ? current[j] + 1 : undefined}
                 style={current[j] !== undefined ? { background: ALL_COLORS[current[j]] } : undefined}
                 onClick={() => setCurrent((c) => c.slice(0, j))}
                 aria-label={`Slot ${j + 1}`}
@@ -114,7 +115,7 @@ export default function Mastermind({ onExit }: { onExit: () => void }) {
         {saved.done && !saved.won && (
           <div className="mm-row mm-answer">
             {code.map((c, j) => (
-              <span key={j} className="mm-peg" style={{ background: ALL_COLORS[c] }} />
+              <span key={j} className="mm-peg" data-c={c + 1} style={{ background: ALL_COLORS[c] }} />
             ))}
             <span className="mm-feedback">code</span>
           </div>
@@ -126,6 +127,7 @@ export default function Mastermind({ onExit }: { onExit: () => void }) {
           <button
             key={col}
             className="mm-peg mm-pick"
+            data-c={i + 1}
             style={{ background: col }}
             onClick={() =>
               setCurrent((c) => (c.length < codeLen ? [...c, i] : c))

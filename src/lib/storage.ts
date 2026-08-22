@@ -52,6 +52,29 @@ export interface DiffSplit {
   won: number;
 }
 
+/** Games pinned to the top of the hub. */
+export function loadFavorites(): GameId[] {
+  return load<GameId[]>("pref:favorites", []);
+}
+
+export function toggleFavorite(game: GameId): GameId[] {
+  const cur = loadFavorites();
+  const next = cur.includes(game) ? cur.filter((g) => g !== game) : [...cur, game];
+  save("pref:favorites", next);
+  return next;
+}
+
+/** Most recently opened games, newest first. */
+export function loadRecents(): GameId[] {
+  return load<GameId[]>("pref:recent", []);
+}
+
+export function pushRecent(game: GameId): GameId[] {
+  const next = [game, ...loadRecents().filter((g) => g !== game)].slice(0, 8);
+  save("pref:recent", next);
+  return next;
+}
+
 export interface Stats {
   played: number;
   won: number;
