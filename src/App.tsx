@@ -76,6 +76,20 @@ const Sujiko = lazy(() => import("./games/Sujiko"));
 const Untangle = lazy(() => import("./games/Untangle"));
 const Str8ts = lazy(() => import("./games/Str8ts"));
 const Mahjong = lazy(() => import("./games/Mahjong"));
+const Numbrix = lazy(() => import("./games/Numbrix"));
+const Jigsaw = lazy(() => import("./games/Jigsaw"));
+const Sandwich = lazy(() => import("./games/Sandwich"));
+const Kakurasu = lazy(() => import("./games/Kakurasu"));
+const Knight = lazy(() => import("./games/Knight"));
+const Norinori = lazy(() => import("./games/Norinori"));
+const Heyawake = lazy(() => import("./games/Heyawake"));
+const FloodIt = lazy(() => import("./games/FloodIt"));
+const DotsBoxes = lazy(() => import("./games/DotsBoxes"));
+const FortyThieves = lazy(() => import("./games/FortyThieves"));
+const BakersDozen = lazy(() => import("./games/BakersDozen"));
+const Accordion = lazy(() => import("./games/Accordion"));
+const AcesUp = lazy(() => import("./games/AcesUp"));
+const Canfield = lazy(() => import("./games/Canfield"));
 import {
   GameId,
   load,
@@ -151,6 +165,9 @@ const CARDS: CardInfo[] = [
   { id: "equation", name: "Equation", tagline: "Guess the hidden math", accent: "var(--purple)", glyph: "=", cat: "numbers" },
   { id: "sujiko", name: "Sujiko", tagline: "Four circles, nine digits", accent: "var(--teal)", glyph: "◉", cat: "numbers" },
   { id: "str8ts", name: "Str8ts", tagline: "Runs of consecutive numbers", accent: "var(--coral)", glyph: "⊟", cat: "numbers" },
+  { id: "numbrix", name: "Numbrix", tagline: "One unbroken chain of numbers", accent: "var(--green)", glyph: "⤴", cat: "numbers" },
+  { id: "jigsaw", name: "Jigsaw Sudoku", tagline: "Sudoku with wandering regions", accent: "var(--rose)", glyph: "⬡", cat: "numbers" },
+  { id: "sandwich", name: "Sandwich", tagline: "Sum between the 1 and the 9", accent: "var(--amber)", glyph: "⊂", cat: "numbers" },
 
   { id: "picross", name: "Picross", tagline: "Reveal the hidden picture", accent: "var(--rose)", glyph: "▦", cat: "logic" },
   { id: "queens", name: "Queens", tagline: "One crown per colour, none touching", accent: "var(--indigo)", glyph: "♛", cat: "logic" },
@@ -177,6 +194,10 @@ const CARDS: CardInfo[] = [
   { id: "fillomino", name: "Fillomino", tagline: "Regions sized by their number", accent: "var(--amber)", glyph: "▤", cat: "logic" },
   { id: "yinyang", name: "Yin-Yang", tagline: "Two circles, one balance", accent: "var(--teal)", glyph: "☯", cat: "logic" },
   { id: "untangle", name: "Untangle", tagline: "Drag dots, uncross lines", accent: "var(--green)", glyph: "✳", cat: "logic" },
+  { id: "kakurasu", name: "Kakurasu", tagline: "Weighted rows and columns", accent: "var(--olive)", glyph: "⧗", cat: "logic" },
+  { id: "knight", name: "Knight's Tour", tagline: "Every square, one knight", accent: "var(--indigo)", glyph: "♞", cat: "logic" },
+  { id: "norinori", name: "Norinori", tagline: "Two per region, in dominoes", accent: "var(--purple)", glyph: "⬛", cat: "logic" },
+  { id: "heyawake", name: "Heyawake", tagline: "Numbered rooms, shaded squares", accent: "var(--rose)", glyph: "▥", cat: "logic" },
 
   { id: "mines", name: "Minesweeper", tagline: "First tap is always safe", accent: "var(--purple)", glyph: "✹", cat: "classic" },
   { id: "lights", name: "Lights Out", tagline: "Flip them all off", accent: "var(--amber)", glyph: "◉", cat: "classic" },
@@ -200,7 +221,14 @@ const CARDS: CardInfo[] = [
   { id: "farkle", name: "Farkle", tagline: "Push your luck with six dice", accent: "var(--rose)", glyph: "⚅", cat: "classic" },
   { id: "yukon", name: "Yukon", tagline: "Klondike unchained — no deck", accent: "var(--teal)", glyph: "♥", cat: "classic" },
   { id: "scorpion", name: "Scorpion", tagline: "Spider with a sting", accent: "var(--olive)", glyph: "♦", cat: "classic" },
-  { id: "mahjong", name: "Mahjong", tagline: "Match free tiles, clear the stack", accent: "var(--indigo)", glyph: "🀄", cat: "classic" }
+  { id: "mahjong", name: "Mahjong", tagline: "Match free tiles, clear the stack", accent: "var(--indigo)", glyph: "🀄", cat: "classic" },
+  { id: "flood", name: "Flood It", tagline: "Swallow the board in colour", accent: "var(--teal)", glyph: "◈", cat: "classic" },
+  { id: "dots", name: "Dots & Boxes", tagline: "Close boxes, beat the machine", accent: "var(--blue)", glyph: "⊞", cat: "classic" },
+  { id: "forty", name: "Forty Thieves", tagline: "Two packs, no second chances", accent: "var(--coral)", glyph: "♧", cat: "classic" },
+  { id: "bakers", name: "Baker's Dozen", tagline: "Thirteen columns, no deck", accent: "var(--olive)", glyph: "♡", cat: "classic" },
+  { id: "accordion", name: "Accordion", tagline: "Squeeze fifty-two into one", accent: "var(--amber)", glyph: "⇤", cat: "classic" },
+  { id: "acesup", name: "Aces Up", tagline: "Leave only the four aces", accent: "var(--green)", glyph: "♤", cat: "classic" },
+  { id: "canfield", name: "Canfield", tagline: "Wrapping foundations, fast deck", accent: "var(--purple)", glyph: "◇", cat: "classic" }
 ];
 
 const CATEGORIES: Category[] = ["words", "numbers", "logic", "classic"];
@@ -384,7 +412,12 @@ export default function App() {
       fillomino: Fillomino, yinyang: YinYang, unblock: Unblock,
       pyramid: Pyramid, golf: Golf, farkle: Farkle, crypto: Cryptogram,
       ladder: Ladder, mini: MiniCrossword, yukon: Yukon, scorpion: Scorpion,
-      sujiko: Sujiko, untangle: Untangle, str8ts: Str8ts, mahjong: Mahjong
+      sujiko: Sujiko, untangle: Untangle, str8ts: Str8ts, mahjong: Mahjong,
+      numbrix: Numbrix, jigsaw: Jigsaw, sandwich: Sandwich,
+      kakurasu: Kakurasu, knight: Knight, norinori: Norinori,
+      heyawake: Heyawake, flood: FloodIt, dots: DotsBoxes,
+      forty: FortyThieves, bakers: BakersDozen, accordion: Accordion,
+      acesup: AcesUp, canfield: Canfield
     }[view];
     return (
       <GameShell>
@@ -500,7 +533,7 @@ export default function App() {
         <h1>PuzzleBox</h1>
         <p className="ticket-note">
           {online
-            ? "Sixty-six puzzles, endless boards — pick one."
+            ? "Eighty puzzles, endless boards — pick one."
             : "Offline — puzzles still work."}
         </p>
       </header>

@@ -43,7 +43,10 @@ export type GameId =
   | "math24"
   | "killer" | "equation" | "fillapix" | "fillomino" | "yinyang" | "unblock"
   | "pyramid" | "golf" | "farkle" | "crypto" | "ladder" | "mini"
-  | "yukon" | "scorpion" | "sujiko" | "untangle" | "str8ts" | "mahjong";
+  | "yukon" | "scorpion" | "sujiko" | "untangle" | "str8ts" | "mahjong"
+  | "numbrix" | "jigsaw" | "sandwich" | "kakurasu" | "knight" | "norinori"
+  | "heyawake" | "flood" | "dots" | "forty" | "bakers" | "accordion"
+  | "acesup" | "canfield";
 
 export type Diff = "easy" | "medium" | "hard";
 

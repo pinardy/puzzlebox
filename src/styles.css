@@ -2923,6 +2923,368 @@ button { font-family: inherit; color: inherit; }
 .mj-hue3 b, .mj-hue3 i { color: var(--amber); }
 .mj-hue4 b, .mj-hue4 i { color: var(--indigo); }
 
+
+/* ---------- Numbrix ---------- */
+
+.nx-grid {
+  align-self: center;
+  width: min(100%, 400px);
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  border: 2px solid var(--ink);
+  background: var(--card);
+  aspect-ratio: 1;
+}
+.nx-cell {
+  border: 0.5px solid var(--grid-line);
+  background: var(--card);
+  padding: 0;
+  font-family: var(--mono);
+  font-size: clamp(13px, 3.6vw, 20px);
+  font-weight: 700;
+  color: var(--blue);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  aspect-ratio: 1;
+}
+.nx-cell.given { color: var(--ink); font-weight: 800; background: var(--paper); }
+.nx-cell.selected { background: #c3d7f8; outline: 2px solid var(--blue); outline-offset: -2px; }
+.nx-cell.conflict { color: var(--rose); background: #fbe6ef; }
+.nx-tray {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  justify-content: center;
+  margin-top: 4px;
+}
+.nx-chip {
+  min-width: 34px;
+  height: 34px;
+  border: 1.5px solid var(--ink);
+  border-radius: 8px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink);
+  cursor: pointer;
+  padding: 0 6px;
+}
+.nx-chip:active { transform: translateY(2px); box-shadow: none; }
+.nx-chip:disabled { opacity: 0.4; box-shadow: none; cursor: default; }
+.nx-empty { font-size: 13px; color: var(--ink-soft); }
+
+/* ---------- Jigsaw Sudoku ---------- */
+
+/* Regions replace the 3×3 rules, so their outlines carry the weight. */
+.jig-cell.jr-t { border-top: 2px solid var(--ink); }
+.jig-cell.jr-l { border-left: 2px solid var(--ink); }
+.jig-cell.jr-b { border-bottom: 2px solid var(--ink); }
+.jig-cell.jr-r { border-right: 2px solid var(--ink); }
+
+/* ---------- Sandwich ---------- */
+
+.sw-wrap {
+  align-self: center;
+  width: min(100%, 420px);
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto 1fr;
+  gap: 3px;
+}
+.sw-corner { grid-area: 1 / 1; }
+.sw-top {
+  grid-area: 1 / 2;
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+}
+.sw-left {
+  grid-area: 2 / 1;
+  display: grid;
+  grid-template-rows: repeat(9, 1fr);
+}
+.sw-wrap .sudoku-grid { grid-area: 2 / 2; }
+.sw-clue {
+  display: grid;
+  place-items: center;
+  min-width: 20px;
+  padding: 0 3px;
+  font-family: var(--mono);
+  font-size: clamp(10px, 2.6vw, 13px);
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+.sw-clue.ok { color: var(--green); }
+.sw-clue.bad { color: var(--rose); }
+
+/* ---------- Kakurasu ---------- */
+
+.ks-grid {
+  align-self: center;
+  width: min(100%, 380px);
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  gap: 2px;
+}
+.ks-pad { aspect-ratio: 1; }
+.ks-weight {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  font-family: var(--mono);
+  font-size: clamp(10px, 2.8vw, 14px);
+  color: var(--ink-soft);
+}
+.ks-cell {
+  aspect-ratio: 1;
+  border: 1.5px solid var(--grid-line);
+  border-radius: 4px;
+  background: var(--card);
+  padding: 0;
+  cursor: pointer;
+}
+.ks-cell.on { background: var(--olive); border-color: var(--ink); }
+.ks-target {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  font-family: var(--mono);
+  font-size: clamp(11px, 3vw, 15px);
+  font-weight: 700;
+  color: var(--ink);
+}
+.ks-target.ok { color: var(--green); }
+.ks-target.over { color: var(--rose); }
+
+/* ---------- Knight's Tour ---------- */
+
+.kt-grid {
+  align-self: center;
+  width: min(100%, 420px);
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  border: 2px solid var(--ink);
+  aspect-ratio: 1;
+}
+.kt-cell {
+  aspect-ratio: 1;
+  border: none;
+  background: var(--card);
+  padding: 0;
+  font-family: var(--mono);
+  font-size: clamp(10px, 2.6vw, 14px);
+  color: var(--ink-soft);
+  display: grid;
+  place-items: center;
+  cursor: default;
+}
+.kt-cell.dark { background: var(--grid-line); }
+.kt-cell.seen { color: var(--indigo); font-weight: 700; }
+.kt-cell.here { background: var(--indigo); color: #fff; font-size: clamp(16px, 4.5vw, 24px); }
+.kt-cell.legal {
+  cursor: pointer;
+  outline: 2.5px solid var(--green);
+  outline-offset: -3px;
+}
+.kt-cell.suggested { background: var(--amber); color: #fff; }
+
+/* ---------- Norinori ---------- */
+
+.nn-grid {
+  align-self: center;
+  width: min(100%, 420px);
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  aspect-ratio: 1;
+  background: var(--card);
+}
+.nn-cell {
+  aspect-ratio: 1;
+  border: 0.5px solid var(--grid-line);
+  background: var(--card);
+  padding: 0;
+  cursor: pointer;
+}
+.nn-cell.on { background: var(--purple); }
+.nn-cell.settled:not(.on) { background: #f2f0fa; }
+.nn-cell.conflict { background: var(--rose); }
+.nn-cell.reg-t { border-top: 2px solid var(--ink); }
+.nn-cell.reg-l { border-left: 2px solid var(--ink); }
+.nn-cell.reg-b { border-bottom: 2px solid var(--ink); }
+.nn-cell.reg-r { border-right: 2px solid var(--ink); }
+
+/* ---------- Heyawake ---------- */
+
+.hw-grid {
+  align-self: center;
+  width: min(100%, 420px);
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  aspect-ratio: 1;
+  background: var(--card);
+}
+.hw-cell {
+  position: relative;
+  aspect-ratio: 1;
+  border: 0.5px solid var(--grid-line);
+  background: var(--card);
+  padding: 0;
+  cursor: pointer;
+}
+.hw-cell.on { background: var(--ink); }
+.hw-cell.conflict { background: var(--rose); }
+.hw-clue {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-size: clamp(11px, 3vw, 15px);
+  font-weight: 700;
+  color: var(--ink);
+}
+.hw-cell.on .hw-clue { color: var(--paper); }
+.hw-cell.settled .hw-clue { color: var(--green); }
+.hw-cell.room-t { border-top: 2px solid var(--ink); }
+.hw-cell.room-l { border-left: 2px solid var(--ink); }
+.hw-cell.room-b { border-bottom: 2px solid var(--ink); }
+.hw-cell.room-r { border-right: 2px solid var(--ink); }
+
+/* ---------- Flood It ---------- */
+
+.fl-status {
+  display: flex;
+  justify-content: space-between;
+  align-self: center;
+  width: min(100%, 420px);
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+.fl-status b { color: var(--ink); font-family: var(--mono); }
+.fl-grid {
+  align-self: center;
+  width: min(100%, 420px);
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  overflow: hidden;
+  aspect-ratio: 1;
+}
+.fl-cell { aspect-ratio: 1; }
+.fl-cell.owned { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45); }
+.fl-palette { display: flex; gap: 8px; justify-content: center; margin-top: 8px; }
+.fl-pick {
+  width: 46px;
+  height: 46px;
+  border: 1.5px solid var(--ink);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  padding: 0;
+}
+.fl-pick:active { transform: translateY(2px); box-shadow: none; }
+.fl-pick.current { outline: 3px solid var(--ink); outline-offset: 2px; opacity: 0.5; }
+.fl-c0 { background: #3b6fe0; }
+.fl-c1 { background: #c9407a; }
+.fl-c2 { background: #2e9e6b; }
+.fl-c3 { background: #e0a23b; }
+.fl-c4 { background: #7857c9; }
+.fl-c5 { background: #2a9d8f; }
+
+/* ---------- Dots & Boxes ---------- */
+
+.db-score {
+  display: flex;
+  gap: 18px;
+  justify-content: center;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+.db-score b { font-family: var(--mono); font-size: 17px; }
+.db-you b { color: var(--blue); }
+.db-them b { color: var(--coral); }
+.db-board {
+  align-self: center;
+  display: grid;
+  grid-template-columns: repeat(var(--n), 14px 1fr) 14px;
+  grid-template-rows: repeat(var(--n), 14px 1fr) 14px;
+  width: min(100%, 400px);
+  aspect-ratio: 1;
+  margin: 8px 0;
+}
+.db-dot {
+  width: 8px;
+  height: 8px;
+  margin: 3px;
+  border-radius: 50%;
+  background: var(--ink);
+}
+.db-edge {
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  border-radius: 3px;
+}
+.db-edge:disabled { cursor: default; }
+.db-h { height: 8px; align-self: center; }
+.db-v { width: 8px; justify-self: center; }
+.db-edge:not(.on):not(:disabled):hover { background: var(--grid-line); }
+.db-edge.on { background: var(--ink); }
+.db-box {
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  color: transparent;
+}
+.db-box.you { background: rgba(59, 111, 224, 0.22); color: var(--blue); }
+.db-box.them { background: rgba(217, 92, 67, 0.22); color: var(--coral); }
+
+/* ---------- Accordion ---------- */
+
+.ac-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  justify-content: center;
+  align-self: center;
+  width: min(100%, 460px);
+  margin: 6px 0;
+}
+.ac-card { position: relative; }
+.ac-card.ac-live { outline: 2px solid var(--amber); outline-offset: -2px; }
+.ac-card.ac-target { outline: 3px solid var(--green); outline-offset: 1px; }
+.ac-depth {
+  position: absolute;
+  bottom: 1px;
+  right: 3px;
+  font-size: 9px;
+  color: var(--ink-soft);
+}
+.ac-stuck { color: var(--rose); font-weight: 700; }
+
+/* ---------- Aces Up ---------- */
+
+.au-row {
+  display: flex;
+  gap: 8px;
+  align-self: center;
+  width: min(100%, 340px);
+  margin-top: 8px;
+}
+.au-pile { min-height: 190px; }
+.au-slot { position: absolute; top: 0; left: 0; width: 100%; }
+
+/* ---------- Canfield / Baker's Dozen ---------- */
+
+.cf-reserve { align-items: center; gap: 10px; margin-top: 4px; }
+.game-bakers .kl-card { font-size: clamp(8px, 2.1vw, 12px); }
+.bd-tableau .kl-card.kl-stacked { top: calc(var(--stack) * clamp(12px, 3.2vw, 18px)); }
+.game-bakers .kl-pile { min-height: 110px; }
+
 @media (prefers-color-scheme: dark) {
   :root {
     --paper: #14181e;
@@ -2942,6 +3304,11 @@ button { font-family: inherit; color: inherit; }
   .sudoku-cell.same { background: #263a52; }
   .sudoku-cell.selected { background: #2e4a6d; }
 
+  .nx-cell.selected { background: #2e4a6d; }
+  .nx-cell.conflict { background: #45222f; }
+  .nx-cell.given { background: #202b39; }
+  .nn-cell.settled:not(.on) { background: #232030; }
+  .kt-cell.dark { background: #202b39; }
   .yy-cell.conflict { background: #45222f; }
   .xw-cell.selected { background: #2e4a6d; }
   .xw-black { background: #060a0e; border-color: #060a0e; }
