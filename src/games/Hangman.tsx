@@ -1,13 +1,20 @@
 import { useEffect } from "react";
 import { makeRng } from "../lib/rng";
 import { ANSWERS } from "../lib/words";
-import { recordResult } from "../lib/storage";
+import { COMMON4 } from "../lib/words4";
+import { recordResult, Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
-import { Result } from "./ui";
+import { GameTools, Result } from "./ui";
 
-const LIVES = 6;
+// Short words are brutal in hangman — fewer letters means fewer freebies —
+// so Hard pairs 4-letter answers with a shorter rope.
+const LIVES_BY: Record<Diff, number> = { easy: 8, medium: 6, hard: 5 };
 const KEY_ROWS = ["qwertyuiop", "asdfghjkl", "zxcvbnm"];
+const HELP =
+  "Guess the hidden word one letter at a time; every miss costs a life. " +
+  "Easy gives eight lives, Medium six. Hard hides a 4-letter word with " +
+  "five lives — short words leave nowhere to hide.";
 
 interface SavedState {
   guessed: string[]; // uppercase letters tried
@@ -15,16 +22,18 @@ interface SavedState {
   won: boolean;
 }
 
-function answerFor(seed: string): string {
-  return ANSWERS[Math.floor(makeRng(`hangman-${seed}`)() * ANSWERS.length)].toUpperCase();
+function answerFor(seed: string, diff: Diff): string {
+  const pool = diff === "hard" ? COMMON4 : ANSWERS;
+  return pool[Math.floor(makeRng(`hangman-${seed}`)() * pool.length)].toUpperCase();
 }
 
 export default function Hangman({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, newPuzzle, playMs } = useGame<SavedState>(
+  const { seed, diff, saved, commit, newPuzzle, playMs } = useGame<SavedState>(
     "hangman",
     () => ({ guessed: [], done: false, won: false })
   );
-  const answer = answerFor(seed);
+  const LIVES = LIVES_BY[diff];
+  const answer = answerFor(seed, diff);
 
   const wrong = saved.guessed.filter((g) => !answer.includes(g));
   const livesLeft = LIVES - wrong.length;
@@ -50,9 +59,10 @@ export default function Hangman({ onExit }: { onExit: () => void }) {
     <div className="game game-hangman">
       <GameHeader title="Hangman" onExit={onExit} onNew={() => newPuzzle()} />
       <p className="game-hint">
-        Guess the 5-letter word one letter at a time — {LIVES} misses and it's
-        gone.
+        Guess the {answer.length}-letter word one letter at a time — {LIVES}{" "}
+        misses and it's gone.
       </p>
+      <GameTools diff={diff} onDiff={newPuzzle} help={HELP} />
 
       <div className="hangman-lives" aria-label={`${livesLeft} lives left`}>
         {Array.from({ length: LIVES }).map((_, i) => (

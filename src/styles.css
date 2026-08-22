@@ -928,17 +928,17 @@ button { font-family: inherit; color: inherit; }
   position: absolute;
   inset: 6px;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(var(--gn, 4), 1fr);
   gap: 6px;
 }
 .t2048-slot { border-radius: 8px; background: var(--card); opacity: 0.55; }
 
 .t2048-tile {
   position: absolute;
-  width: calc((100% - 12px) / 4 - 4.5px);
-  height: calc((100% - 12px) / 4 - 4.5px);
-  left: calc(6px + var(--c) * ((100% - 12px) / 4 + 1.5px));
-  top: calc(6px + var(--r) * ((100% - 12px) / 4 + 1.5px));
+  width: calc((100% - 12px - (var(--gn, 4) - 1) * 6px) / var(--gn, 4));
+  height: calc((100% - 12px - (var(--gn, 4) - 1) * 6px) / var(--gn, 4));
+  left: calc(6px + var(--c) * ((100% - 12px - (var(--gn, 4) - 1) * 6px) / var(--gn, 4) + 6px));
+  top: calc(6px + var(--r) * ((100% - 12px - (var(--gn, 4) - 1) * 6px) / var(--gn, 4) + 6px));
   transition: left 110ms ease, top 110ms ease;
   border-radius: 8px;
   background: var(--card);
@@ -1762,17 +1762,21 @@ button { font-family: inherit; color: inherit; }
 
 /* ---------- Peg Solitaire ---------- */
 
-.pegs-grid {
-  display: grid;
-  grid-template-columns: repeat(var(--n), 1fr);
+.pegs-rows {
+  --hole: calc((min(100vw - 28px, 380px) - (var(--n) - 1) * 6px) / var(--n));
+  display: flex;
+  flex-direction: column;
   gap: 6px;
+  align-items: center;
   align-self: center;
   width: min(100%, 380px);
-  aspect-ratio: 1;
   margin: auto 0;
 }
+.pegs-row { display: flex; gap: 6px; justify-content: center; }
 
 .peg-hole {
+  width: var(--hole);
+  height: var(--hole);
   border: 2px solid var(--grid-line);
   border-radius: 50%;
   background: transparent;

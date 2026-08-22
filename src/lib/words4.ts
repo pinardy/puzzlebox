@@ -154,3 +154,9 @@ export const WORDS4: readonly string[] = [
   "yelp","yoga","yoke","yolk","your","zeal","zero","zest","zinc","zone",
   "zoom"
 ];
+
+/** The list minus plain plurals — the answer-quality subset used when a
+ *  game needs to PICK a 4-letter word rather than accept one. */
+export const COMMON4: readonly string[] = WORDS4.filter(
+  (w) => !w.endsWith("s") || w.endsWith("ss")
+);
