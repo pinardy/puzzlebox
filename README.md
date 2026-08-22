@@ -1,6 +1,6 @@
 # PuzzleBox
 
-A puzzle PWA — sixty-six games, endless boards: word guess, sudoku,
+A puzzle PWA — eighty games, endless boards: word guess, sudoku,
 picross, word search, lights out, minesweeper, queens, suns & moons,
 zip, 2048, pairs, fifteen, hangman, futoshiki, skyscrapers, hitori,
 nurikabe, bridges, kenken, kropki, star battle, flow, tents & trees,
@@ -10,7 +10,10 @@ dominoes, thermometers, suguru, sokoban, peg solitaire, yahtzee,
 tripeaks, aquarium, galaxies, pipes, ball sort, samegame, math 24,
 killer sudoku, equation guess, fill-a-pix, fillomino, yin-yang,
 unblock, pyramid, golf, farkle, cryptogram, word ladder, a mini
-crossword, yukon, scorpion, sujiko, untangle, str8ts, and mahjong. Pick any game, play as many rounds as
+crossword, yukon, scorpion, sujiko, untangle, str8ts, mahjong, numbrix,
+jigsaw sudoku, sandwich, kakurasu, knight's tour, norinori, heyawake,
+flood it, dots & boxes, forty thieves, baker's dozen, accordion, aces up,
+and canfield. Pick any game, play as many rounds as
 you like. Fully offline: puzzles are generated **on-device** from
 random seeds, so nothing is ever fetched at runtime.
 
@@ -84,6 +87,20 @@ random seeds, so nothing is ever fetched at runtime.
 | **Untangle** | Drag dots until no lines cross | Greedy planar graph, circle-scrambled |
 | **Str8ts** | White runs are consecutive sets | 6×6/7×7, symmetric blacks, DFS-filled |
 | **Mahjong** | Match free pairs, clear the layers | Reverse-dealt — a winning order always exists |
+| **Numbrix** | Chain 1…N through every square | Snake path from the Zip generator, numbered |
+| **Jigsaw Sudoku** | Sudoku with irregular regions | Box-swap partition, unique solution enforced |
+| **Sandwich** | Sudoku plus between-the-1-and-9 sums | Clues read off a solved grid |
+| **Kakurasu** | Shade cells so weighted lines hit their totals | 5×5–7×7, clues from a random shading |
+| **Knight's Tour** | Visit every square by knight move | Start squares verified tourable; hint completes |
+| **Norinori** | Two shaded per region, all in dominoes | Domino-seeded regions — solvable by construction |
+| **Heyawake** | Numbered rooms, no touching shaded cells | Rectangle rooms + pruned shading search |
+| **Flood It** | Swallow the board from the corner | Budget set from a greedy solve, so always winnable |
+| **Dots & Boxes** | Close boxes against an opponent | Chain-aware AI; difficulty picks its strength |
+| **Forty Thieves** | Two packs, build down in suit | Seeded deals, one-card moves, no redeal |
+| **Baker's Dozen** | Thirteen columns, no stock | Kings buried at deal; empty columns stay empty |
+| **Accordion** | Squeeze 52 piles into one | Move one or three places left on suit or rank |
+| **Aces Up** | Discard low cards, leave four aces | Seeded deals, four piles |
+| **Canfield** | Wrapping foundations from a random base | 13-card reserve, draw-three with redeals |
 
 The current puzzle of each game (its seed, difficulty, progress, and play
 time) persists in `localStorage`, so leaving and returning resumes where
@@ -96,8 +113,8 @@ counts accumulate per game.
   `useGame` hook that also tracks active play time.
 - **Hints** (💡) in the solution-backed games — Sudoku, Killer Sudoku,
   Picross, Fill-a-Pix, Fillomino, Futoshiki, Skyscrapers, KenKen,
-  Kropki, Kakuro, Suguru, Cryptogram, the Mini Crossword, Sujiko, and
-  Str8ts — reveal
+  Kropki, Kakuro, Suguru, Cryptogram, the Mini Crossword, Sujiko,
+  Str8ts, Numbrix, Jigsaw Sudoku, Sandwich, and Knight's Tour — reveal
   one cell; hinted solves still count, but never set a best time or
   extend a streak.
 - **Streaks & best times**: per-game win streaks, longest streak, a
@@ -107,11 +124,11 @@ counts accumulate per game.
   hash (`#/game/sudoku`, `#/cat/logic`), so Android/browser back
   returns to the hub instead of closing the app, and any game can be
   bookmarked.
-- **Search** across all 66 games from the hub, by name or tagline.
+- **Search** across all 80 games from the hub, by name or tagline.
 - **Sound effects** — tiny WebAudio jingles on win/lose/hint, no audio
   assets so the app stays fully offline; mute toggle in the hub header,
   remembered across visits.
-- **Difficulty picker** (Easy / Medium / Hard) on 62 of the 66 games —
+- **Difficulty picker** (Easy / Medium / Hard) on 68 of the 80 games —
   board sizes, clue counts, and fleets scale with it.
 - **Win banner** with time, lifetime stats, haptic feedback, and
   New puzzle / All games actions.
