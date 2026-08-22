@@ -5,7 +5,7 @@ import { COMMON4 } from "../lib/words4";
 import { recordResult, Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
-import { GameTools, Result } from "./ui";
+import { GameTools, Result, Toast } from "./ui";
 
 const ROWS = 6;
 const LEN: Record<Diff, number> = { easy: 4, medium: 5, hard: 5 };
@@ -216,7 +216,7 @@ export default function Wordle({ onExit }: { onExit: () => void }) {
         )}
       </div>
 
-      {toast && <div className="toast">{toast}</div>}
+      <Toast message={toast} />
 
       <div className="keyboard">
         {KEY_ROWS.map((row, i) => (

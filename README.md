@@ -115,10 +115,19 @@ counts accumulate per game.
   board sizes, clue counts, and fleets scale with it.
 - **Win banner** with time, lifetime stats, haptic feedback, and
   New puzzle / All games actions.
+- **New puzzle asks twice** once a board has progress, so one stray tap
+  can't bin an hour of Killer Sudoku.
+- **Rules open themselves** the first time you visit each game, then
+  stay out of the way.
+- **The hub remembers where you were** — scroll position per view, plus
+  a ring around the game you just came back from.
 - **Drag-to-paint** in Picross, Nurikabe, Tents, Battleships, and Hitori
   (a whole stroke is one undo step).
 - **Keyboard play** on desktop: digits, arrows, and Backspace in all six
-  number-grid games; arrows/letters in 2048, Word Guess, Hangman.
+  number-grid games; arrows/letters in 2048, Word Guess, Hangman. Shell
+  shortcuts too — `Esc` back to the hub, `Ctrl`/`Cmd`+`Z` to undo, and
+  bare `u`/`n` for undo and new board in games that don't read letters
+  as guesses.
 - **Minesweeper**: long-press (or right-click) to flag, chording on
   satisfied numbers.
 - **2048**: animated tile slides, merges, and spawns via identity-keyed

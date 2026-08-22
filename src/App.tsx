@@ -1,4 +1,12 @@
-import { lazy, Suspense, useEffect, useRef, useState, type CSSProperties } from "react";
+import {
+  lazy,
+  Suspense,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties
+} from "react";
 
 // Each game is its own chunk: the hub paints without parsing any game
 // code, and the service worker still precaches every chunk for offline.
@@ -69,6 +77,7 @@ const Untangle = lazy(() => import("./games/Untangle"));
 const Str8ts = lazy(() => import("./games/Str8ts"));
 const Mahjong = lazy(() => import("./games/Mahjong"));
 import { GameId, loadStats, loadSlot } from "./lib/storage";
+import { GameShell } from "./games/GameShell";
 import { soundEnabled, setSoundEnabled } from "./lib/sound";
 
 type View = "hub" | GameId;
@@ -217,12 +226,20 @@ const STATE_LABEL: Record<Progress, string> = {
   done: "Play again →"
 };
 
-function Card({ card, onOpen }: { card: CardInfo; onOpen: () => void }) {
+function Card({
+  card,
+  onOpen,
+  recent
+}: {
+  card: CardInfo;
+  onOpen: () => void;
+  recent?: boolean;
+}) {
   const stats = loadStats(card.id);
   const progress = progressOf(card.id);
   return (
     <button
-      className={`card is-${progress}`}
+      className={`card is-${progress}${recent ? " is-recent" : ""}`}
       style={{ "--accent": card.accent } as CSSProperties}
       onClick={onOpen}
     >
@@ -248,10 +265,23 @@ export default function App() {
   const [online, setOnline] = useState(navigator.onLine);
   const [query, setQuery] = useState("");
   const [sound, setSound] = useState(soundEnabled);
+  const [lastGame, setLastGame] = useState<GameId | null>(null);
   const wide = useIsWide();
   // True once we've pushed an in-app hash, so "back" can pop real history;
   // on a deep link there's nothing behind us, so we push the hub instead.
   const navigated = useRef(false);
+  // Scroll offset per route: sixty-six cards is a long way to re-scroll
+  // after every game, so returning puts you back where you were.
+  const scrollMem = useRef(new Map<string, number>());
+  const routeKey = `${view}:${openCat ?? ""}`;
+
+  useEffect(() => {
+    if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+  }, []);
+
+  useLayoutEffect(() => {
+    window.scrollTo(0, scrollMem.current.get(routeKey) ?? 0);
+  }, [routeKey]);
 
   useEffect(() => {
     const on = () => setOnline(true);
@@ -268,10 +298,12 @@ export default function App() {
   }, []);
 
   const navigate = (hash: string) => {
+    scrollMem.current.set(routeKey, window.scrollY);
     navigated.current = true;
     window.location.hash = hash;
   };
   const exit = () => {
+    scrollMem.current.set(routeKey, window.scrollY);
     if (navigated.current) window.history.back();
     else window.location.hash = "/";
   };
@@ -304,21 +336,31 @@ export default function App() {
       sujiko: Sujiko, untangle: Untangle, str8ts: Str8ts, mahjong: Mahjong
     }[view];
     return (
-      <Suspense fallback={<div className="game" />}>
-        <Game onExit={exit} />
-      </Suspense>
+      <GameShell>
+        <Suspense fallback={<div className="game" />}>
+          <Game onExit={exit} />
+        </Suspense>
+      </GameShell>
     );
   }
 
   const inProgress = CARDS.filter((c) => progressOf(c.id) === "started");
-  const open = (id: GameId) => navigate(`/game/${id}`);
+  const open = (id: GameId) => {
+    setLastGame(id);
+    navigate(`/game/${id}`);
+  };
 
   const jumpBackIn = inProgress.length > 0 && (
     <section className="cards-section">
       <h2>Jump back in</h2>
       <div className="cards">
         {inProgress.map((card) => (
-          <Card key={card.id} card={card} onOpen={() => open(card.id)} />
+          <Card
+              key={card.id}
+              card={card}
+              recent={card.id === lastGame}
+              onOpen={() => open(card.id)}
+            />
         ))}
       </div>
     </section>
@@ -327,7 +369,12 @@ export default function App() {
   const gamesOf = (cat: Category) => (
     <div className="cards">
       {CARDS.filter((c) => c.cat === cat).map((card) => (
-        <Card key={card.id} card={card} onOpen={() => open(card.id)} />
+        <Card
+              key={card.id}
+              card={card}
+              recent={card.id === lastGame}
+              onOpen={() => open(card.id)}
+            />
       ))}
     </div>
   );
@@ -406,7 +453,12 @@ export default function App() {
           </h2>
           <div className="cards">
             {matches.map((card) => (
-              <Card key={card.id} card={card} onOpen={() => open(card.id)} />
+              <Card
+              key={card.id}
+              card={card}
+              recent={card.id === lastGame}
+              onOpen={() => open(card.id)}
+            />
             ))}
           </div>
         </section>
