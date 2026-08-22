@@ -27,10 +27,10 @@ random seeds, so nothing is ever fetched at runtime.
 | **Queens** | One crown per row/column/colour, none touching | 8×8; unique solution |
 | **Suns & Moons** | Balance two symbols, no three in a row | 6×6; unique fill |
 | **Zip** | One line through every square, numbers in order | 6×6; solvable by construction |
-| **2048** | Swipe to merge equal tiles, reach 2048 | 4×4; deterministic spawns per seed |
+| **2048** | Swipe to merge equal tiles, reach the target | 5×5/4×4/3×3 by difficulty; deterministic spawns |
 | **Pairs** | Flip two cards, find every match | 4×4, 8 symbol pairs |
 | **Fifteen** | Slide tiles into 1–15 order | 4×4; scrambled by legal moves, always solvable |
-| **Hangman** | Guess the word letter by letter | 6 lives, 5-letter answers |
+| **Hangman** | Guess the word letter by letter | 8/6/5 lives; short brutal words on Hard |
 | **Futoshiki** | Latin square with inequality arrows | 5×5, 10 arrows, 3 givens |
 | **Skyscrapers** | Latin square with visibility clues | 5×5, all 20 edge clues |
 | **Hitori** | Shade duplicates: no touching, rest connected | 6×6; built from a Latin square |
@@ -50,14 +50,14 @@ random seeds, so nothing is ever fetched at runtime.
 | **Solitaire** | Klondike, tap-to-move | Draw-1 or draw-3; three passes on Hard |
 | **FreeCell** | All face-up, spare cells | 4/3/2 free cells by difficulty, supermove sizing |
 | **Spider** | Clear eight same-suit K→A runs | 1/2/4 suits by difficulty |
-| **Anagram** | Unscramble a five-letter word | Seeded pick, letter-lock hints |
+| **Anagram** | Unscramble the word | 4- or 5-letter by difficulty; 3 attempts on Hard |
 | **Masyu** | One loop obeying black/white pearls | Loop from a grown blob boundary |
 | **Light Up** | Bulbs light all cells, never each other | Bulbs placed first; numbered walls |
 | **Dominoes** | Re-draw the hidden domino set | Backtracking tiling, full pair set |
 | **Thermometers** | Fill from the bulb to match counts | Hamiltonian path cut into thermos |
 | **Suguru** | 1..N per region, no touching twins | Region growth + backtracking fill |
 | **Sokoban** | Push crates onto goals | Reverse-play generation, always solvable |
-| **Peg Solitaire** | Jump pegs down to one | Classic English cross board |
+| **Peg Solitaire** | Jump pegs down to one | Triangle-15, English cross, or centre-finish |
 | **Yahtzee** | 13 rounds of dice, chase a high score | Seeded deterministic dice stream |
 | **TriPeaks** | Clear the peaks one rank at a time | A–K wrap on Easy, shorter deck on Hard |
 | **Aquarium** | Flood tanks; water obeys gravity | Region growth + level choice |
@@ -111,7 +111,7 @@ counts accumulate per game.
 - **Sound effects** — tiny WebAudio jingles on win/lose/hint, no audio
   assets so the app stays fully offline; mute toggle in the hub header,
   remembered across visits.
-- **Difficulty picker** (Easy / Medium / Hard) on 59 of the 66 games —
+- **Difficulty picker** (Easy / Medium / Hard) on 62 of the 66 games —
   board sizes, clue counts, and fleets scale with it.
 - **Win banner** with time, lifetime stats, haptic feedback, and
   New puzzle / All games actions.

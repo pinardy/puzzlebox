@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { makeRng } from "../lib/rng";
 import { ANSWERS, LetterState, scoreGuess } from "../lib/words";
-import { WORDS4 } from "../lib/words4";
+import { COMMON4 } from "../lib/words4";
 import { recordResult, Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
@@ -18,7 +18,7 @@ const HELP =
   "try.";
 
 // 4-letter answers reuse the word-ladder list, minus plain plurals.
-const ANSWERS4 = WORDS4.filter((w) => !w.endsWith("s") || w.endsWith("ss"));
+const ANSWERS4 = COMMON4;
 
 interface SavedState {
   guesses: string[];

@@ -1,15 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, type CSSProperties } from "react";
 import { makeRng } from "../lib/rng";
-import { recordResult } from "../lib/storage";
+import { recordResult, Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
 
-const N = 4;
-const TARGET = 2048;
+const SIZE: Record<Diff, number> = { easy: 5, medium: 4, hard: 3 };
+// A 3×3 board can't realistically reach 2048 — 256 is the honest summit.
+const TARGET_BY: Record<Diff, number> = { easy: 2048, medium: 2048, hard: 256 };
 const HELP =
   "Swipe (or use the arrow keys) to slide every tile. Two equal tiles that " +
-  "collide merge into their sum — build up to 2048 before the board locks.";
+  "collide merge into their sum — reach the target before the board locks. " +
+  "Easy plays a roomy 5×5; Hard squeezes onto 3×3, chasing 256.";
 
 interface Tile {
   id: number;
@@ -31,34 +33,34 @@ interface SavedState {
 
 /** Deterministic spawn: the k-th tile of a given seed always lands the same
  *  way, so a reloaded game replays identically. */
-function spawnTile(tiles: Tile[], nextId: number, seed: string, k: number): { tiles: Tile[]; nextId: number } {
+function spawnTile(tiles: Tile[], nextId: number, seed: string, k: number, n: number): { tiles: Tile[]; nextId: number } {
   const rng = makeRng(`2048-${seed}-${k}`);
-  const occupied = new Set(tiles.map((t) => t.r * N + t.c));
-  const empty = [...Array(N * N).keys()].filter((i) => !occupied.has(i));
+  const occupied = new Set(tiles.map((t) => t.r * n + t.c));
+  const empty = [...Array(n * n).keys()].filter((i) => !occupied.has(i));
   if (!empty.length) return { tiles, nextId };
   const cell = empty[Math.floor(rng() * empty.length)];
   const v = rng() < 0.9 ? 2 : 4;
   return {
-    tiles: [...tiles, { id: nextId, v, r: Math.floor(cell / N), c: cell % N, spawned: true }],
+    tiles: [...tiles, { id: nextId, v, r: Math.floor(cell / n), c: cell % n, spawned: true }],
     nextId: nextId + 1
   };
 }
 
-function fresh(seed: string): SavedState {
-  let s = spawnTile([], 1, seed, 0);
-  s = spawnTile(s.tiles, s.nextId, seed, 1);
+function fresh(seed: string, n: number): SavedState {
+  let s = spawnTile([], 1, seed, 0, n);
+  s = spawnTile(s.tiles, s.nextId, seed, 1, n);
   return { tiles: s.tiles, nextId: s.nextId, score: 0, spawns: 2, done: false, won: false };
 }
 
 type Dir = "left" | "right" | "up" | "down";
 
-function moveTiles(tiles: Tile[], dir: Dir): { tiles: Tile[]; gained: number; changed: boolean } {
+function moveTiles(tiles: Tile[], dir: Dir, n: number): { tiles: Tile[]; gained: number; changed: boolean } {
   const horiz = dir === "left" || dir === "right";
   const rev = dir === "right" || dir === "down";
   let gained = 0;
   let changed = false;
   const out: Tile[] = [];
-  for (let line = 0; line < N; line++) {
+  for (let line = 0; line < n; line++) {
     const inLine = tiles
       .filter((t) => (horiz ? t.r : t.c) === line)
       .sort((a, b) => (horiz ? a.c - b.c : a.r - b.r));
@@ -76,7 +78,7 @@ function moveTiles(tiles: Tile[], dir: Dir): { tiles: Tile[]; gained: number; ch
       }
     }
     placed.forEach((t, k) => {
-      const pos = rev ? N - 1 - k : k;
+      const pos = rev ? n - 1 - k : k;
       const nr = horiz ? line : pos;
       const nc = horiz ? pos : line;
       if (nr !== t.r || nc !== t.c) changed = true;
@@ -88,39 +90,41 @@ function moveTiles(tiles: Tile[], dir: Dir): { tiles: Tile[]; gained: number; ch
   return { tiles: out, gained, changed };
 }
 
-function anyMoves(tiles: Tile[]): boolean {
-  if (tiles.length < N * N) return true;
-  const at = new Map(tiles.map((t) => [t.r * N + t.c, t.v]));
+function anyMoves(tiles: Tile[], n: number): boolean {
+  if (tiles.length < n * n) return true;
+  const at = new Map(tiles.map((t) => [t.r * n + t.c, t.v]));
   for (const t of tiles) {
-    if (at.get(t.r * N + t.c + 1) === t.v && t.c < N - 1) return true;
-    if (at.get((t.r + 1) * N + t.c) === t.v && t.r < N - 1) return true;
+    if (at.get(t.r * n + t.c + 1) === t.v && t.c < n - 1) return true;
+    if (at.get((t.r + 1) * n + t.c) === t.v && t.r < n - 1) return true;
   }
   return false;
 }
 
 /** Convert a save from before tiles had identity (plain cells array). */
-function migrate(state: SavedState & { cells?: number[] }): SavedState {
+function migrate(state: SavedState & { cells?: number[] }, n: number): SavedState {
   if (state.tiles) return state;
   const cells = state.cells ?? [];
   const tiles: Tile[] = [];
   cells.forEach((v, i) => {
-    if (v) tiles.push({ id: tiles.length + 1, v, r: Math.floor(i / N), c: i % N });
+    if (v) tiles.push({ id: tiles.length + 1, v, r: Math.floor(i / n), c: i % n });
   });
   return { ...state, tiles, nextId: tiles.length + 1 };
 }
 
 export default function Game2048({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("2048", (s) => fresh(s));
-  const state = useMemo(() => migrate(saved), [saved]);
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
+    useGame<SavedState>("2048", (s, d) => fresh(s, SIZE[d]));
+  const N = SIZE[diff];
+  const TARGET = TARGET_BY[diff];
+  const state = useMemo(() => migrate(saved, N), [saved, N]);
   const touch = useRef<{ x: number; y: number } | null>(null);
 
   const move = useCallback(
     (dir: Dir) => {
       if (state.done) return;
-      const res = moveTiles(state.tiles, dir);
+      const res = moveTiles(state.tiles, dir, N);
       if (!res.changed) return;
-      const sp = spawnTile(res.tiles, state.nextId, seed, state.spawns);
+      const sp = spawnTile(res.tiles, state.nextId, seed, state.spawns, N);
       const next: SavedState = {
         tiles: sp.tiles,
         nextId: sp.nextId,
@@ -133,14 +137,14 @@ export default function Game2048({ onExit }: { onExit: () => void }) {
         next.done = true;
         next.won = true;
         recordResult("2048", true);
-      } else if (!anyMoves(next.tiles)) {
+      } else if (!anyMoves(next.tiles, N)) {
         next.done = true;
         recordResult("2048", false);
       }
       commit(next);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [state, seed]
+    [state, seed, N, TARGET]
   );
 
   useEffect(() => {
@@ -163,7 +167,13 @@ export default function Game2048({ onExit }: { onExit: () => void }) {
       <p className="game-hint">
         Swipe or use arrow keys. Equal tiles merge — reach {TARGET}.
       </p>
-      <GameTools help={HELP} onUndo={undo} canUndo={canUndo && !state.done} />
+      <GameTools
+        diff={diff}
+        onDiff={newPuzzle}
+        help={HELP}
+        onUndo={undo}
+        canUndo={canUndo && !state.done}
+      />
 
       <div className="lights-meta">
         <span>Score: {state.score}</span>
@@ -171,6 +181,7 @@ export default function Game2048({ onExit }: { onExit: () => void }) {
 
       <div
         className="t2048-board"
+        style={{ "--gn": N } as CSSProperties}
         role="grid"
         aria-label="2048 board"
         onPointerDown={(e) => {
@@ -224,7 +235,7 @@ export default function Game2048({ onExit }: { onExit: () => void }) {
           key={seed}
           game="2048"
           won={state.won}
-          message={state.won ? "2048 — you made it!" : `No moves left — score ${state.score}`}
+          message={state.won ? `${TARGET} — you made it!` : `No moves left — score ${state.score}`}
           playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}

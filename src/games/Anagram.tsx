@@ -1,20 +1,24 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { makeRng, shuffled } from "../lib/rng";
 import { ANSWERS } from "../lib/words";
-import { recordResult } from "../lib/storage";
+import { COMMON4 } from "../lib/words4";
+import { recordResult, Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
 
 const HELP =
-  "Rearrange the five scrambled letters into a real word. Tap tiles to " +
-  "build your answer, tap a slot to take a letter back. A hint locks the " +
-  "next correct letter into place — but counts against you.";
+  "Rearrange the scrambled letters into a real word. Tap tiles to build " +
+  "your answer, tap a slot to take a letter back. A hint locks the next " +
+  "correct letter into place — but counts against you. Easy scrambles " +
+  "4-letter words; Hard allows only three wrong attempts.";
+const MAX_TRIES_HARD = 3;
 
 interface SavedState {
   tries: number;
   hints: number;
   done: boolean;
+  won?: boolean;
 }
 
 interface Puzzle {
@@ -22,9 +26,10 @@ interface Puzzle {
   scrambled: string[];
 }
 
-function generateAnagram(seed: string): Puzzle {
+function generateAnagram(seed: string, diff: Diff): Puzzle {
   const rng = makeRng(`anagram-${seed}`);
-  const word = ANSWERS[Math.floor(rng() * ANSWERS.length)].toUpperCase();
+  const pool = diff === "easy" ? COMMON4 : ANSWERS;
+  const word = pool[Math.floor(rng() * pool.length)].toUpperCase();
   let scrambled = shuffled([...word], rng);
   // Never show the solved arrangement.
   while (scrambled.join("") === word) scrambled = shuffled(scrambled, rng);
@@ -32,15 +37,18 @@ function generateAnagram(seed: string): Puzzle {
 }
 
 export default function Anagram({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, newPuzzle, playMs } = useGame<SavedState>(
+  const { seed, diff, saved, commit, newPuzzle, playMs } = useGame<SavedState>(
     "anagram",
-    () => ({ tries: 0, hints: 0, done: false })
+    () => ({ tries: 0, hints: 0, done: false, won: false })
   );
-  const { word, scrambled } = useMemo(() => generateAnagram(seed), [seed]);
+  const { word, scrambled } = useMemo(() => generateAnagram(seed, diff), [seed, diff]);
+  const L = word.length;
+  const won = saved.won ?? saved.done; // pre-mode saves couldn't lose
 
   // Which scrambled-tile index fills each slot (null = empty).
-  const [slots, setSlots] = useState<(number | null)[]>(Array(5).fill(null));
+  const [slots, setSlots] = useState<(number | null)[]>(Array(L).fill(null));
   const [shake, setShake] = useState(false);
+  useEffect(() => setSlots(Array(word.length).fill(null)), [word]);
 
   function tapTile(t: number) {
     if (saved.done || slots.includes(t)) return;
@@ -63,8 +71,11 @@ export default function Anagram({ onExit }: { onExit: () => void }) {
     if (next.some((t) => t === null)) return;
     const attempt = next.map((t) => scrambled[t!]).join("");
     if (attempt === word) {
-      commit({ ...saved, tries: saved.tries + 1, done: true });
+      commit({ ...saved, tries: saved.tries + 1, done: true, won: true });
       recordResult("anagram", true);
+    } else if (diff === "hard" && saved.tries + 1 >= MAX_TRIES_HARD) {
+      commit({ ...saved, tries: saved.tries + 1, done: true, won: false });
+      recordResult("anagram", false);
     } else {
       commit({ ...saved, tries: saved.tries + 1 });
       setShake(true);
@@ -76,7 +87,7 @@ export default function Anagram({ onExit }: { onExit: () => void }) {
   function hint() {
     if (saved.done) return;
     const next = slots.slice();
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < L; i++) {
       const want = word[i];
       if (next[i] !== null && scrambled[next[i]!] === want) continue;
       // Free a tile showing the wanted letter and place it here.
@@ -99,16 +110,21 @@ export default function Anagram({ onExit }: { onExit: () => void }) {
     }
   }
 
-  function startNew() {
-    newPuzzle();
-    setSlots(Array(5).fill(null));
+  function startNew(d?: Diff) {
+    newPuzzle(d);
   }
 
   return (
     <div className="game game-anagram">
-      <GameHeader title="Anagram" onExit={onExit} onNew={startNew} />
-      <p className="game-hint">Unscramble the letters into a word.</p>
-      <GameTools help={HELP} />
+      <GameHeader title="Anagram" onExit={onExit} onNew={() => startNew()} />
+      <p className="game-hint">
+        Unscramble the letters into a word.
+        {diff === "hard" && !saved.done &&
+          ` ${MAX_TRIES_HARD - saved.tries} attempt${
+            MAX_TRIES_HARD - saved.tries === 1 ? "" : "s"
+          } left.`}
+      </p>
+      <GameTools diff={diff} onDiff={startNew} help={HELP} />
 
       <div className={`word-grid anagram-slots${shake ? " shake" : ""}`}>
         <div className="word-row">
@@ -116,7 +132,7 @@ export default function Anagram({ onExit }: { onExit: () => void }) {
             <button
               key={i}
               className={`word-cell${t !== null ? " filled" : ""}${
-                saved.done ? " is-correct" : ""
+                saved.done && won ? " is-correct" : ""
               }`}
               onClick={() => tapSlot(i)}
             >
@@ -153,11 +169,13 @@ export default function Anagram({ onExit }: { onExit: () => void }) {
         <Result
           key={seed}
           game="anagram"
-          won
+          won={won}
           message={
-            saved.hints
-              ? `${word} — with ${saved.hints} hint${saved.hints > 1 ? "s" : ""}`
-              : `${word} — in ${saved.tries} ${saved.tries === 1 ? "try" : "tries"}!`
+            !won
+              ? `Out of attempts — it was ${word}`
+              : saved.hints
+                ? `${word} — with ${saved.hints} hint${saved.hints > 1 ? "s" : ""}`
+                : `${word} — in ${saved.tries} ${saved.tries === 1 ? "try" : "tries"}!`
           }
           playMs={playMs}
           onNew={startNew}
