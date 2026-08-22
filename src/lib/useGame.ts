@@ -1,6 +1,7 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { GameId, Diff, load, save, loadSlot, saveSlot } from "./storage";
 import { newSeed } from "./rng";
+import { useGameShell } from "./shell";
 
 /** Shared per-game plumbing: seed + difficulty management, persisted state
  *  with an undo stack, an active-play-time counter (gaps over a minute
@@ -17,6 +18,14 @@ export function useGame<T>(game: GameId, fresh: (seed: string, diff: Diff) => T)
   const [playMs, setPlayMs] = useState(slot?.playMs ?? 0);
   const [hints, setHints] = useState(slot?.hints ?? 0);
   const lastAction = useRef(Date.now());
+
+  // Tell the shared header/toolbar what's running. Play time is restored
+  // from the slot, so a resumed board counts as progress too.
+  const { publish } = useGameShell();
+  useEffect(() => {
+    const done = (saved as { done?: boolean }).done === true;
+    publish({ game, dirty: playMs > 0 && !done });
+  }, [publish, game, playMs, saved]);
 
   function commit(next: T, opts?: { undoable?: boolean; hint?: boolean }) {
     const now = Date.now();

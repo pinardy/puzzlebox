@@ -4,7 +4,7 @@ import { WORDS4 } from "../lib/words4";
 import { recordResult, Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
-import { GameTools, Result } from "./ui";
+import { GameTools, Result, Toast } from "./ui";
 
 const PAR: Record<Diff, number> = { easy: 4, medium: 5, hard: 6 };
 const KEY_ROWS = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"];
@@ -176,7 +176,7 @@ export default function Ladder({ onExit }: { onExit: () => void }) {
         })}
       </div>
 
-      {toast && <div className="toast">{toast}</div>}
+      <Toast message={toast} />
       {slot === null && !saved.done && (
         <p className="game-hint">Tap the letter you want to change.</p>
       )}

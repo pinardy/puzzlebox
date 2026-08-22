@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { GameId, Diff, loadStats, loadSlot } from "../lib/storage";
+import { GameId, Diff, loadStats, loadSlot, load, save } from "../lib/storage";
+import { TEXT_GAMES, useGameShell } from "../lib/shell";
 import { playWin, playLose, playHint } from "../lib/sound";
 
 const DIFFS: Diff[] = ["easy", "medium", "hard"];
@@ -22,7 +23,39 @@ export function GameTools({
   canUndo?: boolean;
   onHint?: () => void;
 }) {
+  const { info } = useGameShell();
   const [showHelp, setShowHelp] = useState(false);
+
+  // Sixty-six games is a lot of unfamiliar boards: open the rules the
+  // first time someone lands on each one, then never again.
+  const seenKey = info.game ? `pref:seenrules:${info.game}` : null;
+  useEffect(() => {
+    if (!help || !seenKey || load(seenKey, false)) return;
+    setShowHelp(true);
+    save(seenKey, true);
+  }, [help, seenKey]);
+
+  useEffect(() => {
+    if (!onUndo) return;
+    const h = (e: KeyboardEvent) => {
+      const mod = e.metaKey || e.ctrlKey;
+      if (mod && e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        if (canUndo) onUndo();
+        return;
+      }
+      if (mod || e.altKey) return;
+      // Word games read bare letters as guesses.
+      if (info.game && TEXT_GAMES.has(info.game)) return;
+      if (e.key === "u") {
+        e.preventDefault();
+        if (canUndo) onUndo();
+      }
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [onUndo, canUndo, info.game]);
+
   return (
     <>
       <div className="game-tools">
@@ -70,6 +103,16 @@ export function GameTools({
       </div>
       {help && showHelp && <p className="game-help">{help}</p>}
     </>
+  );
+}
+
+/** Transient message above the keyboard ("Not in word list"). The live
+ *  region stays mounted so screen readers announce each new message. */
+export function Toast({ message }: { message: string | null }) {
+  return (
+    <div className="toast-live" role="status" aria-live="polite">
+      {message && <div className="toast">{message}</div>}
+    </div>
   );
 }
 
