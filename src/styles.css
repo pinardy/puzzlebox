@@ -150,8 +150,6 @@ button { font-family: inherit; color: inherit; }
   padding: 16px 16px;
   cursor: pointer;
   transition: transform 120ms ease, box-shadow 120ms ease;
-  animation: card-in 340ms ease backwards;
-  animation-delay: calc(var(--i) * 70ms);
 }
 
 .card:active {
