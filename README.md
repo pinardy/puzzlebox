@@ -118,8 +118,9 @@ counts accumulate per game.
   tiles.
 - **Solitaire**: one-tap auto-finish once everything is face-up.
 - **Rules help** (`? Rules`) on every logic puzzle, a categorised hub
-  with a "Jump back in" row, dictionary-checked Word Guess guesses, and
-  full dark-mode support via `prefers-color-scheme`.
+  with a "Jump back in" row, and full dark-mode support via
+  `prefers-color-scheme`. Word Guess accepts any five letters as a
+  guess — a wrong word costs a try instead of being rejected.
 
 ## Run it
 

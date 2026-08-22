@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { makeRng } from "../lib/rng";
-import { ANSWERS, LetterState, isValidGuess, scoreGuess } from "../lib/words";
+import { ANSWERS, LetterState, scoreGuess } from "../lib/words";
 import { recordResult } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
@@ -58,10 +58,8 @@ export default function Wordle({ onExit }: { onExit: () => void }) {
       flash("Not enough letters");
       return;
     }
-    if (!isValidGuess(current)) {
-      flash("Not in word list");
-      return;
-    }
+    // Any five letters count as a guess — it costs a try either way, and
+    // a small bundled word list rejecting real words feels like a bug.
     const guesses = [...saved.guesses, current];
     const won = current === answer;
     const done = won || guesses.length >= ROWS;
