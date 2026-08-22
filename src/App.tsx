@@ -76,7 +76,17 @@ const Sujiko = lazy(() => import("./games/Sujiko"));
 const Untangle = lazy(() => import("./games/Untangle"));
 const Str8ts = lazy(() => import("./games/Str8ts"));
 const Mahjong = lazy(() => import("./games/Mahjong"));
-import { GameId, loadStats, loadSlot } from "./lib/storage";
+import {
+  GameId,
+  load,
+  save,
+  loadStats,
+  loadSlot,
+  loadFavorites,
+  toggleFavorite,
+  loadRecents,
+  pushRecent
+} from "./lib/storage";
 import { GameShell } from "./games/GameShell";
 import { soundEnabled, setSoundEnabled } from "./lib/sound";
 
@@ -229,34 +239,52 @@ const STATE_LABEL: Record<Progress, string> = {
 function Card({
   card,
   onOpen,
-  recent
+  recent,
+  fav,
+  onFav
 }: {
   card: CardInfo;
   onOpen: () => void;
   recent?: boolean;
+  fav?: boolean;
+  onFav?: () => void;
 }) {
   const stats = loadStats(card.id);
   const progress = progressOf(card.id);
   return (
-    <button
-      className={`card is-${progress}${recent ? " is-recent" : ""}`}
-      style={{ "--accent": card.accent } as CSSProperties}
-      onClick={onOpen}
-    >
-      <span className="card-glyph" aria-hidden="true">
-        {card.glyph}
-      </span>
-      <span className="card-body">
-        <span className="card-name">{card.name}</span>
-        <span className="card-tag">{card.tagline}</span>
-      </span>
-      <span className="card-meta">
-        <span className="card-state">{STATE_LABEL[progress]}</span>
-        {stats.won > 0 && (
-          <span className="card-solved">✓ {stats.won} solved</span>
-        )}
-      </span>
-    </button>
+    <div className="card-slot">
+      <button
+        className={`card is-${progress}${recent ? " is-recent" : ""}`}
+        style={{ "--accent": card.accent } as CSSProperties}
+        onClick={onOpen}
+      >
+        <span className="card-glyph" aria-hidden="true">
+          {card.glyph}
+        </span>
+        <span className="card-body">
+          <span className="card-name">{card.name}</span>
+          <span className="card-tag">{card.tagline}</span>
+        </span>
+        <span className="card-meta">
+          <span className="card-state">{STATE_LABEL[progress]}</span>
+          {stats.won > 0 && (
+            <span className="card-solved">✓ {stats.won} solved</span>
+          )}
+        </span>
+      </button>
+      {onFav && (
+        <button
+          className={`fav-btn${fav ? " on" : ""}`}
+          onClick={onFav}
+          aria-pressed={fav}
+          aria-label={
+            fav ? `Unpin ${card.name}` : `Pin ${card.name} to favourites`
+          }
+        >
+          {fav ? "★" : "☆"}
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -265,6 +293,11 @@ export default function App() {
   const [online, setOnline] = useState(navigator.onLine);
   const [query, setQuery] = useState("");
   const [sound, setSound] = useState(soundEnabled);
+  const [colorblind, setColorblind] = useState(() =>
+    load("pref:colorblind", false)
+  );
+  const [favorites, setFavorites] = useState(loadFavorites);
+  const [recents, setRecents] = useState(loadRecents);
   const [lastGame, setLastGame] = useState<GameId | null>(null);
   const wide = useIsWide();
   // True once we've pushed an in-app hash, so "back" can pop real history;
@@ -282,6 +315,20 @@ export default function App() {
   useLayoutEffect(() => {
     window.scrollTo(0, scrollMem.current.get(routeKey) ?? 0);
   }, [routeKey]);
+
+  // The palette swap is a document-level flag so every game picks it up.
+  useLayoutEffect(() => {
+    const root = document.documentElement;
+    if (colorblind) root.setAttribute("data-cb", "1");
+    else root.removeAttribute("data-cb");
+  }, [colorblind]);
+
+  // Catches deep links and back/forward too, not just taps on a card.
+  useEffect(() => {
+    if (view === "hub") return;
+    setLastGame(view);
+    setRecents(pushRecent(view));
+  }, [view]);
 
   useEffect(() => {
     const on = () => setOnline(true);
@@ -310,6 +357,10 @@ export default function App() {
   const toggleSound = () => {
     setSoundEnabled(!sound);
     setSound(!sound);
+  };
+  const toggleColorblind = () => {
+    save("pref:colorblind", !colorblind);
+    setColorblind(!colorblind);
   };
 
   if (view !== "hub") {
@@ -345,37 +396,42 @@ export default function App() {
   }
 
   const inProgress = CARDS.filter((c) => progressOf(c.id) === "started");
-  const open = (id: GameId) => {
-    setLastGame(id);
-    navigate(`/game/${id}`);
-  };
+  const open = (id: GameId) => navigate(`/game/${id}`);
 
-  const jumpBackIn = inProgress.length > 0 && (
-    <section className="cards-section">
-      <h2>Jump back in</h2>
-      <div className="cards">
-        {inProgress.map((card) => (
-          <Card
-              key={card.id}
-              card={card}
-              recent={card.id === lastGame}
-              onOpen={() => open(card.id)}
-            />
-        ))}
-      </div>
-    </section>
+  const renderCard = (card: CardInfo) => (
+    <Card
+      key={card.id}
+      card={card}
+      recent={card.id === lastGame}
+      fav={favorites.includes(card.id)}
+      onFav={() => setFavorites(toggleFavorite(card.id))}
+      onOpen={() => open(card.id)}
+    />
   );
+
+  const cardSection = (title: string, cards: CardInfo[]) =>
+    cards.length > 0 && (
+      <section className="cards-section">
+        <h2>{title}</h2>
+        <div className="cards">{cards.map(renderCard)}</div>
+      </section>
+    );
+
+  const favCards = CARDS.filter((c) => favorites.includes(c.id));
+  // Anything already pinned or mid-game is shown above; don't list it twice.
+  const shownAbove = new Set<GameId>([
+    ...favorites,
+    ...inProgress.map((c) => c.id)
+  ]);
+  const recentCards = recents
+    .filter((id) => !shownAbove.has(id))
+    .map((id) => CARDS.find((c) => c.id === id))
+    .filter((c): c is CardInfo => c !== undefined)
+    .slice(0, 4);
 
   const gamesOf = (cat: Category) => (
     <div className="cards">
-      {CARDS.filter((c) => c.cat === cat).map((card) => (
-        <Card
-              key={card.id}
-              card={card}
-              recent={card.id === lastGame}
-              onOpen={() => open(card.id)}
-            />
-      ))}
+      {CARDS.filter((c) => c.cat === cat).map(renderCard)}
     </div>
   );
 
@@ -419,14 +475,28 @@ export default function App() {
   return (
     <div className="hub">
       <header className="ticket" aria-label="PuzzleBox">
-        <button
-          className="sound-btn"
-          onClick={toggleSound}
-          aria-label={sound ? "Mute sounds" : "Unmute sounds"}
-          aria-pressed={sound}
-        >
-          {sound ? "🔊" : "🔇"}
-        </button>
+        <div className="ticket-tools">
+          <button
+            className={`icon-btn${colorblind ? " on" : ""}`}
+            onClick={toggleColorblind}
+            aria-label={
+              colorblind
+                ? "Switch back to the standard palette"
+                : "Use the colour-blind palette"
+            }
+            aria-pressed={colorblind}
+          >
+            ◑
+          </button>
+          <button
+            className="icon-btn"
+            onClick={toggleSound}
+            aria-label={sound ? "Mute sounds" : "Unmute sounds"}
+            aria-pressed={sound}
+          >
+            {sound ? "🔊" : "🔇"}
+          </button>
+        </div>
         <h1>PuzzleBox</h1>
         <p className="ticket-note">
           {online
@@ -451,20 +521,13 @@ export default function App() {
               ? `${matches.length} ${matches.length === 1 ? "match" : "matches"}`
               : "No matches"}
           </h2>
-          <div className="cards">
-            {matches.map((card) => (
-              <Card
-              key={card.id}
-              card={card}
-              recent={card.id === lastGame}
-              onOpen={() => open(card.id)}
-            />
-            ))}
-          </div>
+          <div className="cards">{matches.map(renderCard)}</div>
         </section>
       ) : (
         <>
-          {jumpBackIn}
+          {cardSection("Favourites", favCards)}
+          {cardSection("Jump back in", inProgress)}
+          {cardSection("Recently played", recentCards)}
 
           {wide ? (
             CATEGORIES.map((cat) => (

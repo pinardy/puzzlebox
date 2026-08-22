@@ -121,6 +121,13 @@ counts accumulate per game.
   stay out of the way.
 - **The hub remembers where you were** — scroll position per view, plus
   a ring around the game you just came back from.
+- **Favourites and recents**: star any game to pin it to the top of the
+  hub, and the last few you played get their own row (games already
+  pinned or in progress aren't listed twice).
+- **Colour-blind palette** (◑ in the hub header): swaps the green/amber
+  right-letter feedback for Okabe-Ito blue and vermillion across Word
+  Guess, Equation, Hangman and Word Ladder, and numbers Mastermind's
+  pegs, whose eight colours can't be told apart by hue alone.
 - **Drag-to-paint** in Picross, Nurikabe, Tents, Battleships, and Hitori
   (a whole stroke is one undo step).
 - **Keyboard play** on desktop: digits, arrows, and Backspace in all six
