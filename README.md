@@ -18,7 +18,7 @@ random seeds, so nothing is ever fetched at runtime.
 
 | Game | Rules | Board |
 |---|---|---|
-| **Word Guess** | Guess the 5-letter word in 6 tries | Random pick from 360 curated answers |
+| **Word Guess** | Guess the word in 6 tries | 730 curated answers; 4-letter Easy, binding-hints Hard |
 | **Sudoku** | Classic 9×9, unique solution guaranteed | Medium difficulty (~34 clues) |
 | **Picross** | Fill cells to satisfy run clues | 10×10 |
 | **Word Search** | Tap first + last letter to select | 7 words, 8 directions |

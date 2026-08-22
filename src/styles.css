@@ -434,6 +434,26 @@ button { font-family: inherit; color: inherit; }
 .word-cell.is-present { background: var(--amber); border-color: var(--amber); color: #fff; }
 .word-cell.is-absent { background: var(--ink-soft); border-color: var(--ink-soft); color: #fff; }
 
+/* Hint-revealed letters: outlined green, sized down so the row reads as
+   a reference strip rather than a guess. */
+.word-cell.hint-reveal {
+  width: min(40px, 10.5vw);
+  height: min(40px, 10.5vw);
+  font-size: 18px;
+  border-style: dashed;
+}
+.word-cell.hint-reveal.filled {
+  border-color: var(--green);
+  color: var(--green);
+}
+
+/* The answer, shown after a loss. */
+.word-cell.answer-cell {
+  background: transparent;
+  border: 2px solid var(--green);
+  color: var(--green);
+}
+
 .keyboard {
   margin-top: auto;
   display: flex;
