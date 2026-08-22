@@ -62,6 +62,12 @@ const Farkle = lazy(() => import("./games/Farkle"));
 const Cryptogram = lazy(() => import("./games/Cryptogram"));
 const Ladder = lazy(() => import("./games/Ladder"));
 const MiniCrossword = lazy(() => import("./games/MiniCrossword"));
+const Yukon = lazy(() => import("./games/Yukon"));
+const Scorpion = lazy(() => import("./games/Scorpion"));
+const Sujiko = lazy(() => import("./games/Sujiko"));
+const Untangle = lazy(() => import("./games/Untangle"));
+const Str8ts = lazy(() => import("./games/Str8ts"));
+const Mahjong = lazy(() => import("./games/Mahjong"));
 import { GameId, loadStats, loadSlot } from "./lib/storage";
 import { soundEnabled, setSoundEnabled } from "./lib/sound";
 
@@ -124,6 +130,8 @@ const CARDS: CardInfo[] = [
   { id: "math24", name: "Math 24", tagline: "Make 24 from four numbers", accent: "var(--green)", glyph: "24", cat: "numbers" },
   { id: "killer", name: "Killer Sudoku", tagline: "Cages that add up", accent: "var(--indigo)", glyph: "⊠", cat: "numbers" },
   { id: "equation", name: "Equation", tagline: "Guess the hidden math", accent: "var(--purple)", glyph: "=", cat: "numbers" },
+  { id: "sujiko", name: "Sujiko", tagline: "Four circles, nine digits", accent: "var(--teal)", glyph: "◉", cat: "numbers" },
+  { id: "str8ts", name: "Str8ts", tagline: "Runs of consecutive numbers", accent: "var(--coral)", glyph: "⊟", cat: "numbers" },
 
   { id: "picross", name: "Picross", tagline: "Reveal the hidden picture", accent: "var(--rose)", glyph: "▦", cat: "logic" },
   { id: "queens", name: "Queens", tagline: "One crown per colour, none touching", accent: "var(--indigo)", glyph: "♛", cat: "logic" },
@@ -149,6 +157,7 @@ const CARDS: CardInfo[] = [
   { id: "fillapix", name: "Fill-a-Pix", tagline: "Paint by neighbour counts", accent: "var(--blue)", glyph: "▨", cat: "logic" },
   { id: "fillomino", name: "Fillomino", tagline: "Regions sized by their number", accent: "var(--amber)", glyph: "▤", cat: "logic" },
   { id: "yinyang", name: "Yin-Yang", tagline: "Two circles, one balance", accent: "var(--teal)", glyph: "☯", cat: "logic" },
+  { id: "untangle", name: "Untangle", tagline: "Drag dots, uncross lines", accent: "var(--green)", glyph: "✳", cat: "logic" },
 
   { id: "mines", name: "Minesweeper", tagline: "First tap is always safe", accent: "var(--purple)", glyph: "✹", cat: "classic" },
   { id: "lights", name: "Lights Out", tagline: "Flip them all off", accent: "var(--amber)", glyph: "◉", cat: "classic" },
@@ -169,7 +178,10 @@ const CARDS: CardInfo[] = [
   { id: "unblock", name: "Unblock", tagline: "Slide the red car free", accent: "var(--coral)", glyph: "⇥", cat: "classic" },
   { id: "pyramid", name: "Pyramid", tagline: "Pairs that make thirteen", accent: "var(--amber)", glyph: "♦", cat: "classic" },
   { id: "golf", name: "Golf", tagline: "One up or down, clear the course", accent: "var(--green)", glyph: "◎", cat: "classic" },
-  { id: "farkle", name: "Farkle", tagline: "Push your luck with six dice", accent: "var(--rose)", glyph: "⚅", cat: "classic" }
+  { id: "farkle", name: "Farkle", tagline: "Push your luck with six dice", accent: "var(--rose)", glyph: "⚅", cat: "classic" },
+  { id: "yukon", name: "Yukon", tagline: "Klondike unchained — no deck", accent: "var(--teal)", glyph: "♥", cat: "classic" },
+  { id: "scorpion", name: "Scorpion", tagline: "Spider with a sting", accent: "var(--olive)", glyph: "♦", cat: "classic" },
+  { id: "mahjong", name: "Mahjong", tagline: "Match free tiles, clear the stack", accent: "var(--indigo)", glyph: "🀄", cat: "classic" }
 ];
 
 const CATEGORIES: Category[] = ["words", "numbers", "logic", "classic"];
@@ -288,7 +300,8 @@ export default function App() {
       killer: Killer, equation: Equation, fillapix: FillAPix,
       fillomino: Fillomino, yinyang: YinYang, unblock: Unblock,
       pyramid: Pyramid, golf: Golf, farkle: Farkle, crypto: Cryptogram,
-      ladder: Ladder, mini: MiniCrossword
+      ladder: Ladder, mini: MiniCrossword, yukon: Yukon, scorpion: Scorpion,
+      sujiko: Sujiko, untangle: Untangle, str8ts: Str8ts, mahjong: Mahjong
     }[view];
     return (
       <Suspense fallback={<div className="game" />}>
@@ -370,7 +383,7 @@ export default function App() {
         <h1>PuzzleBox</h1>
         <p className="ticket-note">
           {online
-            ? "Sixty puzzles, endless boards — pick one."
+            ? "Sixty-six puzzles, endless boards — pick one."
             : "Offline — puzzles still work."}
         </p>
       </header>
