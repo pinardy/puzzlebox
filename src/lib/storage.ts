@@ -42,7 +42,8 @@ export type GameId =
   | "tripeaks" | "aquarium" | "galaxies" | "net" | "ballsort" | "samegame"
   | "math24"
   | "killer" | "equation" | "fillapix" | "fillomino" | "yinyang" | "unblock"
-  | "pyramid" | "golf" | "farkle" | "crypto" | "ladder" | "mini";
+  | "pyramid" | "golf" | "farkle" | "crypto" | "ladder" | "mini"
+  | "yukon" | "scorpion" | "sujiko" | "untangle" | "str8ts" | "mahjong";
 
 export type Diff = "easy" | "medium" | "hard";
 

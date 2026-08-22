@@ -1,6 +1,6 @@
 # PuzzleBox
 
-A puzzle PWA — sixty games, endless boards: word guess, sudoku,
+A puzzle PWA — sixty-six games, endless boards: word guess, sudoku,
 picross, word search, lights out, minesweeper, queens, suns & moons,
 zip, 2048, pairs, fifteen, hangman, futoshiki, skyscrapers, hitori,
 nurikabe, bridges, kenken, kropki, star battle, flow, tents & trees,
@@ -9,8 +9,8 @@ hanoi, klondike, freecell, spider, anagram, masyu, light up,
 dominoes, thermometers, suguru, sokoban, peg solitaire, yahtzee,
 tripeaks, aquarium, galaxies, pipes, ball sort, samegame, math 24,
 killer sudoku, equation guess, fill-a-pix, fillomino, yin-yang,
-unblock, pyramid, golf, farkle, cryptogram, word ladder, and a mini
-crossword. Pick any game, play as many rounds as
+unblock, pyramid, golf, farkle, cryptogram, word ladder, a mini
+crossword, yukon, scorpion, sujiko, untangle, str8ts, and mahjong. Pick any game, play as many rounds as
 you like. Fully offline: puzzles are generated **on-device** from
 random seeds, so nothing is ever fetched at runtime.
 
@@ -78,6 +78,12 @@ random seeds, so nothing is ever fetched at runtime.
 | **Cryptogram** | Crack a substitution cipher | 100 bundled proverbs, deranged mapping |
 | **Word Ladder** | Morph one word into another | BFS over a 1,500-word list; par + 2 moves |
 | **Mini Crossword** | 5×5 clued crossword | MRV backtracking fill, ~1,000 clued words |
+| **Yukon** | Klondike with no deck; move any face-up group | All 52 dealt, seeded |
+| **Scorpion** | Build down by suit, grab any face-up card | 7×7 + 3 reserve; clear four K→A runs |
+| **Sujiko** | 1–9 once; circles are quadrant sums | Unique solution enforced by search |
+| **Untangle** | Drag dots until no lines cross | Greedy planar graph, circle-scrambled |
+| **Str8ts** | White runs are consecutive sets | 6×6/7×7, symmetric blacks, DFS-filled |
+| **Mahjong** | Match free pairs, clear the layers | Reverse-dealt — a winning order always exists |
 
 The current puzzle of each game (its seed, difficulty, progress, and play
 time) persists in `localStorage`, so leaving and returning resumes where
@@ -90,7 +96,8 @@ counts accumulate per game.
   `useGame` hook that also tracks active play time.
 - **Hints** (💡) in the solution-backed games — Sudoku, Killer Sudoku,
   Picross, Fill-a-Pix, Fillomino, Futoshiki, Skyscrapers, KenKen,
-  Kropki, Kakuro, Suguru, Cryptogram, and the Mini Crossword — reveal
+  Kropki, Kakuro, Suguru, Cryptogram, the Mini Crossword, Sujiko, and
+  Str8ts — reveal
   one cell; hinted solves still count, but never set a best time or
   extend a streak.
 - **Streaks & best times**: per-game win streaks, longest streak, a
@@ -100,11 +107,11 @@ counts accumulate per game.
   hash (`#/game/sudoku`, `#/cat/logic`), so Android/browser back
   returns to the hub instead of closing the app, and any game can be
   bookmarked.
-- **Search** across all 60 games from the hub, by name or tagline.
+- **Search** across all 66 games from the hub, by name or tagline.
 - **Sound effects** — tiny WebAudio jingles on win/lose/hint, no audio
   assets so the app stays fully offline; mute toggle in the hub header,
   remembered across visits.
-- **Difficulty picker** (Easy / Medium / Hard) on 54 of the 60 games —
+- **Difficulty picker** (Easy / Medium / Hard) on 59 of the 66 games —
   board sizes, clue counts, and fleets scale with it.
 - **Win banner** with time, lifetime stats, haptic feedback, and
   New puzzle / All games actions.
