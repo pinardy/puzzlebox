@@ -46,10 +46,10 @@ random seeds, so nothing is ever fetched at runtime.
 | **Slitherlink** | One loop matching edge-count clues | 5×5; loop = boundary of a grown blob |
 | **Kakuro** | Crossword sums, unique digits per run | 7×7, runs of 2–5 |
 | **Mastermind** | Crack the colour code from peg feedback | 6 colours, length 4, 10 guesses |
-| **Towers of Hanoi** | Rebuild the tower, big never on small | 5–7 disks by seed |
-| **Solitaire** | Klondike, draw-1, tap-to-move | Seeded deals |
-| **FreeCell** | All face-up, four spare cells | Seeded deals, supermove sizing |
-| **Spider** | One suit, clear eight K→A runs | Seeded 104-card deals |
+| **Towers of Hanoi** | Rebuild the tower, big never on small | 5–7 disks by difficulty |
+| **Solitaire** | Klondike, tap-to-move | Draw-1 or draw-3; three passes on Hard |
+| **FreeCell** | All face-up, spare cells | 4/3/2 free cells by difficulty, supermove sizing |
+| **Spider** | Clear eight same-suit K→A runs | 1/2/4 suits by difficulty |
 | **Anagram** | Unscramble a five-letter word | Seeded pick, letter-lock hints |
 | **Masyu** | One loop obeying black/white pearls | Loop from a grown blob boundary |
 | **Light Up** | Bulbs light all cells, never each other | Bulbs placed first; numbered walls |
@@ -59,7 +59,7 @@ random seeds, so nothing is ever fetched at runtime.
 | **Sokoban** | Push crates onto goals | Reverse-play generation, always solvable |
 | **Peg Solitaire** | Jump pegs down to one | Classic English cross board |
 | **Yahtzee** | 13 rounds of dice, chase a high score | Seeded deterministic dice stream |
-| **TriPeaks** | Clear the peaks one rank at a time | Seeded deals, classic 28-card layout |
+| **TriPeaks** | Clear the peaks one rank at a time | A–K wrap on Easy, shorter deck on Hard |
 | **Aquarium** | Flood tanks; water obeys gravity | Region growth + level choice |
 | **Galaxies** | 180°-symmetric regions around dots | Symmetric-pair region growth |
 | **Pipes (Net)** | Rotate tiles into one sealed network | Random spanning tree, scrambled |
@@ -104,7 +104,7 @@ counts accumulate per game.
 - **Sound effects** — tiny WebAudio jingles on win/lose/hint, no audio
   assets so the app stays fully offline; mute toggle in the hub header,
   remembered across visits.
-- **Difficulty picker** (Easy / Medium / Hard) on 24 of the 30 games —
+- **Difficulty picker** (Easy / Medium / Hard) on 54 of the 60 games —
   board sizes, clue counts, and fleets scale with it.
 - **Win banner** with time, lifetime stats, haptic feedback, and
   New puzzle / All games actions.

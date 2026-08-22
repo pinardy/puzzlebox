@@ -4,7 +4,8 @@ import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
 
-const DISKS: Record<Diff, number> = { easy: 5, medium: 6, hard: 8 };
+// Hard once jumped to 8 disks (255 optimal moves) — a slog on touch.
+const DISKS: Record<Diff, number> = { easy: 5, medium: 6, hard: 7 };
 const HELP =
   "Move the whole tower to the rightmost peg, one disk at a time. A disk " +
   "may never sit on a smaller one. Tap a peg to lift its top disk, then " +

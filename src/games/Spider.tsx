@@ -1,19 +1,22 @@
 import { useMemo, useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult } from "../lib/storage";
+import { recordResult, Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
 
-// One-suit spider: 104 spades. Card id 0–103, rank = id % 13 + 1 (A…K).
+// 104 cards in 8 sets of 13. Card id 0–103, rank = id % 13 + 1 (A…K);
+// the suit of each 13-card set cycles through the difficulty's suits.
 const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+const SUITS = ["♠", "♥", "♦", "♣"];
+const SUIT_COUNT: Record<Diff, number> = { easy: 1, medium: 2, hard: 4 };
 const rank = (id: number) => (id % 13) + 1;
-const label = (id: number) => `${RANKS[rank(id) - 1]}♠`;
 const HELP =
-  "Stack cards downward (any pile, K high to A low). A complete K-to-A run " +
-  "clears off the board — clear all eight to win. Tap the deck to deal one " +
-  "card onto every column; every column must have a card first. You can " +
-  "move any face-up descending run as one unit.";
+  "Stack cards downward on any pile, K high to A low, regardless of suit — " +
+  "but only a same-suit descending run moves as one unit, and only a " +
+  "same-suit K-to-A run clears off the board. Clear all eight to win. Tap " +
+  "the deck to deal one card onto every column; every column must have a " +
+  "card first. Easy plays one suit, Medium two, Hard the full four.";
 
 interface SavedState {
   cols: number[][];
@@ -43,13 +46,15 @@ function deal(seed: string): SavedState {
   };
 }
 
-/** Remove a finished K→A run from the top of a column, if present. */
-function clearRuns(next: SavedState): void {
+/** Remove a finished same-suit K→A run from the top of a column. */
+function clearRuns(next: SavedState, suitOf: (id: number) => number): void {
   for (let p = 0; p < 10; p++) {
     const pile = next.cols[p];
     if (pile.length < 13) continue;
     const tail = pile.slice(-13);
-    const isRun = tail.every((c, i) => rank(c) === 13 - i);
+    const isRun = tail.every(
+      (c, i) => rank(c) === 13 - i && suitOf(c) === suitOf(tail[0])
+    );
     const allUp = pile.length - 13 >= next.faceDown[p];
     if (isRun && allUp) {
       pile.splice(-13);
@@ -62,9 +67,13 @@ function clearRuns(next: SavedState): void {
 type Sel = { pile: number; index: number } | null;
 
 export default function Spider({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle, playMs } =
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
     useGame<SavedState>("spider", (s) => deal(s));
   const [sel, setSel] = useState<Sel>(null);
+  const nSuits = SUIT_COUNT[diff];
+  const suitOf = (id: number) => Math.floor(id / 13) % nSuits;
+  const isRed = (id: number) => suitOf(id) === 1 || suitOf(id) === 2;
+  const label = (id: number) => `${RANKS[rank(id) - 1]}${SUITS[suitOf(id)]}`;
 
   const selCards = useMemo(
     (): number[] => (sel ? saved.cols[sel.pile].slice(sel.index) : []),
@@ -73,7 +82,7 @@ export default function Spider({ onExit }: { onExit: () => void }) {
 
   function finish(next: SavedState) {
     next.moves++;
-    clearRuns(next);
+    clearRuns(next, suitOf);
     if (!next.done && next.completed === 8) {
       next.done = true;
       recordResult("spider", true);
@@ -126,14 +135,17 @@ export default function Spider({ onExit }: { onExit: () => void }) {
     }
 
     if (index === null || index < saved.faceDown[pile]) return;
-    // Grabbable run: strictly descending by one from here to the end.
+    // Grabbable run: same suit, strictly descending by one to the end.
     const run = cards.slice(index);
-    const ok = run.every((c, i) => i === 0 || rank(c) === rank(run[i - 1]) - 1);
+    const ok = run.every(
+      (c, i) =>
+        i === 0 || (rank(c) === rank(run[i - 1]) - 1 && suitOf(c) === suitOf(run[0]))
+    );
     if (ok) setSel({ pile, index });
   }
 
-  function startNew() {
-    newPuzzle();
+  function startNew(d?: Diff) {
+    newPuzzle(d);
     setSel(null);
   }
 
@@ -142,11 +154,18 @@ export default function Spider({ onExit }: { onExit: () => void }) {
 
   return (
     <div className="game game-spider" style={{ "--cols": 10 } as CSSProperties}>
-      <GameHeader title="Spider" onExit={onExit} onNew={startNew} />
+      <GameHeader title="Spider" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
-        One suit. Build K→A runs to clear them; complete all eight.
+        {nSuits === 1 ? "One suit" : nSuits === 2 ? "Two suits" : "Four suits"}.
+        Build same-suit K→A runs to clear them; complete all eight.
       </p>
-      <GameTools help={HELP} onUndo={undo} canUndo={canUndo && !saved.done} />
+      <GameTools
+        diff={diff}
+        onDiff={startNew}
+        help={HELP}
+        onUndo={undo}
+        canUndo={canUndo && !saved.done}
+      />
 
       <div className="kl-top">
         <button className="kl-card kl-back" onClick={tapStock} aria-label="Stock">
@@ -156,7 +175,7 @@ export default function Spider({ onExit }: { onExit: () => void }) {
         <span className="spider-done">
           {Array.from({ length: 8 }).map((_, i) => (
             <span key={i} className={i < saved.completed ? "run-done" : "run-todo"}>
-              ♠
+              {SUITS[i % nSuits]}
             </span>
           ))}
         </span>
@@ -179,6 +198,7 @@ export default function Spider({ onExit }: { onExit: () => void }) {
                   className={[
                     "kl-card kl-stacked",
                     up ? "" : "kl-back",
+                    up && isRed(card) ? "red" : "",
                     isSelected(p, i) ? "selected" : ""
                   ].join(" ")}
                   style={{ "--stack": i } as CSSProperties}

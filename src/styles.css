@@ -1669,6 +1669,13 @@ button { font-family: inherit; color: inherit; }
 }
 .kl-gap { flex: 1; }
 
+/* Draw-3 waste: fan the visible cards, only the top one plays. */
+.kl-fan { display: flex; }
+.kl-fan .kl-card + .kl-card {
+  margin-left: calc(-0.62 * (min(100vw - 28px, 440px) - (var(--cols, 7) - 1) * 6px) / var(--cols, 7));
+}
+.kl-fan .kl-card:not(:last-child) { pointer-events: none; box-shadow: none; }
+
 .kl-card {
   width: calc((min(100vw - 28px, 440px) - (var(--cols, 7) - 1) * 6px) / var(--cols, 7));
   aspect-ratio: 5 / 7;
