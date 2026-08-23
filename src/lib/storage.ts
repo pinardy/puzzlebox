@@ -46,7 +46,11 @@ export type GameId =
   | "yukon" | "scorpion" | "sujiko" | "untangle" | "str8ts" | "mahjong"
   | "numbrix" | "jigsaw" | "sandwich" | "kakurasu" | "knight" | "norinori"
   | "heyawake" | "flood" | "dots" | "forty" | "bakers" | "accordion"
-  | "acesup" | "canfield";
+  | "acesup" | "canfield"
+  | "bee" | "waffle" | "boggle" | "boxed"
+  | "sumplete" | "suko" | "hidato" | "magic"
+  | "tracks" | "slant" | "magnets" | "yajilin" | "lits" | "ripple"
+  | "gaps" | "castle" | "nim";
 
 export type Diff = "easy" | "medium" | "hard";
 

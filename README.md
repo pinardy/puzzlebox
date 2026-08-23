@@ -1,6 +1,6 @@
 # PuzzleBox
 
-A puzzle PWA — eighty games, endless boards: word guess, sudoku,
+A puzzle PWA — ninety-seven games, endless boards: word guess, sudoku,
 picross, word search, lights out, minesweeper, queens, suns & moons,
 zip, 2048, pairs, fifteen, hangman, futoshiki, skyscrapers, hitori,
 nurikabe, bridges, kenken, kropki, star battle, flow, tents & trees,
@@ -13,7 +13,9 @@ unblock, pyramid, golf, farkle, cryptogram, word ladder, a mini
 crossword, yukon, scorpion, sujiko, untangle, str8ts, mahjong, numbrix,
 jigsaw sudoku, sandwich, kakurasu, knight's tour, norinori, heyawake,
 flood it, dots & boxes, forty thieves, baker's dozen, accordion, aces up,
-and canfield. Pick any game, play as many rounds as
+canfield, spelling bee, waffle, boggle, letter boxed, sumplete, suko,
+hidato, magic square, train tracks, slant, magnets, yajilin, LITS, ripple
+effect, gaps, beleaguered castle, and nim. Pick any game, play as many rounds as
 you like. Fully offline: puzzles are generated **on-device** from
 random seeds, so nothing is ever fetched at runtime.
 
@@ -101,6 +103,23 @@ random seeds, so nothing is ever fetched at runtime.
 | **Accordion** | Squeeze 52 piles into one | Move one or three places left on suit or rank |
 | **Aces Up** | Discard low cards, leave four aces | Seeded deals, four piles |
 | **Canfield** | Wrapping foundations from a random base | 13-card reserve, draw-three with redeals |
+| **Spelling Bee** | Words of 4+ letters, all using the centre letter | Seven-letter pangram sets; Genius at 70% of the score |
+| **Waffle** | Swap letters until all six words read true | 5×5 lattice, 15 swaps; scramble depth by difficulty |
+| **Boggle** | Trace adjacent letters, three or more | Standard Boggle dice; target is a share of the board |
+| **Letter Boxed** | Use all twelve letters, changing side each step | Two-word chains; sides fixed by graph colouring |
+| **Sumplete** | Cross numbers out so every line hits its total | 4/6/8; solvable by construction |
+| **Suko** | Nine digits, four circled sums, colour totals | 3×3; brute-forced to a unique solution |
+| **Hidato** | Consecutive numbers touch — diagonals count | 5/6/7; Warnsdorff king-move path |
+| **Magic Square** | Every row, column and diagonal on one total | 3×3 and 4×4; unique solution guaranteed |
+| **Train Tracks** | One line, matching the row and column counts | 5/6/7; any line obeying the rules wins |
+| **Slant** | A diagonal per cell, corner counts, no loops | 5/7/9; union-find keeps the board loop-free |
+| **Magnets** | Domino magnets, no two like poles adjacent | 6/8/10; clues withheld as difficulty rises |
+| **Yajilin** | One loop; arrows count the shaded cells | 6/8/10; loop grown by bumping out a small cycle |
+| **LITS** | One L, I, T or S tetromino in every region | 6/8/10; pieces seeded, then regions grown around them |
+| **Ripple Effect** | Rooms hold 1..n; equal numbers keep their distance | 5/6/7; unique solution |
+| **Gaps** | Order every row 2→K into the four gaps | 4×13 deal, two redeals |
+| **Beleaguered Castle** | Build A→K; the tableau descends in any suit | Eight piles of six, four aces up |
+| **Nim** | Take the last counter to win | 3–5 heaps; a perfect opponent, always a winnable deal |
 
 The current puzzle of each game (its seed, difficulty, progress, and play
 time) persists in `localStorage`, so leaving and returning resumes where
@@ -124,11 +143,11 @@ counts accumulate per game.
   hash (`#/game/sudoku`, `#/cat/logic`), so Android/browser back
   returns to the hub instead of closing the app, and any game can be
   bookmarked.
-- **Search** across all 80 games from the hub, by name or tagline.
+- **Search** across all 97 games from the hub, by name or tagline.
 - **Sound effects** — tiny WebAudio jingles on win/lose/hint, no audio
   assets so the app stays fully offline; mute toggle in the hub header,
   remembered across visits.
-- **Difficulty picker** (Easy / Medium / Hard) on 68 of the 80 games —
+- **Difficulty picker** (Easy / Medium / Hard) on 87 of the 97 games —
   board sizes, clue counts, and fleets scale with it.
 - **Win banner** with time, lifetime stats, haptic feedback, and
   New puzzle / All games actions.
@@ -197,6 +216,7 @@ src/
     rng.ts       seeded RNG + seed minting shared by all games
     sudoku.ts    backtracking generator + uniqueness-counting solver
     words.ts     360 curated answers + duplicate-aware guess scoring
+    dict.ts      ~11k common words + letter-mask lookups for the letter games
     storage.ts   typed localStorage: current-puzzle slots + solve stats
   games/
     Wordle.tsx   grid, on-screen + hardware keyboard, key-state colouring

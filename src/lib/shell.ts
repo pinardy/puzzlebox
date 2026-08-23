@@ -30,5 +30,8 @@ export const TEXT_GAMES = new Set<GameId>([
   "crypto",
   "ladder",
   "mini",
-  "equation"
+  "equation",
+  "bee",
+  "boggle",
+  "boxed"
 ]);

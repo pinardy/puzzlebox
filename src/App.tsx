@@ -90,6 +90,23 @@ const BakersDozen = lazy(() => import("./games/BakersDozen"));
 const Accordion = lazy(() => import("./games/Accordion"));
 const AcesUp = lazy(() => import("./games/AcesUp"));
 const Canfield = lazy(() => import("./games/Canfield"));
+const SpellingBee = lazy(() => import("./games/SpellingBee"));
+const Waffle = lazy(() => import("./games/Waffle"));
+const Boggle = lazy(() => import("./games/Boggle"));
+const LetterBoxed = lazy(() => import("./games/LetterBoxed"));
+const Sumplete = lazy(() => import("./games/Sumplete"));
+const Suko = lazy(() => import("./games/Suko"));
+const Hidato = lazy(() => import("./games/Hidato"));
+const MagicSquare = lazy(() => import("./games/MagicSquare"));
+const TrainTracks = lazy(() => import("./games/TrainTracks"));
+const Slant = lazy(() => import("./games/Slant"));
+const Magnets = lazy(() => import("./games/Magnets"));
+const Yajilin = lazy(() => import("./games/Yajilin"));
+const Lits = lazy(() => import("./games/Lits"));
+const Ripple = lazy(() => import("./games/Ripple"));
+const Gaps = lazy(() => import("./games/Gaps"));
+const BeleagueredCastle = lazy(() => import("./games/BeleagueredCastle"));
+const Nim = lazy(() => import("./games/Nim"));
 import {
   GameId,
   load,
@@ -158,6 +175,10 @@ const CARDS: CardInfo[] = [
   { id: "crypto", name: "Cryptogram", tagline: "Crack the letter cipher", accent: "var(--indigo)", glyph: "§", cat: "words" },
   { id: "ladder", name: "Word Ladder", tagline: "One letter at a time", accent: "var(--blue)", glyph: "⇅", cat: "words" },
   { id: "mini", name: "Mini Crossword", tagline: "Five by five, clued", accent: "var(--purple)", glyph: "╋", cat: "words" },
+  { id: "bee", name: "Spelling Bee", tagline: "Seven letters, one in every word", accent: "var(--amber)", glyph: "⬢", cat: "words" },
+  { id: "waffle", name: "Waffle", tagline: "Fifteen swaps, six words", accent: "var(--olive)", glyph: "✚", cat: "words" },
+  { id: "boggle", name: "Boggle", tagline: "Trace words through the grid", accent: "var(--teal)", glyph: "⊡", cat: "words" },
+  { id: "boxed", name: "Letter Boxed", tagline: "Twelve letters, four sides", accent: "var(--indigo)", glyph: "▢", cat: "words" },
 
   { id: "sudoku", name: "Sudoku", tagline: "Fill the grid, no repeats", accent: "var(--blue)", glyph: "9", cat: "numbers" },
   { id: "futoshiki", name: "Futoshiki", tagline: "Fill the grid, obey the arrows", accent: "var(--purple)", glyph: "≶", cat: "numbers" },
@@ -173,6 +194,10 @@ const CARDS: CardInfo[] = [
   { id: "numbrix", name: "Numbrix", tagline: "One unbroken chain of numbers", accent: "var(--green)", glyph: "⤴", cat: "numbers" },
   { id: "jigsaw", name: "Jigsaw Sudoku", tagline: "Sudoku with wandering regions", accent: "var(--rose)", glyph: "⬡", cat: "numbers" },
   { id: "sandwich", name: "Sandwich", tagline: "Sum between the 1 and the 9", accent: "var(--amber)", glyph: "⊂", cat: "numbers" },
+  { id: "sumplete", name: "Sumplete", tagline: "Cross out to hit every total", accent: "var(--olive)", glyph: "⊖", cat: "numbers" },
+  { id: "suko", name: "Suko", tagline: "Nine digits, four circled sums", accent: "var(--teal)", glyph: "⊙", cat: "numbers" },
+  { id: "hidato", name: "Hidato", tagline: "A chain that counts diagonally", accent: "var(--purple)", glyph: "⤢", cat: "numbers" },
+  { id: "magic", name: "Magic Square", tagline: "Every line the same total", accent: "var(--indigo)", glyph: "✧", cat: "numbers" },
 
   { id: "picross", name: "Picross", tagline: "Reveal the hidden picture", accent: "var(--rose)", glyph: "▦", cat: "logic" },
   { id: "queens", name: "Queens", tagline: "One crown per colour, none touching", accent: "var(--indigo)", glyph: "♛", cat: "logic" },
@@ -203,6 +228,12 @@ const CARDS: CardInfo[] = [
   { id: "knight", name: "Knight's Tour", tagline: "Every square, one knight", accent: "var(--indigo)", glyph: "♞", cat: "logic" },
   { id: "norinori", name: "Norinori", tagline: "Two per region, in dominoes", accent: "var(--purple)", glyph: "⬛", cat: "logic" },
   { id: "heyawake", name: "Heyawake", tagline: "Numbered rooms, shaded squares", accent: "var(--rose)", glyph: "▥", cat: "logic" },
+  { id: "tracks", name: "Train Tracks", tagline: "Lay the line, match the counts", accent: "var(--coral)", glyph: "╍", cat: "logic" },
+  { id: "slant", name: "Slant", tagline: "Diagonals that never close a loop", accent: "var(--blue)", glyph: "◸", cat: "logic" },
+  { id: "magnets", name: "Magnets", tagline: "Poles that never touch", accent: "var(--rose)", glyph: "◨", cat: "logic" },
+  { id: "yajilin", name: "Yajilin", tagline: "Arrows count the shaded cells", accent: "var(--purple)", glyph: "⇲", cat: "logic" },
+  { id: "lits", name: "LITS", tagline: "One tetromino in every region", accent: "var(--olive)", glyph: "⬓", cat: "logic" },
+  { id: "ripple", name: "Ripple Effect", tagline: "Equal numbers keep their distance", accent: "var(--teal)", glyph: "∷", cat: "logic" },
 
   { id: "mines", name: "Minesweeper", tagline: "First tap is always safe", accent: "var(--purple)", glyph: "✹", cat: "classic" },
   { id: "lights", name: "Lights Out", tagline: "Flip them all off", accent: "var(--amber)", glyph: "◉", cat: "classic" },
@@ -233,7 +264,10 @@ const CARDS: CardInfo[] = [
   { id: "bakers", name: "Baker's Dozen", tagline: "Thirteen columns, no deck", accent: "var(--olive)", glyph: "♡", cat: "classic" },
   { id: "accordion", name: "Accordion", tagline: "Squeeze fifty-two into one", accent: "var(--amber)", glyph: "⇤", cat: "classic" },
   { id: "acesup", name: "Aces Up", tagline: "Leave only the four aces", accent: "var(--green)", glyph: "♤", cat: "classic" },
-  { id: "canfield", name: "Canfield", tagline: "Wrapping foundations, fast deck", accent: "var(--purple)", glyph: "◇", cat: "classic" }
+  { id: "canfield", name: "Canfield", tagline: "Wrapping foundations, fast deck", accent: "var(--purple)", glyph: "◇", cat: "classic" },
+  { id: "gaps", name: "Gaps", tagline: "Four suits in order, four holes", accent: "var(--blue)", glyph: "⬚", cat: "classic" },
+  { id: "castle", name: "Beleaguered Castle", tagline: "Eight fans, four aces home", accent: "var(--indigo)", glyph: "♖", cat: "classic" },
+  { id: "nim", name: "Nim", tagline: "Take the last counter to win", accent: "var(--coral)", glyph: "⚈", cat: "classic" }
 ];
 
 const CATEGORIES: Category[] = ["words", "numbers", "logic", "classic"];
@@ -446,7 +480,12 @@ export default function App() {
       kakurasu: Kakurasu, knight: Knight, norinori: Norinori,
       heyawake: Heyawake, flood: FloodIt, dots: DotsBoxes,
       forty: FortyThieves, bakers: BakersDozen, accordion: Accordion,
-      acesup: AcesUp, canfield: Canfield
+      acesup: AcesUp, canfield: Canfield,
+      bee: SpellingBee, waffle: Waffle, boggle: Boggle, boxed: LetterBoxed,
+      sumplete: Sumplete, suko: Suko, hidato: Hidato, magic: MagicSquare,
+      tracks: TrainTracks, slant: Slant, magnets: Magnets, yajilin: Yajilin,
+      lits: Lits, ripple: Ripple,
+      gaps: Gaps, castle: BeleagueredCastle, nim: Nim
     }[view];
     return (
       <GameShell>
@@ -574,7 +613,7 @@ export default function App() {
         <h1>PuzzleBox</h1>
         <p className="ticket-note">
           {online
-            ? "Eighty puzzles, endless boards — pick one."
+            ? `${CARDS.length} puzzles, endless boards — pick one.`
             : "Offline — puzzles still work."}
         </p>
       </header>
