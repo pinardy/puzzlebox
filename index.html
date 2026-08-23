@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/icon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#1b2733" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -27,6 +27,11 @@
               : "light";
         }
         document.documentElement.setAttribute("data-theme", theme);
+        // Match the browser/status-bar chrome to the page's paper colour;
+        // lib/theme.ts keeps it in sync from here.
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta)
+          meta.setAttribute("content", theme === "dark" ? "#14181e" : "#eef1f4");
       })();
     </script>
   </head>

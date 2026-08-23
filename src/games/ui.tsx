@@ -31,6 +31,50 @@ function Clock({ playMs }: { playMs: number }) {
 
 /** Slim toolbar under the game header: difficulty picker, rules help,
  *  hint, and undo. Every prop is optional so games opt into what fits. */
+/** The keyboard bindings, which are otherwise invisible. Hidden on
+ *  touch-only devices, where there is no keyboard to describe. */
+function KeysPopover({
+  game,
+  hasUndo,
+  onClose
+}: {
+  game: GameId | null;
+  hasUndo: boolean;
+  onClose: () => void;
+}) {
+  // Bare-letter shortcuts are suppressed in games that read letters as
+  // guesses, so don't advertise them there.
+  const letterKeys = !(game && TEXT_GAMES.has(game));
+  return (
+    <span className="tools-menu-wrap">
+      <button className="tools-menu-scrim" onClick={onClose} aria-label="Close" />
+      <div className="tools-menu tools-keys" role="dialog" aria-label="Keyboard shortcuts">
+        <span className="tools-menu-keys-head">Keys</span>
+        <span>
+          <kbd>Esc</kbd> back
+        </span>
+        {letterKeys && (
+          <span>
+            <kbd>N</kbd> new puzzle
+          </span>
+        )}
+        {hasUndo && (
+          <span>
+            <kbd>⌘Z</kbd>
+            {letterKeys && (
+              <>
+                {" / "}
+                <kbd>U</kbd>
+              </>
+            )}{" "}
+            undo
+          </span>
+        )}
+      </div>
+    </span>
+  );
+}
+
 export function GameTools({
   diff,
   onDiff,
@@ -49,9 +93,34 @@ export function GameTools({
   const { info } = useGameShell();
   const [showHelp, setShowHelp] = useState(false);
   const [showTip, setShowTip] = useState(false);
+  const [showKeys, setShowKeys] = useState(false);
   // Read once on mount: you change this on the preferences screen, so it
   // can't move underneath a board that's already open.
   const [showClock] = useState(() => load("pref:timer", false));
+  // Switching difficulty deals a new board, so a board with progress asks
+  // twice — the same arm-and-confirm the header's New button uses.
+  const [arming, setArming] = useState<Diff | null>(null);
+  const armTimer = useRef<number | null>(null);
+
+  useEffect(
+    () => () => {
+      if (armTimer.current !== null) clearTimeout(armTimer.current);
+    },
+    []
+  );
+
+  const pickDiff = (d: Diff) => {
+    if (!onDiff || d === diff) return;
+    if (!info.dirty || arming === d) {
+      if (armTimer.current !== null) clearTimeout(armTimer.current);
+      setArming(null);
+      onDiff(d);
+      return;
+    }
+    setArming(d);
+    if (armTimer.current !== null) clearTimeout(armTimer.current);
+    armTimer.current = window.setTimeout(() => setArming(null), 3000);
+  };
 
   // Ninety-seven games is a lot of unfamiliar boards: open the rules the
   // first time someone lands on each one, then never again.
@@ -117,41 +186,68 @@ export function GameTools({
                 key={d}
                 role="radio"
                 aria-checked={diff === d}
-                className={diff === d ? "active" : ""}
-                onClick={() => diff !== d && onDiff(d)}
+                className={`${diff === d ? "active" : ""}${
+                  arming === d ? " arming" : ""
+                }`}
+                aria-label={
+                  arming === d
+                    ? `Tap again to start a new ${DIFF_LABEL[d]} puzzle and discard this one`
+                    : DIFF_LABEL[d]
+                }
+                onClick={() => pickDiff(d)}
               >
-                {DIFF_LABEL[d]}
+                {arming === d ? "Discard?" : DIFF_LABEL[d]}
               </button>
             ))}
           </div>
         )}
-        {showClock && <Clock playMs={info.playMs} />}
-        <span className="tools-gap" />
-        {help && (
-          <button
-            className="tool-chip"
-            onClick={() => setShowHelp((s) => !s)}
-            aria-expanded={showHelp}
-          >
-            ? Rules
-          </button>
-        )}
-        {onHint && (
-          <button
-            className="tool-chip"
-            onClick={() => {
-              playHint();
-              onHint();
-            }}
-          >
-            💡 Hint
-          </button>
-        )}
-        {onUndo && (
-          <button className="tool-chip" onClick={onUndo} disabled={!canUndo}>
-            ↩ Undo
-          </button>
-        )}
+        {/* Chips are one group so they wrap together, below the
+            difficulty picker, when the row runs out of width. */}
+        <span className="tools-chips">
+          {showClock && <Clock playMs={info.playMs} />}
+          {help && (
+            <button
+              className="tool-chip"
+              onClick={() => setShowHelp((s) => !s)}
+              aria-expanded={showHelp}
+            >
+              ? Rules
+            </button>
+          )}
+          {onHint && (
+            <button
+              className="tool-chip"
+              onClick={() => {
+                playHint();
+                onHint();
+              }}
+            >
+              💡 Hint
+            </button>
+          )}
+          {onUndo && (
+            <button className="tool-chip" onClick={onUndo} disabled={!canUndo}>
+              ↩ Undo
+            </button>
+          )}
+          <span className="tools-menu-anchor">
+            <button
+              className="tool-chip"
+              onClick={() => setShowKeys((k) => !k)}
+              aria-expanded={showKeys}
+              aria-label="Keyboard shortcuts"
+            >
+              ⌨
+            </button>
+            {showKeys && (
+              <KeysPopover
+                game={info.game}
+                hasUndo={!!onUndo}
+                onClose={() => setShowKeys(false)}
+              />
+            )}
+          </span>
+        </span>
       </div>
 
       {showTip && tip && (

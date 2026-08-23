@@ -27,8 +27,15 @@ export function themePref(): Theme | null {
 
 export const currentTheme = (): Theme => themePref() ?? systemTheme();
 
+// Light and dark paper, so the browser/status-bar chrome matches the page
+// instead of staying on one hard-coded colour.
+const THEME_COLOR: Record<Theme, string> = { light: "#eef1f4", dark: "#14181e" };
+
 export function applyTheme(t: Theme): void {
   document.documentElement.setAttribute("data-theme", t);
+  document
+    .querySelector('meta[name="theme-color"]')
+    ?.setAttribute("content", THEME_COLOR[t]);
 }
 
 export function setTheme(t: Theme): void {

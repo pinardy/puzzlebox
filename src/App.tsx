@@ -5,110 +5,23 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  type ComponentType,
   type CSSProperties
 } from "react";
 
-// Each game is its own chunk: the hub paints without parsing any game
-// code, and the service worker still precaches every chunk for offline.
-const Wordle = lazy(() => import("./games/Wordle"));
-const Sudoku = lazy(() => import("./games/Sudoku"));
-const Picross = lazy(() => import("./games/Picross"));
-const WordSearch = lazy(() => import("./games/WordSearch"));
-const LightsOut = lazy(() => import("./games/LightsOut"));
-const Mines = lazy(() => import("./games/Mines"));
-const Queens = lazy(() => import("./games/Queens"));
-const Tango = lazy(() => import("./games/Tango"));
-const Zip = lazy(() => import("./games/Zip"));
-const Game2048 = lazy(() => import("./games/Game2048"));
-const Memory = lazy(() => import("./games/Memory"));
-const Fifteen = lazy(() => import("./games/Fifteen"));
-const Hangman = lazy(() => import("./games/Hangman"));
-const Futoshiki = lazy(() => import("./games/Futoshiki"));
-const Skyscrapers = lazy(() => import("./games/Skyscrapers"));
-const Hitori = lazy(() => import("./games/Hitori"));
-const Nurikabe = lazy(() => import("./games/Nurikabe"));
-const Hashi = lazy(() => import("./games/Hashi"));
-const KenKen = lazy(() => import("./games/KenKen"));
-const Kropki = lazy(() => import("./games/Kropki"));
-const Stars = lazy(() => import("./games/Stars"));
-const Flow = lazy(() => import("./games/Flow"));
-const Tents = lazy(() => import("./games/Tents"));
-const Shikaku = lazy(() => import("./games/Shikaku"));
-const Battleships = lazy(() => import("./games/Battleships"));
-const Slitherlink = lazy(() => import("./games/Slitherlink"));
-const Kakuro = lazy(() => import("./games/Kakuro"));
-const Mastermind = lazy(() => import("./games/Mastermind"));
-const Hanoi = lazy(() => import("./games/Hanoi"));
-const Klondike = lazy(() => import("./games/Klondike"));
-const FreeCell = lazy(() => import("./games/FreeCell"));
-const Spider = lazy(() => import("./games/Spider"));
-const Anagram = lazy(() => import("./games/Anagram"));
-const Masyu = lazy(() => import("./games/Masyu"));
-const Akari = lazy(() => import("./games/Akari"));
-const Dominoes = lazy(() => import("./games/Dominoes"));
-const Thermometers = lazy(() => import("./games/Thermometers"));
-const Suguru = lazy(() => import("./games/Suguru"));
-const Sokoban = lazy(() => import("./games/Sokoban"));
-const PegSolitaire = lazy(() => import("./games/PegSolitaire"));
-const Yahtzee = lazy(() => import("./games/Yahtzee"));
-const TriPeaks = lazy(() => import("./games/TriPeaks"));
-const Aquarium = lazy(() => import("./games/Aquarium"));
-const Galaxies = lazy(() => import("./games/Galaxies"));
-const Net = lazy(() => import("./games/Net"));
-const BallSort = lazy(() => import("./games/BallSort"));
-const SameGame = lazy(() => import("./games/SameGame"));
-const Math24 = lazy(() => import("./games/Math24"));
-const Killer = lazy(() => import("./games/Killer"));
-const Equation = lazy(() => import("./games/Equation"));
-const FillAPix = lazy(() => import("./games/FillAPix"));
-const Fillomino = lazy(() => import("./games/Fillomino"));
-const YinYang = lazy(() => import("./games/YinYang"));
-const Unblock = lazy(() => import("./games/Unblock"));
-const Pyramid = lazy(() => import("./games/Pyramid"));
-const Golf = lazy(() => import("./games/Golf"));
-const Farkle = lazy(() => import("./games/Farkle"));
-const Cryptogram = lazy(() => import("./games/Cryptogram"));
-const Ladder = lazy(() => import("./games/Ladder"));
-const MiniCrossword = lazy(() => import("./games/MiniCrossword"));
-const Yukon = lazy(() => import("./games/Yukon"));
-const Scorpion = lazy(() => import("./games/Scorpion"));
-const Sujiko = lazy(() => import("./games/Sujiko"));
-const Untangle = lazy(() => import("./games/Untangle"));
-const Str8ts = lazy(() => import("./games/Str8ts"));
-const Mahjong = lazy(() => import("./games/Mahjong"));
-const Numbrix = lazy(() => import("./games/Numbrix"));
-const Jigsaw = lazy(() => import("./games/Jigsaw"));
-const Sandwich = lazy(() => import("./games/Sandwich"));
-const Kakurasu = lazy(() => import("./games/Kakurasu"));
-const Knight = lazy(() => import("./games/Knight"));
-const Norinori = lazy(() => import("./games/Norinori"));
-const Heyawake = lazy(() => import("./games/Heyawake"));
-const FloodIt = lazy(() => import("./games/FloodIt"));
-const DotsBoxes = lazy(() => import("./games/DotsBoxes"));
-const FortyThieves = lazy(() => import("./games/FortyThieves"));
-const BakersDozen = lazy(() => import("./games/BakersDozen"));
-const Accordion = lazy(() => import("./games/Accordion"));
-const AcesUp = lazy(() => import("./games/AcesUp"));
-const Canfield = lazy(() => import("./games/Canfield"));
-const SpellingBee = lazy(() => import("./games/SpellingBee"));
-const Waffle = lazy(() => import("./games/Waffle"));
-const Boggle = lazy(() => import("./games/Boggle"));
-const LetterBoxed = lazy(() => import("./games/LetterBoxed"));
-const Sumplete = lazy(() => import("./games/Sumplete"));
-const Suko = lazy(() => import("./games/Suko"));
-const Hidato = lazy(() => import("./games/Hidato"));
-const MagicSquare = lazy(() => import("./games/MagicSquare"));
-const TrainTracks = lazy(() => import("./games/TrainTracks"));
-const Slant = lazy(() => import("./games/Slant"));
-const Magnets = lazy(() => import("./games/Magnets"));
-const Yajilin = lazy(() => import("./games/Yajilin"));
-const Lits = lazy(() => import("./games/Lits"));
-const Ripple = lazy(() => import("./games/Ripple"));
-const Gaps = lazy(() => import("./games/Gaps"));
-const BeleagueredCastle = lazy(() => import("./games/BeleagueredCastle"));
-const Nim = lazy(() => import("./games/Nim"));
 import {
-  GameId,
+  GAMES,
+  GAME_IDS,
+  CATEGORIES,
+  CATEGORY_LABEL,
+  CATEGORY_META,
+  SUB_ORDER,
+  type Category,
+  type GameId,
+  type GameInfo,
+  type GameProps
+} from "./games/registry";
+import {
   load,
   save,
   loadStats,
@@ -124,23 +37,14 @@ import { hapticsEnabled, setHapticsEnabled } from "./lib/haptics";
 import { useTheme } from "./lib/theme";
 const Stats = lazy(() => import("./Stats"));
 
+// Each game is its own chunk (the registry's `load` thunks are separate
+// dynamic imports): the hub paints without parsing any game code, and the
+// service worker still precaches every chunk for offline.
+const GAME_COMPONENT = Object.fromEntries(
+  GAMES.map((g) => [g.id, lazy(g.load)])
+) as Record<string, ComponentType<GameProps>>;
+
 type View = "hub" | "stats" | GameId;
-
-type Category = "words" | "numbers" | "logic" | "classic";
-
-const CATEGORY_LABEL: Record<Category, string> = {
-  words: "Word games",
-  numbers: "Number grids",
-  logic: "Logic grids",
-  classic: "Classics & arcade"
-};
-
-const CATEGORY_META: Record<Category, { glyph: string; accent: string; tagline: string }> = {
-  words: { glyph: "A", accent: "var(--green)", tagline: "Guess, search, unscramble" },
-  numbers: { glyph: "9", accent: "var(--blue)", tagline: "Sudoku and its cousins" },
-  logic: { glyph: "▦", accent: "var(--purple)", tagline: "Loops, islands, fleets, stars" },
-  classic: { glyph: "♠", accent: "var(--coral)", tagline: "Cards, dice, and arcade" }
-};
 
 /** Narrow screens get a two-level hub: categories first, then games. */
 function useIsWide(): boolean {
@@ -156,128 +60,6 @@ function useIsWide(): boolean {
   return wide;
 }
 
-interface CardInfo {
-  id: GameId;
-  name: string;
-  tagline: string;
-  accent: string;
-  glyph: string;
-  cat: Category;
-  /** Which named run inside the category this belongs to, where the
-   *  category is big enough to need them. */
-  sub?: string;
-}
-
-/** Named runs, in the order they appear under a category heading. */
-const SUB_ORDER: Partial<Record<Category, string[]>> = {
-  logic: ["Loops & paths", "Shade the grid", "Regions", "Placement"]
-};
-
-const CARDS: CardInfo[] = [
-  { id: "word", name: "Word Guess", tagline: "Six tries, five letters", accent: "var(--green)", glyph: "A", cat: "words" },
-  { id: "hangman", name: "Hangman", tagline: "Six lives, one word", accent: "var(--amber)", glyph: "?", cat: "words" },
-  { id: "wordsearch", name: "Word Search", tagline: "Hidden words, eight directions", accent: "var(--teal)", glyph: "⌕", cat: "words" },
-  { id: "anagram", name: "Anagram", tagline: "Unscramble the letters", accent: "var(--coral)", glyph: "⇄", cat: "words" },
-  { id: "crypto", name: "Cryptogram", tagline: "Crack the letter cipher", accent: "var(--indigo)", glyph: "§", cat: "words" },
-  { id: "ladder", name: "Word Ladder", tagline: "One letter at a time", accent: "var(--blue)", glyph: "⇅", cat: "words" },
-  { id: "mini", name: "Mini Crossword", tagline: "Five by five, clued", accent: "var(--purple)", glyph: "╋", cat: "words" },
-  { id: "bee", name: "Spelling Bee", tagline: "Seven letters, one in every word", accent: "var(--amber)", glyph: "⬢", cat: "words" },
-  { id: "waffle", name: "Waffle", tagline: "Fifteen swaps, six words", accent: "var(--olive)", glyph: "✚", cat: "words" },
-  { id: "boggle", name: "Boggle", tagline: "Trace words through the grid", accent: "var(--teal)", glyph: "⊡", cat: "words" },
-  { id: "boxed", name: "Letter Boxed", tagline: "Twelve letters, four sides", accent: "var(--indigo)", glyph: "▢", cat: "words" },
-
-  { id: "sudoku", name: "Sudoku", tagline: "Fill the grid, no repeats", accent: "var(--blue)", glyph: "9", cat: "numbers" },
-  { id: "futoshiki", name: "Futoshiki", tagline: "Fill the grid, obey the arrows", accent: "var(--purple)", glyph: "≶", cat: "numbers" },
-  { id: "sky", name: "Skyscrapers", tagline: "Count the towers you can see", accent: "var(--teal)", glyph: "⌂", cat: "numbers" },
-  { id: "kenken", name: "KenKen", tagline: "Cages with arithmetic", accent: "var(--blue)", glyph: "⊞", cat: "numbers" },
-  { id: "kropki", name: "Kropki", tagline: "Dots join neighbours and doubles", accent: "var(--rose)", glyph: "◉", cat: "numbers" },
-  { id: "kakuro", name: "Kakuro", tagline: "Crossword sums, digits 1–9", accent: "var(--olive)", glyph: "Σ", cat: "numbers" },
-  { id: "math24", name: "Math 24", tagline: "Make 24 from four numbers", accent: "var(--green)", glyph: "24", cat: "numbers" },
-  { id: "killer", name: "Killer Sudoku", tagline: "Cages that add up", accent: "var(--indigo)", glyph: "⊠", cat: "numbers" },
-  { id: "equation", name: "Equation", tagline: "Guess the hidden math", accent: "var(--purple)", glyph: "=", cat: "numbers" },
-  { id: "sujiko", name: "Sujiko", tagline: "Four circles, nine digits", accent: "var(--teal)", glyph: "◉", cat: "numbers" },
-  { id: "str8ts", name: "Str8ts", tagline: "Runs of consecutive numbers", accent: "var(--coral)", glyph: "⊟", cat: "numbers" },
-  { id: "numbrix", name: "Numbrix", tagline: "One unbroken chain of numbers", accent: "var(--green)", glyph: "⤴", cat: "numbers" },
-  { id: "jigsaw", name: "Jigsaw Sudoku", tagline: "Sudoku with wandering regions", accent: "var(--rose)", glyph: "⬡", cat: "numbers" },
-  { id: "sandwich", name: "Sandwich", tagline: "Sum between the 1 and the 9", accent: "var(--amber)", glyph: "⊂", cat: "numbers" },
-  { id: "sumplete", name: "Sumplete", tagline: "Cross out to hit every total", accent: "var(--olive)", glyph: "⊖", cat: "numbers" },
-  { id: "suko", name: "Suko", tagline: "Nine digits, four circled sums", accent: "var(--teal)", glyph: "⊙", cat: "numbers" },
-  { id: "hidato", name: "Hidato", tagline: "A chain that counts diagonally", accent: "var(--purple)", glyph: "⤢", cat: "numbers" },
-  { id: "magic", name: "Magic Square", tagline: "Every line the same total", accent: "var(--indigo)", glyph: "✧", cat: "numbers" },
-
-  { id: "picross", name: "Picross", tagline: "Reveal the hidden picture", accent: "var(--rose)", glyph: "▦", sub: "Shade the grid", cat: "logic" },
-  { id: "queens", name: "Queens", tagline: "One crown per colour, none touching", accent: "var(--indigo)", glyph: "♛", sub: "Placement", cat: "logic" },
-  { id: "stars", name: "Star Battle", tagline: "Two stars everywhere, never touching", accent: "var(--amber)", glyph: "★", sub: "Placement", cat: "logic" },
-  { id: "tango", name: "Suns & Moons", tagline: "Balance the board, no three in a row", accent: "var(--coral)", glyph: "☾", sub: "Placement", cat: "logic" },
-  { id: "zip", name: "Zip", tagline: "One line, every square, in order", accent: "var(--olive)", glyph: "⤳", sub: "Loops & paths", cat: "logic" },
-  { id: "flow", name: "Flow", tagline: "Pipe every pair, fill the grid", accent: "var(--teal)", glyph: "∿", sub: "Loops & paths", cat: "logic" },
-  { id: "hitori", name: "Hitori", tagline: "Shade out the duplicates", accent: "var(--indigo)", glyph: "▩", sub: "Shade the grid", cat: "logic" },
-  { id: "nurikabe", name: "Nurikabe", tagline: "Islands in a connected sea", accent: "var(--coral)", glyph: "◍", sub: "Shade the grid", cat: "logic" },
-  { id: "hashi", name: "Bridges", tagline: "Link every island, no crossings", accent: "var(--olive)", glyph: "☰", sub: "Loops & paths", cat: "logic" },
-  { id: "tents", name: "Tents & Trees", tagline: "Pitch a tent by every tree", accent: "var(--green)", glyph: "△", sub: "Placement", cat: "logic" },
-  { id: "shikaku", name: "Shikaku", tagline: "Box every number by its area", accent: "var(--purple)", glyph: "▭", sub: "Regions", cat: "logic" },
-  { id: "ships", name: "Battleships", tagline: "Find the hidden fleet", accent: "var(--indigo)", glyph: "▬", sub: "Placement", cat: "logic" },
-  { id: "slither", name: "Slitherlink", tagline: "One loop around the clues", accent: "var(--coral)", glyph: "◇", sub: "Loops & paths", cat: "logic" },
-  { id: "masyu", name: "Masyu", tagline: "One loop through the pearls", accent: "var(--blue)", glyph: "◐", sub: "Loops & paths", cat: "logic" },
-  { id: "akari", name: "Light Up", tagline: "Bulbs that never blind each other", accent: "var(--amber)", glyph: "☼", sub: "Shade the grid", cat: "logic" },
-  { id: "dominoes", name: "Dominoes", tagline: "Re-draw the hidden set", accent: "var(--teal)", glyph: "⠿", sub: "Regions", cat: "logic" },
-  { id: "thermo", name: "Thermometers", tagline: "Fill mercury to match the counts", accent: "var(--rose)", glyph: "▮", sub: "Shade the grid", cat: "logic" },
-  { id: "suguru", name: "Suguru", tagline: "Small regions, no touching twins", accent: "var(--green)", glyph: "⌗", sub: "Regions", cat: "logic" },
-  { id: "aquarium", name: "Aquarium", tagline: "Water always finds its level", accent: "var(--blue)", glyph: "≋", sub: "Shade the grid", cat: "logic" },
-  { id: "galaxies", name: "Galaxies", tagline: "Symmetric regions around each dot", accent: "var(--indigo)", glyph: "✦", sub: "Regions", cat: "logic" },
-  { id: "net", name: "Pipes", tagline: "Rotate tiles, reconnect the network", accent: "var(--teal)", glyph: "╬", sub: "Loops & paths", cat: "logic" },
-  { id: "fillapix", name: "Fill-a-Pix", tagline: "Paint by neighbour counts", accent: "var(--blue)", glyph: "▨", sub: "Shade the grid", cat: "logic" },
-  { id: "fillomino", name: "Fillomino", tagline: "Regions sized by their number", accent: "var(--amber)", glyph: "▤", sub: "Regions", cat: "logic" },
-  { id: "yinyang", name: "Yin-Yang", tagline: "Two circles, one balance", accent: "var(--teal)", glyph: "☯", sub: "Shade the grid", cat: "logic" },
-  { id: "untangle", name: "Untangle", tagline: "Drag dots, uncross lines", accent: "var(--green)", glyph: "✳", sub: "Loops & paths", cat: "logic" },
-  { id: "kakurasu", name: "Kakurasu", tagline: "Weighted rows and columns", accent: "var(--olive)", glyph: "⧗", sub: "Shade the grid", cat: "logic" },
-  { id: "knight", name: "Knight's Tour", tagline: "Every square, one knight", accent: "var(--indigo)", glyph: "♞", sub: "Loops & paths", cat: "logic" },
-  { id: "norinori", name: "Norinori", tagline: "Two per region, in dominoes", accent: "var(--purple)", glyph: "⬛", sub: "Shade the grid", cat: "logic" },
-  { id: "heyawake", name: "Heyawake", tagline: "Numbered rooms, shaded squares", accent: "var(--rose)", glyph: "▥", sub: "Shade the grid", cat: "logic" },
-  { id: "tracks", name: "Train Tracks", tagline: "Lay the line, match the counts", accent: "var(--coral)", glyph: "╍", sub: "Loops & paths", cat: "logic" },
-  { id: "slant", name: "Slant", tagline: "Diagonals that never close a loop", accent: "var(--blue)", glyph: "◸", sub: "Loops & paths", cat: "logic" },
-  { id: "magnets", name: "Magnets", tagline: "Poles that never touch", accent: "var(--rose)", glyph: "◨", sub: "Shade the grid", cat: "logic" },
-  { id: "yajilin", name: "Yajilin", tagline: "Arrows count the shaded cells", accent: "var(--purple)", glyph: "⇲", sub: "Loops & paths", cat: "logic" },
-  { id: "lits", name: "LITS", tagline: "One tetromino in every region", accent: "var(--olive)", glyph: "⬓", sub: "Shade the grid", cat: "logic" },
-  { id: "ripple", name: "Ripple Effect", tagline: "Equal numbers keep their distance", accent: "var(--teal)", glyph: "∷", sub: "Regions", cat: "logic" },
-
-  { id: "mines", name: "Minesweeper", tagline: "First tap is always safe", accent: "var(--purple)", glyph: "✹", cat: "classic" },
-  { id: "lights", name: "Lights Out", tagline: "Flip them all off", accent: "var(--amber)", glyph: "◉", cat: "classic" },
-  { id: "2048", name: "2048", tagline: "Merge tiles, double up", accent: "var(--amber)", glyph: "⊞", cat: "classic" },
-  { id: "fifteen", name: "Fifteen", tagline: "Slide the tiles into order", accent: "var(--blue)", glyph: "⇆", cat: "classic" },
-  { id: "memory", name: "Pairs", tagline: "Flip two, find the match", accent: "var(--rose)", glyph: "❖", cat: "classic" },
-  { id: "mastermind", name: "Mastermind", tagline: "Crack the colour code", accent: "var(--rose)", glyph: "◒", cat: "classic" },
-  { id: "hanoi", name: "Towers of Hanoi", tagline: "Rebuild the tower, disk by disk", accent: "var(--blue)", glyph: "≣", cat: "classic" },
-  { id: "klondike", name: "Solitaire", tagline: "Classic Klondike, tap to move", accent: "var(--green)", glyph: "♠", cat: "classic" },
-  { id: "freecell", name: "FreeCell", tagline: "All cards up, four spare cells", accent: "var(--indigo)", glyph: "♣", cat: "classic" },
-  { id: "spider", name: "Spider", tagline: "One suit, eight runs to clear", accent: "var(--purple)", glyph: "♤", cat: "classic" },
-  { id: "sokoban", name: "Sokoban", tagline: "Push every crate onto a goal", accent: "var(--olive)", glyph: "▣", cat: "classic" },
-  { id: "pegs", name: "Peg Solitaire", tagline: "Jump pegs down to one", accent: "var(--teal)", glyph: "✛", cat: "classic" },
-  { id: "yahtzee", name: "Yahtzee", tagline: "Thirteen rounds of dice", accent: "var(--coral)", glyph: "⚄", cat: "classic" },
-  { id: "tripeaks", name: "TriPeaks", tagline: "Clear the peaks, rank by rank", accent: "var(--amber)", glyph: "▲", cat: "classic" },
-  { id: "ballsort", name: "Ball Sort", tagline: "Pour until every tube matches", accent: "var(--purple)", glyph: "⫶", cat: "classic" },
-  { id: "samegame", name: "SameGame", tagline: "Pop groups, clear the board", accent: "var(--rose)", glyph: "⣿", cat: "classic" },
-  { id: "unblock", name: "Unblock", tagline: "Slide the red car free", accent: "var(--coral)", glyph: "⇥", cat: "classic" },
-  { id: "pyramid", name: "Pyramid", tagline: "Pairs that make thirteen", accent: "var(--amber)", glyph: "♦", cat: "classic" },
-  { id: "golf", name: "Golf", tagline: "One up or down, clear the course", accent: "var(--green)", glyph: "◎", cat: "classic" },
-  { id: "farkle", name: "Farkle", tagline: "Push your luck with six dice", accent: "var(--rose)", glyph: "⚅", cat: "classic" },
-  { id: "yukon", name: "Yukon", tagline: "Klondike unchained — no deck", accent: "var(--teal)", glyph: "♥", cat: "classic" },
-  { id: "scorpion", name: "Scorpion", tagline: "Spider with a sting", accent: "var(--olive)", glyph: "♦", cat: "classic" },
-  { id: "mahjong", name: "Mahjong", tagline: "Match free tiles, clear the stack", accent: "var(--indigo)", glyph: "🀄", cat: "classic" },
-  { id: "flood", name: "Flood It", tagline: "Swallow the board in colour", accent: "var(--teal)", glyph: "◈", cat: "classic" },
-  { id: "dots", name: "Dots & Boxes", tagline: "Close boxes, beat the machine", accent: "var(--blue)", glyph: "⊞", cat: "classic" },
-  { id: "forty", name: "Forty Thieves", tagline: "Two packs, no second chances", accent: "var(--coral)", glyph: "♧", cat: "classic" },
-  { id: "bakers", name: "Baker's Dozen", tagline: "Thirteen columns, no deck", accent: "var(--olive)", glyph: "♡", cat: "classic" },
-  { id: "accordion", name: "Accordion", tagline: "Squeeze fifty-two into one", accent: "var(--amber)", glyph: "⇤", cat: "classic" },
-  { id: "acesup", name: "Aces Up", tagline: "Leave only the four aces", accent: "var(--green)", glyph: "♤", cat: "classic" },
-  { id: "canfield", name: "Canfield", tagline: "Wrapping foundations, fast deck", accent: "var(--purple)", glyph: "◇", cat: "classic" },
-  { id: "gaps", name: "Gaps", tagline: "Four suits in order, four holes", accent: "var(--blue)", glyph: "⬚", cat: "classic" },
-  { id: "castle", name: "Beleaguered Castle", tagline: "Eight fans, four aces home", accent: "var(--indigo)", glyph: "♖", cat: "classic" },
-  { id: "nim", name: "Nim", tagline: "Take the last counter to win", accent: "var(--coral)", glyph: "⚈", cat: "classic" }
-];
-
-const CATEGORIES: Category[] = ["words", "numbers", "logic", "classic"];
-const GAME_IDS = new Set<string>(CARDS.map((c) => c.id));
 
 /** The view lives in location.hash (#/game/sudoku, #/cat/words), so the
  *  browser back button navigates in-app instead of leaving the PWA, and
@@ -317,7 +99,7 @@ function Card({
   fav,
   onFav
 }: {
-  card: CardInfo;
+  card: GameInfo;
   onOpen: () => void;
   recent?: boolean;
   fav?: boolean;
@@ -377,6 +159,7 @@ export default function App() {
   const [recents, setRecents] = useState(loadRecents);
   const [lastGame, setLastGame] = useState<GameId | null>(null);
   const wide = useIsWide();
+  const searchRef = useRef<HTMLInputElement>(null);
   // True once we've pushed an in-app hash, so "back" can pop real history;
   // on a deep link there's nothing behind us, so we push the hub instead.
   const navigated = useRef(false);
@@ -421,6 +204,22 @@ export default function App() {
     };
   }, []);
 
+  // "/" jumps to the search box from anywhere on the hub, the way it does
+  // in most catalogues; typing into a field must still type a slash.
+  useEffect(() => {
+    if (view !== "hub") return;
+    const h = (e: KeyboardEvent) => {
+      if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return;
+      const el = e.target as HTMLElement | null;
+      if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA")) return;
+      e.preventDefault();
+      searchRef.current?.focus();
+      searchRef.current?.select();
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [view]);
+
   const navigate = (hash: string) => {
     scrollMem.current.set(routeKey, window.scrollY);
     navigated.current = true;
@@ -453,7 +252,7 @@ export default function App() {
       <Suspense fallback={<div className="hub" />}>
         <Stats
           onExit={exit}
-          games={CARDS.map((c) => ({
+          games={GAMES.map((c) => ({
             id: c.id,
             name: c.name,
             cat: CATEGORY_LABEL[c.cat]
@@ -496,38 +295,7 @@ export default function App() {
   }
 
   if (view !== "hub") {
-    const Game = {
-      word: Wordle, sudoku: Sudoku, picross: Picross,
-      wordsearch: WordSearch, lights: LightsOut, mines: Mines,
-      queens: Queens, tango: Tango, zip: Zip,
-      "2048": Game2048, memory: Memory, fifteen: Fifteen,
-      hangman: Hangman, futoshiki: Futoshiki, sky: Skyscrapers,
-      hitori: Hitori, nurikabe: Nurikabe, hashi: Hashi,
-      kenken: KenKen, kropki: Kropki, stars: Stars, flow: Flow,
-      tents: Tents, shikaku: Shikaku, ships: Battleships,
-      slither: Slitherlink, kakuro: Kakuro, mastermind: Mastermind,
-      hanoi: Hanoi, klondike: Klondike, freecell: FreeCell, spider: Spider,
-      anagram: Anagram, masyu: Masyu, akari: Akari, dominoes: Dominoes,
-      thermo: Thermometers, suguru: Suguru, sokoban: Sokoban,
-      pegs: PegSolitaire, yahtzee: Yahtzee, tripeaks: TriPeaks,
-      aquarium: Aquarium, galaxies: Galaxies, net: Net,
-      ballsort: BallSort, samegame: SameGame, math24: Math24,
-      killer: Killer, equation: Equation, fillapix: FillAPix,
-      fillomino: Fillomino, yinyang: YinYang, unblock: Unblock,
-      pyramid: Pyramid, golf: Golf, farkle: Farkle, crypto: Cryptogram,
-      ladder: Ladder, mini: MiniCrossword, yukon: Yukon, scorpion: Scorpion,
-      sujiko: Sujiko, untangle: Untangle, str8ts: Str8ts, mahjong: Mahjong,
-      numbrix: Numbrix, jigsaw: Jigsaw, sandwich: Sandwich,
-      kakurasu: Kakurasu, knight: Knight, norinori: Norinori,
-      heyawake: Heyawake, flood: FloodIt, dots: DotsBoxes,
-      forty: FortyThieves, bakers: BakersDozen, accordion: Accordion,
-      acesup: AcesUp, canfield: Canfield,
-      bee: SpellingBee, waffle: Waffle, boggle: Boggle, boxed: LetterBoxed,
-      sumplete: Sumplete, suko: Suko, hidato: Hidato, magic: MagicSquare,
-      tracks: TrainTracks, slant: Slant, magnets: Magnets, yajilin: Yajilin,
-      lits: Lits, ripple: Ripple,
-      gaps: Gaps, castle: BeleagueredCastle, nim: Nim
-    }[view];
+    const Game = GAME_COMPONENT[view];
     return (
       <GameShell>
         <Suspense fallback={<div className="game" />}>
@@ -537,10 +305,19 @@ export default function App() {
     );
   }
 
-  const inProgress = CARDS.filter((c) => progressOf(c.id) === "started");
+  const inProgress = GAMES.filter((c) => progressOf(c.id) === "started");
   const open = (id: GameId) => navigate(`/game/${id}`);
 
-  const renderCard = (card: CardInfo) => (
+  /** Deal out a game at random, preferring ones never finished before —
+   *  with over a hundred to choose from, the pick is more useful than the
+   *  list. */
+  const surprise = () => {
+    const untried = GAMES.filter((c) => loadStats(c.id).played === 0);
+    const pool = untried.length > 0 ? untried : GAMES;
+    open(pool[Math.floor(Math.random() * pool.length)].id);
+  };
+
+  const renderCard = (card: GameInfo) => (
     <Card
       key={card.id}
       card={card}
@@ -551,7 +328,7 @@ export default function App() {
     />
   );
 
-  const cardSection = (title: string, cards: CardInfo[]) =>
+  const cardSection = (title: string, cards: readonly GameInfo[]) =>
     cards.length > 0 && (
       <section className="cards-section">
         <h2>{title}</h2>
@@ -559,7 +336,7 @@ export default function App() {
       </section>
     );
 
-  const favCards = CARDS.filter((c) => favorites.includes(c.id));
+  const favCards = GAMES.filter((c) => favorites.includes(c.id));
   // Anything already pinned or mid-game is shown above; don't list it twice.
   const shownAbove = new Set<GameId>([
     ...favorites,
@@ -567,15 +344,15 @@ export default function App() {
   ]);
   const recentCards = recents
     .filter((id) => !shownAbove.has(id))
-    .map((id) => CARDS.find((c) => c.id === id))
-    .filter((c): c is CardInfo => c !== undefined)
+    .map((id) => GAMES.find((c) => c.id === id))
+    .filter((c): c is GameInfo => c !== undefined)
     .slice(0, 4);
 
   /** Thirty-five logic grids in one undifferentiated column is a wall, so
    *  that category is shown in named runs. Anything without a run — or a
    *  category that doesn't use them — just lists flat. */
   const gamesOf = (cat: Category) => {
-    const cards = CARDS.filter((c) => c.cat === cat);
+    const cards = GAMES.filter((c) => c.cat === cat);
     const subs = SUB_ORDER[cat];
     if (!subs) return <div className="cards">{cards.map(renderCard)}</div>;
     const loose = cards.filter((c) => !c.sub || !subs.includes(c.sub));
@@ -627,7 +404,7 @@ export default function App() {
 
   // One pass over the saved stats for the hub's summary strip; the storage
   // layer memoises reads, so this is cheap enough to keep always-fresh.
-  const record = CARDS.reduce(
+  const record = GAMES.reduce(
     (acc, c) => {
       const s = loadStats(c.id);
       return {
@@ -639,9 +416,15 @@ export default function App() {
   );
 
   const q = query.trim().toLowerCase();
+  // Name and tagline, plus each game's alias keywords ("nonogram" finds
+  // Picross, "solitaire" finds every card game) and its category label.
   const matches = q
-    ? CARDS.filter(
-        (c) => c.name.toLowerCase().includes(q) || c.tagline.toLowerCase().includes(q)
+    ? GAMES.filter(
+        (c) =>
+          c.name.toLowerCase().includes(q) ||
+          c.tagline.toLowerCase().includes(q) ||
+          c.keywords.includes(q) ||
+          CATEGORY_LABEL[c.cat].toLowerCase().includes(q)
       )
     : [];
 
@@ -681,21 +464,41 @@ export default function App() {
           >
             {sound ? "🔊" : "🔇"}
           </button>
+          <button
+            className="icon-btn"
+            onClick={surprise}
+            aria-label="Open a random game"
+          >
+            ⚄
+          </button>
         </div>
         <h1>PuzzleBox</h1>
         <p className="ticket-note">
           {online
-            ? `${CARDS.length} puzzles, endless boards — pick one.`
+            ? `${GAMES.length} puzzles, endless boards — pick one.`
             : "Offline — puzzles still work."}
         </p>
       </header>
 
       <input
+        ref={searchRef}
         className="hub-search"
         type="search"
-        placeholder={`Search ${CARDS.length} games…`}
+        placeholder={`Search ${GAMES.length} games…`}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
+        // Enter opens the top hit, so a search is one uninterrupted
+        // gesture: type a few letters, press Enter, you're playing.
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && matches.length > 0) {
+            e.preventDefault();
+            e.currentTarget.blur();
+            open(matches[0].id);
+          } else if (e.key === "Escape" && query) {
+            e.preventDefault();
+            setQuery("");
+          }
+        }}
         aria-label="Search games"
       />
 
@@ -734,19 +537,46 @@ export default function App() {
           {cardSection("Recently played", recentCards)}
 
           {wide ? (
-            CATEGORIES.map((cat) => (
-              <section key={cat} className="cards-section">
-                <h2>{CATEGORY_LABEL[cat]}</h2>
-                {gamesOf(cat)}
-              </section>
-            ))
+            <>
+              {/* Wide screens show all four categories on one page, which
+                  is a long scroll — these chips stick to the top and jump. */}
+              <nav className="cat-nav" aria-label="Jump to a category">
+                {CATEGORIES.map((cat) => (
+                  <button
+                    key={cat}
+                    className="cat-nav-chip"
+                    style={{ "--accent": CATEGORY_META[cat].accent } as CSSProperties}
+                    onClick={() =>
+                      document.getElementById(`cat-${cat}`)?.scrollIntoView({
+                        // The CSS reduced-motion rule can't reach a JS
+                        // scroll, so honour the preference here.
+                        behavior: window.matchMedia("(prefers-reduced-motion: reduce)")
+                          .matches
+                          ? "auto"
+                          : "smooth",
+                        block: "start"
+                      })
+                    }
+                  >
+                    <span aria-hidden="true">{CATEGORY_META[cat].glyph}</span>
+                    {CATEGORY_LABEL[cat]}
+                  </button>
+                ))}
+              </nav>
+              {CATEGORIES.map((cat) => (
+                <section key={cat} id={`cat-${cat}`} className="cards-section">
+                  <h2>{CATEGORY_LABEL[cat]}</h2>
+                  {gamesOf(cat)}
+                </section>
+              ))}
+            </>
           ) : (
             <section className="cards-section">
               <h2>Pick a category</h2>
               <div className="cards">
                 {CATEGORIES.map((cat) => {
                   const meta = CATEGORY_META[cat];
-                  const games = CARDS.filter((c) => c.cat === cat);
+                  const games = GAMES.filter((c) => c.cat === cat);
                   const started = games.filter((c) => progressOf(c.id) === "started").length;
                   return (
                     <button

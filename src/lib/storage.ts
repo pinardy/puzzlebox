@@ -30,27 +30,10 @@ export function save<T>(key: string, value: T): void {
   }
 }
 
-export type GameId =
-  | "word" | "sudoku" | "picross" | "wordsearch" | "lights" | "mines"
-  | "queens" | "tango" | "zip"
-  | "2048" | "memory" | "fifteen" | "hangman" | "futoshiki" | "sky"
-  | "hitori" | "nurikabe" | "hashi"
-  | "kenken" | "kropki" | "stars" | "flow" | "tents" | "shikaku"
-  | "ships" | "slither" | "kakuro" | "mastermind" | "hanoi" | "klondike"
-  | "freecell" | "spider" | "anagram" | "masyu" | "akari" | "dominoes"
-  | "thermo" | "suguru" | "sokoban" | "pegs" | "yahtzee"
-  | "tripeaks" | "aquarium" | "galaxies" | "net" | "ballsort" | "samegame"
-  | "math24"
-  | "killer" | "equation" | "fillapix" | "fillomino" | "yinyang" | "unblock"
-  | "pyramid" | "golf" | "farkle" | "crypto" | "ladder" | "mini"
-  | "yukon" | "scorpion" | "sujiko" | "untangle" | "str8ts" | "mahjong"
-  | "numbrix" | "jigsaw" | "sandwich" | "kakurasu" | "knight" | "norinori"
-  | "heyawake" | "flood" | "dots" | "forty" | "bakers" | "accordion"
-  | "acesup" | "canfield"
-  | "bee" | "waffle" | "boggle" | "boxed"
-  | "sumplete" | "suko" | "hidato" | "magic"
-  | "tracks" | "slant" | "magnets" | "yajilin" | "lits" | "ripple"
-  | "gaps" | "castle" | "nim";
+// The id union is derived from the game registry — one entry per game
+// there covers the type, the hub, routing, and code-splitting at once.
+export type { GameId } from "../games/registry";
+import type { GameId } from "../games/registry";
 
 export type Diff = "easy" | "medium" | "hard";
 

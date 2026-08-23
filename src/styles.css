@@ -5018,3 +5018,158 @@ button { font-family: inherit; color: inherit; }
 :root[data-theme="dark"] .aq-cell.water.conflict { background: #4d2b3f; }
 :root[data-theme="dark"] .result-backdrop { background: rgba(0, 0, 0, 0.55); }
 :root[data-theme="dark"] .help-backdrop { background: rgba(0, 0, 0, 0.55); }
+
+/* ---------- Toolbar: arming, chip wrapping, keyboard popover ---------- */
+
+/* Difficulty on the left, chips on the right. With a clock and a keys chip
+   in play the row can outgrow a narrow phone, so the chip group wraps to
+   its own line instead of overlapping — and squeezing the picker clips its
+   own labels, hence flex-shrink: 0. */
+.game-tools { flex-wrap: wrap; }
+.diff-picker { flex-shrink: 0; }
+.tools-chips {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.tools-gap { display: none; }
+
+/* Switching difficulty deals a new board — armed, it reads like the
+   header's Discard button rather than a difficulty label. */
+.diff-picker button.arming {
+  background: var(--rose);
+  border-color: var(--rose);
+  color: #fff;
+  animation: tile-pop 180ms ease;
+}
+
+.tools-menu-anchor { position: relative; display: inline-flex; }
+.tools-menu-wrap { display: contents; }
+/* Full-screen invisible scrim: a tap anywhere outside closes the popover. */
+.tools-menu-scrim {
+  position: fixed;
+  inset: 0;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: default;
+  z-index: 11;
+}
+.tools-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 12;
+  background: var(--card);
+  border: 1.5px solid var(--ink);
+  border-radius: 12px;
+  box-shadow: 0 6px 0 rgba(27, 39, 51, 0.3);
+  padding: 10px 12px;
+  animation: card-in 160ms ease;
+}
+.tools-keys {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: max-content;
+  font-size: 12px;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+.tools-menu-keys-head {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.tools-keys kbd {
+  font-family: var(--mono);
+  font-size: 11px;
+  border: 1px solid var(--ink-soft);
+  border-radius: 4px;
+  padding: 1px 4px;
+  color: var(--ink);
+}
+/* Touch-only devices have no keyboard to describe. */
+@media (hover: none) and (pointer: coarse) {
+  .tools-menu-anchor { display: none; }
+}
+@media (max-width: 430px) {
+  .game-tools, .tools-chips { gap: 6px; }
+  .tool-chip { padding: 5px 10px; }
+}
+
+/* ---------- Per-game stats panel (game header) ---------- */
+
+.stats-btn {
+  width: 40px; height: 40px;
+  border: 1.5px solid var(--ink);
+  border-radius: 10px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  font-size: 18px;
+  cursor: pointer;
+}
+.stats-btn:active { transform: translateY(2px); box-shadow: none; }
+
+.stats-panel { text-align: left; }
+.stats-panel h3 { text-align: center; margin-top: 2px; }
+.stats-rows { display: flex; flex-direction: column; margin-top: 10px; }
+.stats-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 7px 2px;
+  font-size: 14px;
+  border-top: 1px dashed var(--grid-line);
+}
+.stats-row:first-child { border-top: none; }
+.stats-row span { color: var(--ink-soft); }
+.stats-row strong {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: right;
+  white-space: nowrap;
+}
+.stats-empty { margin: 10px 0 4px; font-size: 14px; color: var(--ink-soft); }
+
+/* ---------- Hub: sticky category jump nav (wide screens) ---------- */
+
+.cat-nav {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 8px 0;
+  margin-bottom: -6px;
+  background: var(--paper);
+}
+.cat-nav-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1.5px solid var(--ink);
+  border-left: 5px solid var(--accent);
+  border-radius: 999px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  padding: 6px 14px 6px 11px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.cat-nav-chip:active { transform: translateY(1px); box-shadow: none; }
+.cat-nav-chip span { font-family: var(--mono); color: var(--accent); }
+
+/* Sections land below the sticky bar, not under it. */
+.cards-section[id] { scroll-margin-top: 52px; }
