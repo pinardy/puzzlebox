@@ -2,6 +2,7 @@
    System fonts only: the app is offline-first and loads zero external assets. */
 
 :root {
+  color-scheme: light;
   --paper: #eef1f4;
   --grid-line: #dde3ea;
   --ink: #1b2733;
@@ -3285,86 +3286,88 @@ button { font-family: inherit; color: inherit; }
 .bd-tableau .kl-card.kl-stacked { top: calc(var(--stack) * clamp(12px, 3.2vw, 18px)); }
 .game-bakers .kl-pile { min-height: 110px; }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --paper: #14181e;
-    --grid-line: #242c36;
-    --ink: #e7ecf2;
-    --ink-soft: #98a4b1;
-    --card: #1c232c;
-    --shadow: 0 2px 0 rgba(0, 0, 0, 0.45);
-  }
-
-  /* Cells with pastel inline backgrounds keep dark text on them. */
-  .q-cell { color: #1b2733; }
-  .q-cell.conflict { color: #c9407a; }
-  .shikaku-cell.boxed { color: #1b2733; }
-
-  .sudoku-cell.inline { background: #202b39; }
-  .sudoku-cell.same { background: #263a52; }
-  .sudoku-cell.selected { background: #2e4a6d; }
-
-  .nx-cell.selected { background: #2e4a6d; }
-  .nx-cell.conflict { background: #45222f; }
-  .nx-cell.given { background: #202b39; }
-  .nn-cell.settled:not(.on) { background: #232030; }
-  .kt-cell.dark { background: #202b39; }
-  .yy-cell.conflict { background: #45222f; }
-  .xw-cell.selected { background: #2e4a6d; }
-  .xw-black { background: #060a0e; border-color: #060a0e; }
-  .st-cell.selected { background: #2e4a6d; }
-  .st-cell.conflict { background: #45222f; }
-  .st-black { background: #060a0e; border-color: #060a0e; }
-  .mj-tile { box-shadow: 2px 3px 0 rgba(0, 0, 0, 0.6); }
-
-  .sudoku-cell.conflict,
-  .futo-cell.conflict,
-  .sky-cell.conflict,
-  .kenken-cell.conflict,
-  .kk-cell.conflict,
-  .tango-cell.conflict,
-  .tents-cell.conflict {
-    background: #45222f;
-  }
-
-  .futo-cell.given,
-  .tango-cell.given,
-  .nuri-cell.clue,
-  .ships-cell.given {
-    background: #262f3a;
-  }
-  .ships-cell.given.ship { background: var(--indigo); }
-
-  .mine-cell {
-    background: #2a3542;
-    box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.06);
-  }
-  .memory-card.matched { background: #1f3126; }
-  .ws-cell.found { background: #1e3a34; }
-  .zip-cell.on { background: #2c3a24; }
-  .tents-cell.tree { background: #223226; }
-  .tents-cell.tent { background: #3a3420; }
-  .ships-cell.ship { background: #2b3050; }
-  .hashi-island.full { background: #26331e; }
-  .hashi-island.over { background: #45222f; }
-  .kk-black { background: #0b0e12; border-color: #2b3540; }
-  .kk-black.clued {
-    background:
-      linear-gradient(to bottom right, transparent calc(50% - 1px), #4a5866 calc(50% - 1px), #4a5866 calc(50% + 1px), transparent calc(50% + 1px)),
-      #0b0e12;
-  }
-  .kk-cell.selected { background: #2a3322; }
-  .akari-cell.lit { background: #3a3420; }
-  .akari-cell.conflict { background: #45222f; }
-  .akari-wall { background: #0b0e12; border-color: #2b3540; }
-  .soko-cell.wall { background: #0b0e12; border-color: #2b3540; }
-  .soko-cell.goal { background: #3a3420; }
-  .soko-cell.box.on-goal { background: #26331e; }
-  .dom-cell.paired { background: #1e3230; }
-  .dom-cell.paired.conflict { background: #45222f; }
-  .yz-die.held { background: #3a3420; }
-  .aq-cell.water { background: #23405c; box-shadow: inset 0 3px 0 rgba(90, 140, 220, 0.4); }
-  .aq-cell.conflict { background: #45222f; }
-  .aq-cell.water.conflict { background: #4d2b3f; }
-  .result-backdrop { background: rgba(0, 0, 0, 0.55); }
+/* Dark theme. Applied via the data-theme flag on <html>, which the
+   header toggle controls; until the player picks, index.html stamps it
+   from the OS preference before first paint. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #14181e;
+  --grid-line: #242c36;
+  --ink: #e7ecf2;
+  --ink-soft: #98a4b1;
+  --card: #1c232c;
+  --shadow: 0 2px 0 rgba(0, 0, 0, 0.45);
 }
+
+/* Cells with pastel inline backgrounds keep dark text on them. */
+:root[data-theme="dark"] .q-cell { color: #1b2733; }
+:root[data-theme="dark"] .q-cell.conflict { color: #c9407a; }
+:root[data-theme="dark"] .shikaku-cell.boxed { color: #1b2733; }
+
+:root[data-theme="dark"] .sudoku-cell.inline { background: #202b39; }
+:root[data-theme="dark"] .sudoku-cell.same { background: #263a52; }
+:root[data-theme="dark"] .sudoku-cell.selected { background: #2e4a6d; }
+
+:root[data-theme="dark"] .nx-cell.selected { background: #2e4a6d; }
+:root[data-theme="dark"] .nx-cell.conflict { background: #45222f; }
+:root[data-theme="dark"] .nx-cell.given { background: #202b39; }
+:root[data-theme="dark"] .nn-cell.settled:not(.on) { background: #232030; }
+:root[data-theme="dark"] .kt-cell.dark { background: #202b39; }
+:root[data-theme="dark"] .yy-cell.conflict { background: #45222f; }
+:root[data-theme="dark"] .xw-cell.selected { background: #2e4a6d; }
+:root[data-theme="dark"] .xw-black { background: #060a0e; border-color: #060a0e; }
+:root[data-theme="dark"] .st-cell.selected { background: #2e4a6d; }
+:root[data-theme="dark"] .st-cell.conflict { background: #45222f; }
+:root[data-theme="dark"] .st-black { background: #060a0e; border-color: #060a0e; }
+:root[data-theme="dark"] .mj-tile { box-shadow: 2px 3px 0 rgba(0, 0, 0, 0.6); }
+
+:root[data-theme="dark"] .sudoku-cell.conflict,
+:root[data-theme="dark"] .futo-cell.conflict,
+:root[data-theme="dark"] .sky-cell.conflict,
+:root[data-theme="dark"] .kenken-cell.conflict,
+:root[data-theme="dark"] .kk-cell.conflict,
+:root[data-theme="dark"] .tango-cell.conflict,
+:root[data-theme="dark"] .tents-cell.conflict {
+  background: #45222f;
+}
+
+:root[data-theme="dark"] .futo-cell.given,
+:root[data-theme="dark"] .tango-cell.given,
+:root[data-theme="dark"] .nuri-cell.clue,
+:root[data-theme="dark"] .ships-cell.given {
+  background: #262f3a;
+}
+:root[data-theme="dark"] .ships-cell.given.ship { background: var(--indigo); }
+
+:root[data-theme="dark"] .mine-cell {
+  background: #2a3542;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.06);
+}
+:root[data-theme="dark"] .memory-card.matched { background: #1f3126; }
+:root[data-theme="dark"] .ws-cell.found { background: #1e3a34; }
+:root[data-theme="dark"] .zip-cell.on { background: #2c3a24; }
+:root[data-theme="dark"] .tents-cell.tree { background: #223226; }
+:root[data-theme="dark"] .tents-cell.tent { background: #3a3420; }
+:root[data-theme="dark"] .ships-cell.ship { background: #2b3050; }
+:root[data-theme="dark"] .hashi-island.full { background: #26331e; }
+:root[data-theme="dark"] .hashi-island.over { background: #45222f; }
+:root[data-theme="dark"] .kk-black { background: #0b0e12; border-color: #2b3540; }
+:root[data-theme="dark"] .kk-black.clued {
+  background:
+    linear-gradient(to bottom right, transparent calc(50% - 1px), #4a5866 calc(50% - 1px), #4a5866 calc(50% + 1px), transparent calc(50% + 1px)),
+    #0b0e12;
+}
+:root[data-theme="dark"] .kk-cell.selected { background: #2a3322; }
+:root[data-theme="dark"] .akari-cell.lit { background: #3a3420; }
+:root[data-theme="dark"] .akari-cell.conflict { background: #45222f; }
+:root[data-theme="dark"] .akari-wall { background: #0b0e12; border-color: #2b3540; }
+:root[data-theme="dark"] .soko-cell.wall { background: #0b0e12; border-color: #2b3540; }
+:root[data-theme="dark"] .soko-cell.goal { background: #3a3420; }
+:root[data-theme="dark"] .soko-cell.box.on-goal { background: #26331e; }
+:root[data-theme="dark"] .dom-cell.paired { background: #1e3230; }
+:root[data-theme="dark"] .dom-cell.paired.conflict { background: #45222f; }
+:root[data-theme="dark"] .yz-die.held { background: #3a3420; }
+:root[data-theme="dark"] .aq-cell.water { background: #23405c; box-shadow: inset 0 3px 0 rgba(90, 140, 220, 0.4); }
+:root[data-theme="dark"] .aq-cell.conflict { background: #45222f; }
+:root[data-theme="dark"] .aq-cell.water.conflict { background: #4d2b3f; }
+:root[data-theme="dark"] .result-backdrop { background: rgba(0, 0, 0, 0.55); }

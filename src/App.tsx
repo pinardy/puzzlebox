@@ -106,6 +106,11 @@ import { soundEnabled, setSoundEnabled } from "./lib/sound";
 
 type View = "hub" | GameId;
 
+type Theme = "light" | "dark";
+
+const systemTheme = (): Theme =>
+  window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+
 type Category = "words" | "numbers" | "logic" | "classic";
 
 const CATEGORY_LABEL: Record<Category, string> = {
@@ -324,6 +329,12 @@ export default function App() {
   const [colorblind, setColorblind] = useState(() =>
     load("pref:colorblind", false)
   );
+  // null = no explicit choice yet; the theme then follows the OS setting.
+  const [themePref, setThemePref] = useState(() =>
+    load<Theme | null>("pref:theme", null)
+  );
+  const [osTheme, setOsTheme] = useState(systemTheme);
+  const theme = themePref ?? osTheme;
   const [favorites, setFavorites] = useState(loadFavorites);
   const [recents, setRecents] = useState(loadRecents);
   const [lastGame, setLastGame] = useState<GameId | null>(null);
@@ -350,6 +361,19 @@ export default function App() {
     if (colorblind) root.setAttribute("data-cb", "1");
     else root.removeAttribute("data-cb");
   }, [colorblind]);
+
+  // Same for the theme; index.html already stamped it before first paint.
+  useLayoutEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+  }, [theme]);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const onChange = (e: MediaQueryListEvent) =>
+      setOsTheme(e.matches ? "dark" : "light");
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
 
   // Catches deep links and back/forward too, not just taps on a card.
   useEffect(() => {
@@ -389,6 +413,11 @@ export default function App() {
   const toggleColorblind = () => {
     save("pref:colorblind", !colorblind);
     setColorblind(!colorblind);
+  };
+  const toggleTheme = () => {
+    const next: Theme = theme === "dark" ? "light" : "dark";
+    save("pref:theme", next);
+    setThemePref(next);
   };
 
   if (view !== "hub") {
@@ -509,6 +538,18 @@ export default function App() {
     <div className="hub">
       <header className="ticket" aria-label="PuzzleBox">
         <div className="ticket-tools">
+          <button
+            className="icon-btn"
+            onClick={toggleTheme}
+            aria-label={
+              theme === "dark"
+                ? "Switch to the light theme"
+                : "Switch to the dark theme"
+            }
+            aria-pressed={theme === "dark"}
+          >
+            {theme === "dark" ? "☾" : "☀"}
+          </button>
           <button
             className={`icon-btn${colorblind ? " on" : ""}`}
             onClick={toggleColorblind}

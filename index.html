@@ -8,6 +8,27 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>PuzzleBox — Puzzle Games</title>
+    <script>
+      // Stamp the theme before first paint so a saved choice (or a dark OS
+      // preference) never flashes the light palette. Kept in sync afterwards
+      // by the header toggle in the app.
+      (function () {
+        var theme = null;
+        try {
+          theme = JSON.parse(localStorage.getItem("puzzlebox:pref:theme"));
+        } catch (e) {
+          /* no storage — fall through to the OS preference */
+        }
+        if (theme !== "light" && theme !== "dark") {
+          theme =
+            window.matchMedia &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light";
+        }
+        document.documentElement.setAttribute("data-theme", theme);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
