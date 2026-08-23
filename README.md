@@ -1,6 +1,6 @@
 # PuzzleBox
 
-A puzzle PWA — ninety-seven games, endless boards: word guess, sudoku,
+A puzzle PWA — one hundred and nineteen games, endless boards: word guess, sudoku,
 picross, word search, lights out, minesweeper, queens, suns & moons,
 zip, 2048, pairs, fifteen, hangman, futoshiki, skyscrapers, hitori,
 nurikabe, bridges, kenken, kropki, star battle, flow, tents & trees,
@@ -15,7 +15,11 @@ jigsaw sudoku, sandwich, kakurasu, knight's tour, norinori, heyawake,
 flood it, dots & boxes, forty thieves, baker's dozen, accordion, aces up,
 canfield, spelling bee, waffle, boggle, letter boxed, sumplete, suko,
 hidato, magic square, train tracks, slant, magnets, yajilin, LITS, ripple
-effect, gaps, beleaguered castle, and nim. Pick any game, play as many rounds as
+effect, gaps, beleaguered castle, nim, tapa, kurodoko, cave, codeword,
+typeshift, and seventeen more solitaires — eight off, seahaven towers,
+penguin, spiderette, will o' the wisp, streets & alleys, fortress, la belle
+lucie, trefoil, russian solitaire, whitehead, agnes, monte carlo, clock,
+osmosis, calculation, and poker solitaire. Pick any game, play as many rounds as
 you like. Fully offline: puzzles are generated **on-device** from
 random seeds, so nothing is ever fetched at runtime.
 
@@ -120,6 +124,28 @@ random seeds, so nothing is ever fetched at runtime.
 | **Gaps** | Order every row 2→K into the four gaps | 4×13 deal, two redeals |
 | **Beleaguered Castle** | Build A→K; the tableau descends in any suit | Eight piles of six, four aces up |
 | **Nim** | Take the last counter to win | 3–5 heaps; a perfect opponent, always a winnable deal |
+| **Tapa** | One connected wall, no solid 2×2; clues count neighbour runs | 6/8/9; grown wall, ~18 clues, any legal answer wins |
+| **Kurodoko** | Numbers count the white cells in sight | 7/8/9; blacks placed keeping whites connected |
+| **Cave** | One cave holding every clue, no sealed rock | 7/8/9; rock eaten inwards from the border |
+| **Codeword** | Numbers hide letters — crack the cipher | 7×7 lattice, six real words, 2–4 letters given |
+| **Typeshift** | Pick a letter per strip; use every letter | Five strips cut from 3–5 hidden words |
+| **Eight Off** | Down in suit, eight cells, kings open gaps | 8×6, four cells dealt full |
+| **Seahaven Towers** | Down in suit; only kings fill a tower | 10×5, two of four cells dealt |
+| **Penguin** | The beak sets the rank; foundations wrap | 7×7, seven cells, three siblings start home |
+| **Spiderette** | One-pack spider on a Klondike staircase | 1–7 deal, 24-card stock |
+| **Will o' the Wisp** | Spiderette with everything face-up | Seven threes, 31-card stock |
+| **Streets & Alleys** | Beleaguered Castle with the aces dealt | Eight fans, empty foundations |
+| **Fortress** | Same suit, one rank up or down | Ten walls of five and six |
+| **La Belle Lucie** | Same suit down; empties stay empty | 17 fans of three plus one, two shuffles |
+| **Trefoil** | La Belle Lucie with the aces home | 16 fans of three, two shuffles |
+| **Russian Solitaire** | Yukon's rules, but strictly in suit | All 52 dealt; very few deals go home |
+| **Whitehead** | Klondike in one colour, all face-up | Runs move in suit; one pass, draw one |
+| **Agnes** | The deal names the base rank, foundations wrap | Seven columns, seven reserve slots |
+| **Monte Carlo** | Discard touching pairs, then close up | 5×5, refilled from the deck |
+| **Clock** | Thirteen hours; the deal has already decided | 13 piles of four, one button |
+| **Osmosis** | Ranks seep down the rows | Four reserves of four, two redeals |
+| **Calculation** | Four foundations, four steps, wrapping | 48-card stock, four waste heaps |
+| **Poker Solitaire** | Place 25 cards, score ten poker lines | English scoring; 60/75/90 target |
 
 The current puzzle of each game (its seed, difficulty, progress, and play
 time) persists in `localStorage`, so leaving and returning resumes where
@@ -143,11 +169,11 @@ counts accumulate per game.
   hash (`#/game/sudoku`, `#/cat/logic`), so Android/browser back
   returns to the hub instead of closing the app, and any game can be
   bookmarked.
-- **Search** across all 97 games from the hub, by name or tagline.
+- **Search** across all 119 games from the hub, by name or tagline.
 - **Sound effects** — tiny WebAudio jingles on win/lose/hint, no audio
   assets so the app stays fully offline; mute toggle in the hub header,
   remembered across visits.
-- **Difficulty picker** (Easy / Medium / Hard) on 87 of the 97 games —
+- **Difficulty picker** (Easy / Medium / Hard) on 87 of the 119 games —
   board sizes, clue counts, and fleets scale with it.
 - **Win banner** with time, lifetime stats, haptic feedback, and
   New puzzle / All games actions.
@@ -268,8 +294,14 @@ src/
 
 ## Extending
 
-- **Add a game:** implement `({ onExit }) => JSX`, register a card in
-  `App.tsx`, use `loadSlot`/`saveSlot`/`recordResult` with a new `GameId`.
+- **Add a game:** implement `({ onExit }) => JSX`, then add one entry to
+  `src/games/registry.ts` — the `GameId` union, the hub card, its named run,
+  hash routing, and the lazy chunk all derive from it. Use
+  `loadSlot`/`saveSlot`/`recordResult` for persistence, and reuse an engine
+  where one fits: `lib/piles.ts` (fan/castle solitaires), `games/CellGame`
+  (FreeCell family), `games/SpiderGame`, `games/ShadeGame` (shading
+  puzzles), `lib/cards.ts` (card primitives).
+
 - **Guess dictionary:** guesses are currently shape-validated (any 5
   letters). To enforce a dictionary, add a word set and check it in
   `Wordle.tsx → submit()`.

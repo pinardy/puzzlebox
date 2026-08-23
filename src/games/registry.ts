@@ -52,6 +52,8 @@ const defs = [
   { id: "waffle", name: "Waffle", tagline: "Fifteen swaps, six words", accent: "var(--olive)", glyph: "✚", cat: "words", keywords: "swap crossing wordle", load: () => import("./Waffle") },
   { id: "boggle", name: "Boggle", tagline: "Trace words through the grid", accent: "var(--teal)", glyph: "⊡", cat: "words", keywords: "dice adjacent hunt", load: () => import("./Boggle") },
   { id: "boxed", name: "Letter Boxed", tagline: "Twelve letters, four sides", accent: "var(--indigo)", glyph: "▢", cat: "words", keywords: "square connect", load: () => import("./LetterBoxed") },
+  { id: "codeword", name: "Codeword", tagline: "Numbers hiding letters", accent: "var(--rose)", glyph: "№", cat: "words", keywords: "code cracker cipher crossword substitution", load: () => import("./Codeword") },
+  { id: "typeshift", name: "Typeshift", tagline: "Slide the strips, spell them all", accent: "var(--green)", glyph: "⇕", cat: "words", keywords: "columns slide anagram letters", load: () => import("./Typeshift") },
 
   { id: "sudoku", name: "Sudoku", tagline: "Fill the grid, no repeats", accent: "var(--blue)", glyph: "9", cat: "numbers", keywords: "classic 9x9 digits pencil notes", load: () => import("./Sudoku") },
   { id: "futoshiki", name: "Futoshiki", tagline: "Fill the grid, obey the arrows", accent: "var(--purple)", glyph: "≶", cat: "numbers", keywords: "inequality latin more less", load: () => import("./Futoshiki") },
@@ -107,6 +109,9 @@ const defs = [
   { id: "yajilin", name: "Yajilin", tagline: "Arrows count the shaded cells", accent: "var(--purple)", glyph: "⇲", sub: "Loops & paths", cat: "logic", keywords: "loop shade", load: () => import("./Yajilin") },
   { id: "lits", name: "LITS", tagline: "One tetromino in every region", accent: "var(--olive)", glyph: "⬓", sub: "Shade the grid", cat: "logic", keywords: "shade connected", load: () => import("./Lits") },
   { id: "ripple", name: "Ripple Effect", tagline: "Equal numbers keep their distance", accent: "var(--teal)", glyph: "∷", sub: "Regions", cat: "logic", keywords: "regions rooms", load: () => import("./Ripple") },
+  { id: "tapa", name: "Tapa", tagline: "One wall, runs of neighbours", accent: "var(--indigo)", glyph: "◤", sub: "Shade the grid", cat: "logic", keywords: "shade wall connected clues nikoli", load: () => import("./Tapa") },
+  { id: "kurodoko", name: "Kurodoko", tagline: "Count the white cells in sight", accent: "var(--coral)", glyph: "◫", sub: "Shade the grid", cat: "logic", keywords: "kuromasu black visible nikoli", load: () => import("./Kurodoko") },
+  { id: "cave", name: "Cave", tagline: "One cave, no sealed rock", accent: "var(--olive)", glyph: "◜", sub: "Shade the grid", cat: "logic", keywords: "corral bag sight lines nikoli", load: () => import("./Cave") },
 
   { id: "mines", name: "Minesweeper", tagline: "First tap is always safe", accent: "var(--purple)", glyph: "✹", cat: "classic", keywords: "flags bombs sweep", load: () => import("./Mines") },
   { id: "lights", name: "Lights Out", tagline: "Flip them all off", accent: "var(--amber)", glyph: "◉", cat: "classic", keywords: "toggle switch", load: () => import("./LightsOut") },
@@ -141,6 +146,24 @@ const defs = [
   { id: "gaps", name: "Gaps", tagline: "Four suits in order, four holes", accent: "var(--blue)", glyph: "⬚", cat: "classic", keywords: "montana solitaire cards", load: () => import("./Gaps") },
   { id: "castle", name: "Beleaguered Castle", tagline: "Eight fans, four aces home", accent: "var(--indigo)", glyph: "♖", cat: "classic", keywords: "solitaire cards fortress", load: () => import("./BeleagueredCastle") },
   { id: "nim", name: "Nim", tagline: "Take the last counter to win", accent: "var(--coral)", glyph: "⚈", cat: "classic", keywords: "heaps strategy versus", load: () => import("./Nim") },
+
+  { id: "eightoff", name: "Eight Off", tagline: "Eight cells, build down in suit", accent: "var(--green)", glyph: "♧", cat: "classic", keywords: "solitaire cards patience freecell", load: () => import("./EightOff") },
+  { id: "seahaven", name: "Seahaven Towers", tagline: "Ten towers, kings open the gaps", accent: "var(--blue)", glyph: "♤", cat: "classic", keywords: "solitaire cards patience freecell towers", load: () => import("./Seahaven") },
+  { id: "penguin", name: "Penguin", tagline: "The beak sets the rank", accent: "var(--indigo)", glyph: "♦", cat: "classic", keywords: "solitaire cards patience beak wrapping", load: () => import("./Penguin") },
+  { id: "spiderette", name: "Spiderette", tagline: "One-pack spider on a staircase", accent: "var(--purple)", glyph: "♠", cat: "classic", keywords: "solitaire cards patience spider", load: () => import("./Spiderette") },
+  { id: "wisp", name: "Will o' the Wisp", tagline: "Seven threes, all face up", accent: "var(--teal)", glyph: "♧", cat: "classic", keywords: "solitaire cards patience spider", load: () => import("./WillOWisp") },
+  { id: "streets", name: "Streets & Alleys", tagline: "Eight fans, no aces given", accent: "var(--olive)", glyph: "♖", cat: "classic", keywords: "solitaire cards patience castle", load: () => import("./StreetsAlleys") },
+  { id: "fortress", name: "Fortress", tagline: "Ten walls, in suit either way", accent: "var(--coral)", glyph: "♜", cat: "classic", keywords: "solitaire cards patience castle", load: () => import("./Fortress") },
+  { id: "lucie", name: "La Belle Lucie", tagline: "Seventeen fans, two shuffles", accent: "var(--rose)", glyph: "❦", cat: "classic", keywords: "solitaire cards patience fan clover", load: () => import("./LaBelleLucie") },
+  { id: "trefoil", name: "Trefoil", tagline: "Aces home, sixteen fans to go", accent: "var(--green)", glyph: "❧", cat: "classic", keywords: "solitaire cards patience fan clover lucie", load: () => import("./Trefoil") },
+  { id: "russian", name: "Russian Solitaire", tagline: "Yukon, but strictly in suit", accent: "var(--rose)", glyph: "♥", cat: "classic", keywords: "solitaire cards patience yukon hard", load: () => import("./Russian") },
+  { id: "whitehead", name: "Whitehead", tagline: "Klondike in one colour, all face up", accent: "var(--amber)", glyph: "♡", cat: "classic", keywords: "solitaire cards patience klondike", load: () => import("./Whitehead") },
+  { id: "agnes", name: "Agnes", tagline: "The deal names the base rank", accent: "var(--purple)", glyph: "◈", cat: "classic", keywords: "solitaire cards patience sorel klondike reserve", load: () => import("./Agnes") },
+  { id: "montecarlo", name: "Monte Carlo", tagline: "Pair up the touching ranks", accent: "var(--teal)", glyph: "❐", cat: "classic", keywords: "solitaire cards patience pairs weddings", load: () => import("./MonteCarlo") },
+  { id: "clock", name: "Clock", tagline: "Thirteen hours, no decisions", accent: "var(--indigo)", glyph: "◷", cat: "classic", keywords: "solitaire cards patience travellers fortune", load: () => import("./Clock") },
+  { id: "osmosis", name: "Osmosis", tagline: "Ranks seep down the rows", accent: "var(--blue)", glyph: "≈", cat: "classic", keywords: "solitaire cards patience treasure trove", load: () => import("./Osmosis") },
+  { id: "calculation", name: "Calculation", tagline: "Four foundations, four steps", accent: "var(--olive)", glyph: "∑", cat: "classic", keywords: "solitaire cards patience broken intervals arithmetic", load: () => import("./Calculation") },
+  { id: "poker", name: "Poker Solitaire", tagline: "Twenty-five cards, ten hands", accent: "var(--coral)", glyph: "♣", cat: "classic", keywords: "solitaire cards patience square hands scoring", load: () => import("./PokerSolitaire") }
 ] as const satisfies readonly {
   id: string;
   name: string;
