@@ -1,10 +1,33 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { GameId, Diff, loadStats, loadSlot, load, save } from "../lib/storage";
 import { TEXT_GAMES, useGameShell } from "../lib/shell";
 import { playWin, playLose, playHint } from "../lib/sound";
+import { fmtTime } from "../lib/format";
+import { TIPS } from "../lib/tips";
 
 const DIFFS: Diff[] = ["easy", "medium", "hard"];
 const DIFF_LABEL: Record<Diff, string> = { easy: "Easy", medium: "Medium", hard: "Hard" };
+
+/** Ticks on its own so a running clock re-renders four digits rather than
+ *  the whole board. It counts the same active time a move would bank, so
+ *  it agrees with the time on the win banner: a pause over a minute long
+ *  stops counting. */
+function Clock({ playMs }: { playMs: number }) {
+  const [, bump] = useState(0);
+  const since = useRef(Date.now());
+  useEffect(() => {
+    since.current = Date.now();
+  }, [playMs]);
+  useEffect(() => {
+    const id = window.setInterval(() => bump((n) => n + 1), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+  return (
+    <span className="game-clock" aria-hidden="true">
+      {fmtTime(playMs + Math.min(Date.now() - since.current, 60000))}
+    </span>
+  );
+}
 
 /** Slim toolbar under the game header: difficulty picker, rules help,
  *  hint, and undo. Every prop is optional so games opt into what fits. */
@@ -25,8 +48,12 @@ export function GameTools({
 }) {
   const { info } = useGameShell();
   const [showHelp, setShowHelp] = useState(false);
+  const [showTip, setShowTip] = useState(false);
+  // Read once on mount: you change this on the preferences screen, so it
+  // can't move underneath a board that's already open.
+  const [showClock] = useState(() => load("pref:timer", false));
 
-  // Sixty-six games is a lot of unfamiliar boards: open the rules the
+  // Ninety-seven games is a lot of unfamiliar boards: open the rules the
   // first time someone lands on each one, then never again.
   const seenKey = info.game ? `pref:seenrules:${info.game}` : null;
   useEffect(() => {
@@ -34,6 +61,30 @@ export function GameTools({
     setShowHelp(true);
     save(seenKey, true);
   }, [help, seenKey]);
+
+  // Same idea for a board's unadvertised gesture — a hold-to-flag nobody
+  // finds may as well not exist.
+  const tip = info.game ? TIPS[info.game] : undefined;
+  const tipKey = info.game ? `pref:seentip:${info.game}` : null;
+  useEffect(() => {
+    if (!tip || !tipKey || load(tipKey, false)) return;
+    setShowTip(true);
+    save(tipKey, true);
+  }, [tip, tipKey]);
+
+  // Escape closes the rules rather than leaving the game. Capture beats the
+  // header's own window listener, whichever mounted first.
+  useEffect(() => {
+    if (!showHelp) return;
+    const h = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      e.preventDefault();
+      e.stopPropagation();
+      setShowHelp(false);
+    };
+    window.addEventListener("keydown", h, true);
+    return () => window.removeEventListener("keydown", h, true);
+  }, [showHelp]);
 
   useEffect(() => {
     if (!onUndo) return;
@@ -74,6 +125,7 @@ export function GameTools({
             ))}
           </div>
         )}
+        {showClock && <Clock playMs={info.playMs} />}
         <span className="tools-gap" />
         {help && (
           <button
@@ -101,7 +153,49 @@ export function GameTools({
           </button>
         )}
       </div>
-      {help && showHelp && <p className="game-help">{help}</p>}
+
+      {showTip && tip && (
+        <p className="game-tip">
+          <span aria-hidden="true">💡</span> {tip}
+          <button
+            className="tip-x"
+            onClick={() => setShowTip(false)}
+            aria-label="Dismiss tip"
+          >
+            ×
+          </button>
+        </p>
+      )}
+
+      {/* Over the board, not above it — rules you read while looking at the
+          thing they describe are worth far more than rules that push it
+          off the screen. */}
+      {help && showHelp && (
+        <div className="help-backdrop" onClick={() => setShowHelp(false)}>
+          <div
+            className="help-sheet"
+            role="dialog"
+            aria-modal="true"
+            aria-label="How to play"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="help-head">
+              <h3>How to play</h3>
+              <button
+                className="help-close"
+                onClick={() => setShowHelp(false)}
+                aria-label="Close rules"
+              >
+                ×
+              </button>
+            </div>
+            <p className="game-help">{help}</p>
+            <button className="help-got" onClick={() => setShowHelp(false)}>
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -114,11 +208,6 @@ export function Toast({ message }: { message: string | null }) {
       {message && <div className="toast">{message}</div>}
     </div>
   );
-}
-
-function fmtTime(ms: number): string {
-  const s = Math.round(ms / 1000);
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
 
 /** End-of-game banner: result message, time, best time, streak, and the

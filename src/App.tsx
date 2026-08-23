@@ -120,13 +120,11 @@ import {
 } from "./lib/storage";
 import { GameShell } from "./games/GameShell";
 import { soundEnabled, setSoundEnabled } from "./lib/sound";
+import { hapticsEnabled, setHapticsEnabled } from "./lib/haptics";
+import { useTheme } from "./lib/theme";
+const Stats = lazy(() => import("./Stats"));
 
-type View = "hub" | GameId;
-
-type Theme = "light" | "dark";
-
-const systemTheme = (): Theme =>
-  window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+type View = "hub" | "stats" | GameId;
 
 type Category = "words" | "numbers" | "logic" | "classic";
 
@@ -165,7 +163,15 @@ interface CardInfo {
   accent: string;
   glyph: string;
   cat: Category;
+  /** Which named run inside the category this belongs to, where the
+   *  category is big enough to need them. */
+  sub?: string;
 }
+
+/** Named runs, in the order they appear under a category heading. */
+const SUB_ORDER: Partial<Record<Category, string[]>> = {
+  logic: ["Loops & paths", "Shade the grid", "Regions", "Placement"]
+};
 
 const CARDS: CardInfo[] = [
   { id: "word", name: "Word Guess", tagline: "Six tries, five letters", accent: "var(--green)", glyph: "A", cat: "words" },
@@ -199,41 +205,41 @@ const CARDS: CardInfo[] = [
   { id: "hidato", name: "Hidato", tagline: "A chain that counts diagonally", accent: "var(--purple)", glyph: "⤢", cat: "numbers" },
   { id: "magic", name: "Magic Square", tagline: "Every line the same total", accent: "var(--indigo)", glyph: "✧", cat: "numbers" },
 
-  { id: "picross", name: "Picross", tagline: "Reveal the hidden picture", accent: "var(--rose)", glyph: "▦", cat: "logic" },
-  { id: "queens", name: "Queens", tagline: "One crown per colour, none touching", accent: "var(--indigo)", glyph: "♛", cat: "logic" },
-  { id: "stars", name: "Star Battle", tagline: "Two stars everywhere, never touching", accent: "var(--amber)", glyph: "★", cat: "logic" },
-  { id: "tango", name: "Suns & Moons", tagline: "Balance the board, no three in a row", accent: "var(--coral)", glyph: "☾", cat: "logic" },
-  { id: "zip", name: "Zip", tagline: "One line, every square, in order", accent: "var(--olive)", glyph: "⤳", cat: "logic" },
-  { id: "flow", name: "Flow", tagline: "Pipe every pair, fill the grid", accent: "var(--teal)", glyph: "∿", cat: "logic" },
-  { id: "hitori", name: "Hitori", tagline: "Shade out the duplicates", accent: "var(--indigo)", glyph: "▩", cat: "logic" },
-  { id: "nurikabe", name: "Nurikabe", tagline: "Islands in a connected sea", accent: "var(--coral)", glyph: "◍", cat: "logic" },
-  { id: "hashi", name: "Bridges", tagline: "Link every island, no crossings", accent: "var(--olive)", glyph: "☰", cat: "logic" },
-  { id: "tents", name: "Tents & Trees", tagline: "Pitch a tent by every tree", accent: "var(--green)", glyph: "△", cat: "logic" },
-  { id: "shikaku", name: "Shikaku", tagline: "Box every number by its area", accent: "var(--purple)", glyph: "▭", cat: "logic" },
-  { id: "ships", name: "Battleships", tagline: "Find the hidden fleet", accent: "var(--indigo)", glyph: "▬", cat: "logic" },
-  { id: "slither", name: "Slitherlink", tagline: "One loop around the clues", accent: "var(--coral)", glyph: "◇", cat: "logic" },
-  { id: "masyu", name: "Masyu", tagline: "One loop through the pearls", accent: "var(--blue)", glyph: "◐", cat: "logic" },
-  { id: "akari", name: "Light Up", tagline: "Bulbs that never blind each other", accent: "var(--amber)", glyph: "☼", cat: "logic" },
-  { id: "dominoes", name: "Dominoes", tagline: "Re-draw the hidden set", accent: "var(--teal)", glyph: "⠿", cat: "logic" },
-  { id: "thermo", name: "Thermometers", tagline: "Fill mercury to match the counts", accent: "var(--rose)", glyph: "▮", cat: "logic" },
-  { id: "suguru", name: "Suguru", tagline: "Small regions, no touching twins", accent: "var(--green)", glyph: "⌗", cat: "logic" },
-  { id: "aquarium", name: "Aquarium", tagline: "Water always finds its level", accent: "var(--blue)", glyph: "≋", cat: "logic" },
-  { id: "galaxies", name: "Galaxies", tagline: "Symmetric regions around each dot", accent: "var(--indigo)", glyph: "✦", cat: "logic" },
-  { id: "net", name: "Pipes", tagline: "Rotate tiles, reconnect the network", accent: "var(--teal)", glyph: "╬", cat: "logic" },
-  { id: "fillapix", name: "Fill-a-Pix", tagline: "Paint by neighbour counts", accent: "var(--blue)", glyph: "▨", cat: "logic" },
-  { id: "fillomino", name: "Fillomino", tagline: "Regions sized by their number", accent: "var(--amber)", glyph: "▤", cat: "logic" },
-  { id: "yinyang", name: "Yin-Yang", tagline: "Two circles, one balance", accent: "var(--teal)", glyph: "☯", cat: "logic" },
-  { id: "untangle", name: "Untangle", tagline: "Drag dots, uncross lines", accent: "var(--green)", glyph: "✳", cat: "logic" },
-  { id: "kakurasu", name: "Kakurasu", tagline: "Weighted rows and columns", accent: "var(--olive)", glyph: "⧗", cat: "logic" },
-  { id: "knight", name: "Knight's Tour", tagline: "Every square, one knight", accent: "var(--indigo)", glyph: "♞", cat: "logic" },
-  { id: "norinori", name: "Norinori", tagline: "Two per region, in dominoes", accent: "var(--purple)", glyph: "⬛", cat: "logic" },
-  { id: "heyawake", name: "Heyawake", tagline: "Numbered rooms, shaded squares", accent: "var(--rose)", glyph: "▥", cat: "logic" },
-  { id: "tracks", name: "Train Tracks", tagline: "Lay the line, match the counts", accent: "var(--coral)", glyph: "╍", cat: "logic" },
-  { id: "slant", name: "Slant", tagline: "Diagonals that never close a loop", accent: "var(--blue)", glyph: "◸", cat: "logic" },
-  { id: "magnets", name: "Magnets", tagline: "Poles that never touch", accent: "var(--rose)", glyph: "◨", cat: "logic" },
-  { id: "yajilin", name: "Yajilin", tagline: "Arrows count the shaded cells", accent: "var(--purple)", glyph: "⇲", cat: "logic" },
-  { id: "lits", name: "LITS", tagline: "One tetromino in every region", accent: "var(--olive)", glyph: "⬓", cat: "logic" },
-  { id: "ripple", name: "Ripple Effect", tagline: "Equal numbers keep their distance", accent: "var(--teal)", glyph: "∷", cat: "logic" },
+  { id: "picross", name: "Picross", tagline: "Reveal the hidden picture", accent: "var(--rose)", glyph: "▦", sub: "Shade the grid", cat: "logic" },
+  { id: "queens", name: "Queens", tagline: "One crown per colour, none touching", accent: "var(--indigo)", glyph: "♛", sub: "Placement", cat: "logic" },
+  { id: "stars", name: "Star Battle", tagline: "Two stars everywhere, never touching", accent: "var(--amber)", glyph: "★", sub: "Placement", cat: "logic" },
+  { id: "tango", name: "Suns & Moons", tagline: "Balance the board, no three in a row", accent: "var(--coral)", glyph: "☾", sub: "Placement", cat: "logic" },
+  { id: "zip", name: "Zip", tagline: "One line, every square, in order", accent: "var(--olive)", glyph: "⤳", sub: "Loops & paths", cat: "logic" },
+  { id: "flow", name: "Flow", tagline: "Pipe every pair, fill the grid", accent: "var(--teal)", glyph: "∿", sub: "Loops & paths", cat: "logic" },
+  { id: "hitori", name: "Hitori", tagline: "Shade out the duplicates", accent: "var(--indigo)", glyph: "▩", sub: "Shade the grid", cat: "logic" },
+  { id: "nurikabe", name: "Nurikabe", tagline: "Islands in a connected sea", accent: "var(--coral)", glyph: "◍", sub: "Shade the grid", cat: "logic" },
+  { id: "hashi", name: "Bridges", tagline: "Link every island, no crossings", accent: "var(--olive)", glyph: "☰", sub: "Loops & paths", cat: "logic" },
+  { id: "tents", name: "Tents & Trees", tagline: "Pitch a tent by every tree", accent: "var(--green)", glyph: "△", sub: "Placement", cat: "logic" },
+  { id: "shikaku", name: "Shikaku", tagline: "Box every number by its area", accent: "var(--purple)", glyph: "▭", sub: "Regions", cat: "logic" },
+  { id: "ships", name: "Battleships", tagline: "Find the hidden fleet", accent: "var(--indigo)", glyph: "▬", sub: "Placement", cat: "logic" },
+  { id: "slither", name: "Slitherlink", tagline: "One loop around the clues", accent: "var(--coral)", glyph: "◇", sub: "Loops & paths", cat: "logic" },
+  { id: "masyu", name: "Masyu", tagline: "One loop through the pearls", accent: "var(--blue)", glyph: "◐", sub: "Loops & paths", cat: "logic" },
+  { id: "akari", name: "Light Up", tagline: "Bulbs that never blind each other", accent: "var(--amber)", glyph: "☼", sub: "Shade the grid", cat: "logic" },
+  { id: "dominoes", name: "Dominoes", tagline: "Re-draw the hidden set", accent: "var(--teal)", glyph: "⠿", sub: "Regions", cat: "logic" },
+  { id: "thermo", name: "Thermometers", tagline: "Fill mercury to match the counts", accent: "var(--rose)", glyph: "▮", sub: "Shade the grid", cat: "logic" },
+  { id: "suguru", name: "Suguru", tagline: "Small regions, no touching twins", accent: "var(--green)", glyph: "⌗", sub: "Regions", cat: "logic" },
+  { id: "aquarium", name: "Aquarium", tagline: "Water always finds its level", accent: "var(--blue)", glyph: "≋", sub: "Shade the grid", cat: "logic" },
+  { id: "galaxies", name: "Galaxies", tagline: "Symmetric regions around each dot", accent: "var(--indigo)", glyph: "✦", sub: "Regions", cat: "logic" },
+  { id: "net", name: "Pipes", tagline: "Rotate tiles, reconnect the network", accent: "var(--teal)", glyph: "╬", sub: "Loops & paths", cat: "logic" },
+  { id: "fillapix", name: "Fill-a-Pix", tagline: "Paint by neighbour counts", accent: "var(--blue)", glyph: "▨", sub: "Shade the grid", cat: "logic" },
+  { id: "fillomino", name: "Fillomino", tagline: "Regions sized by their number", accent: "var(--amber)", glyph: "▤", sub: "Regions", cat: "logic" },
+  { id: "yinyang", name: "Yin-Yang", tagline: "Two circles, one balance", accent: "var(--teal)", glyph: "☯", sub: "Shade the grid", cat: "logic" },
+  { id: "untangle", name: "Untangle", tagline: "Drag dots, uncross lines", accent: "var(--green)", glyph: "✳", sub: "Loops & paths", cat: "logic" },
+  { id: "kakurasu", name: "Kakurasu", tagline: "Weighted rows and columns", accent: "var(--olive)", glyph: "⧗", sub: "Shade the grid", cat: "logic" },
+  { id: "knight", name: "Knight's Tour", tagline: "Every square, one knight", accent: "var(--indigo)", glyph: "♞", sub: "Loops & paths", cat: "logic" },
+  { id: "norinori", name: "Norinori", tagline: "Two per region, in dominoes", accent: "var(--purple)", glyph: "⬛", sub: "Shade the grid", cat: "logic" },
+  { id: "heyawake", name: "Heyawake", tagline: "Numbered rooms, shaded squares", accent: "var(--rose)", glyph: "▥", sub: "Shade the grid", cat: "logic" },
+  { id: "tracks", name: "Train Tracks", tagline: "Lay the line, match the counts", accent: "var(--coral)", glyph: "╍", sub: "Loops & paths", cat: "logic" },
+  { id: "slant", name: "Slant", tagline: "Diagonals that never close a loop", accent: "var(--blue)", glyph: "◸", sub: "Loops & paths", cat: "logic" },
+  { id: "magnets", name: "Magnets", tagline: "Poles that never touch", accent: "var(--rose)", glyph: "◨", sub: "Shade the grid", cat: "logic" },
+  { id: "yajilin", name: "Yajilin", tagline: "Arrows count the shaded cells", accent: "var(--purple)", glyph: "⇲", sub: "Loops & paths", cat: "logic" },
+  { id: "lits", name: "LITS", tagline: "One tetromino in every region", accent: "var(--olive)", glyph: "⬓", sub: "Shade the grid", cat: "logic" },
+  { id: "ripple", name: "Ripple Effect", tagline: "Equal numbers keep their distance", accent: "var(--teal)", glyph: "∷", sub: "Regions", cat: "logic" },
 
   { id: "mines", name: "Minesweeper", tagline: "First tap is always safe", accent: "var(--purple)", glyph: "✹", cat: "classic" },
   { id: "lights", name: "Lights Out", tagline: "Flip them all off", accent: "var(--amber)", glyph: "◉", cat: "classic" },
@@ -284,6 +290,7 @@ interface Route {
 function parseRoute(): Route {
   const [kind, id] = window.location.hash.replace(/^#\/?/, "").split("/");
   if (kind === "game" && GAME_IDS.has(id)) return { view: id as GameId, cat: null };
+  if (kind === "stats") return { view: "stats", cat: null };
   if (kind === "cat" && (CATEGORIES as string[]).includes(id))
     return { view: "hub", cat: id as Category };
   return { view: "hub", cat: null };
@@ -363,12 +370,9 @@ export default function App() {
   const [colorblind, setColorblind] = useState(() =>
     load("pref:colorblind", false)
   );
-  // null = no explicit choice yet; the theme then follows the OS setting.
-  const [themePref, setThemePref] = useState(() =>
-    load<Theme | null>("pref:theme", null)
-  );
-  const [osTheme, setOsTheme] = useState(systemTheme);
-  const theme = themePref ?? osTheme;
+  const { theme, toggle: toggleTheme } = useTheme();
+  const [haptics, setHaptics] = useState(hapticsEnabled);
+  const [showTimer, setShowTimer] = useState(() => load("pref:timer", false));
   const [favorites, setFavorites] = useState(loadFavorites);
   const [recents, setRecents] = useState(loadRecents);
   const [lastGame, setLastGame] = useState<GameId | null>(null);
@@ -396,22 +400,9 @@ export default function App() {
     else root.removeAttribute("data-cb");
   }, [colorblind]);
 
-  // Same for the theme; index.html already stamped it before first paint.
-  useLayoutEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
-  }, [theme]);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const onChange = (e: MediaQueryListEvent) =>
-      setOsTheme(e.matches ? "dark" : "light");
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
-
   // Catches deep links and back/forward too, not just taps on a card.
   useEffect(() => {
-    if (view === "hub") return;
+    if (view === "hub" || view === "stats") return;
     setLastGame(view);
     setRecents(pushRecent(view));
   }, [view]);
@@ -448,11 +439,61 @@ export default function App() {
     save("pref:colorblind", !colorblind);
     setColorblind(!colorblind);
   };
-  const toggleTheme = () => {
-    const next: Theme = theme === "dark" ? "light" : "dark";
-    save("pref:theme", next);
-    setThemePref(next);
+  const toggleHaptics = () => {
+    setHapticsEnabled(!haptics);
+    setHaptics(!haptics);
   };
+  const toggleTimer = () => {
+    save("pref:timer", !showTimer);
+    setShowTimer(!showTimer);
+  };
+
+  if (view === "stats") {
+    return (
+      <Suspense fallback={<div className="hub" />}>
+        <Stats
+          onExit={exit}
+          games={CARDS.map((c) => ({
+            id: c.id,
+            name: c.name,
+            cat: CATEGORY_LABEL[c.cat]
+          }))}
+          prefs={[
+            {
+              label: "Dark theme",
+              hint: "Follows your device until you pick a side.",
+              on: theme === "dark",
+              onToggle: toggleTheme
+            },
+            {
+              label: "Colour-blind palette",
+              hint: "Blue and vermillion instead of green and amber.",
+              on: colorblind,
+              onToggle: toggleColorblind
+            },
+            {
+              label: "Sound effects",
+              hint: "Short jingles on a win, a loss, or a hint.",
+              on: sound,
+              onToggle: toggleSound
+            },
+            {
+              label: "Vibration",
+              hint: "A short tick on every move. Phones only.",
+              on: haptics,
+              onToggle: toggleHaptics
+            },
+            {
+              label: "Show the clock",
+              hint: "Times every board as you play. Records are kept either way.",
+              on: showTimer,
+              onToggle: toggleTimer
+            }
+          ]}
+        />
+      </Suspense>
+    );
+  }
 
   if (view !== "hub") {
     const Game = {
@@ -530,11 +571,29 @@ export default function App() {
     .filter((c): c is CardInfo => c !== undefined)
     .slice(0, 4);
 
-  const gamesOf = (cat: Category) => (
-    <div className="cards">
-      {CARDS.filter((c) => c.cat === cat).map(renderCard)}
-    </div>
-  );
+  /** Thirty-five logic grids in one undifferentiated column is a wall, so
+   *  that category is shown in named runs. Anything without a run — or a
+   *  category that doesn't use them — just lists flat. */
+  const gamesOf = (cat: Category) => {
+    const cards = CARDS.filter((c) => c.cat === cat);
+    const subs = SUB_ORDER[cat];
+    if (!subs) return <div className="cards">{cards.map(renderCard)}</div>;
+    const loose = cards.filter((c) => !c.sub || !subs.includes(c.sub));
+    return (
+      <>
+        {[...subs, ...(loose.length ? ["More"] : [])].map((s) => {
+          const group = s === "More" ? loose : cards.filter((c) => c.sub === s);
+          if (!group.length) return null;
+          return (
+            <div className="sub-group" key={s}>
+              <h3 className="sub-head">{s}</h3>
+              <div className="cards">{group.map(renderCard)}</div>
+            </div>
+          );
+        })}
+      </>
+    );
+  };
 
   // Narrow screens drill into one category at a time — no endless scroll.
   if (!wide && openCat !== null) {
@@ -565,6 +624,19 @@ export default function App() {
       </div>
     );
   }
+
+  // One pass over the saved stats for the hub's summary strip; the storage
+  // layer memoises reads, so this is cheap enough to keep always-fresh.
+  const record = CARDS.reduce(
+    (acc, c) => {
+      const s = loadStats(c.id);
+      return {
+        won: acc.won + s.won,
+        streak: Math.max(acc.streak, s.longestStreak ?? 0)
+      };
+    },
+    { won: 0, streak: 0 }
+  );
 
   const q = query.trim().toLowerCase();
   const matches = q
@@ -626,6 +698,25 @@ export default function App() {
         onChange={(e) => setQuery(e.target.value)}
         aria-label="Search games"
       />
+
+      <button className="stats-strip" onClick={() => navigate("/stats")}>
+        <span className="stats-strip-main">
+          {record.won > 0 ? (
+            <>
+              <b>{record.won}</b> solved
+              {record.streak > 1 && (
+                <>
+                  {" · best streak "}
+                  <b>{record.streak}</b>
+                </>
+              )}
+            </>
+          ) : (
+            "Stats & preferences"
+          )}
+        </span>
+        <span className="stats-strip-go">Your puzzles →</span>
+      </button>
 
       {q ? (
         <section className="cards-section">

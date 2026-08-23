@@ -8,9 +8,11 @@ export interface ShellInfo {
   game: GameId | null;
   /** The board holds progress worth a confirm before discarding it. */
   dirty: boolean;
+  /** Active play time banked so far, for the optional on-board clock. */
+  playMs: number;
 }
 
-export const EMPTY_SHELL: ShellInfo = { game: null, dirty: false };
+export const EMPTY_SHELL: ShellInfo = { game: null, dirty: false, playMs: 0 };
 
 export const ShellContext = createContext<{
   info: ShellInfo;

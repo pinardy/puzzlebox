@@ -249,9 +249,13 @@ button { font-family: inherit; color: inherit; }
 .game-header h2 {
   margin: 0;
   flex: 1;
+  min-width: 0; /* the theme button shares this row — let the title give */
   font-family: var(--display);
-  font-size: 22px;
+  font-size: clamp(17px, 5.2vw, 22px);
   font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .back-btn {
@@ -293,6 +297,7 @@ button { font-family: inherit; color: inherit; }
 .game-tools {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
 }
 .tools-gap { flex: 1; }
@@ -4649,6 +4654,284 @@ button { font-family: inherit; color: inherit; }
 :root[data-theme="dark"] .lb-dot.spent { background: #101419; }
 :root[data-theme="dark"] .lb-hop { opacity: 1; }
 
+/* ---------- In-game theme toggle ---------- */
+
+.theme-btn {
+  width: 34px; height: 40px;
+  border: 1.5px solid var(--ink);
+  border-radius: 10px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  font-size: 15px;
+  padding: 0;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+.theme-btn:active { transform: translateY(2px); box-shadow: none; }
+
+/* ---------- Optional on-board clock ---------- */
+
+.game-clock {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+  padding-left: 2px;
+}
+
+/* ---------- One-time gesture tip ---------- */
+
+.game-tip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 8px 8px 12px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ink);
+  background: var(--card);
+  border: 1.5px solid var(--amber);
+  border-radius: 10px;
+}
+.tip-x {
+  margin-left: auto;
+  flex: 0 0 auto;
+  width: 26px; height: 26px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* ---------- Rules sheet ---------- */
+
+/* Over the board rather than above it: the rules mean much more when the
+   thing they describe is still on screen behind them. */
+.help-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(27, 39, 51, 0.35);
+  display: grid;
+  place-items: end center;
+  padding: 16px;
+  z-index: 11;
+  animation: fade-in 160ms ease;
+}
+.help-sheet {
+  width: min(100%, 420px);
+  background: var(--card);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow: 0 6px 0 rgba(27, 39, 51, 0.3);
+  padding: 14px 16px 16px;
+  animation: card-in 220ms ease;
+}
+.help-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.help-head h3 {
+  margin: 0;
+  flex: 1;
+  font-family: var(--display);
+  font-size: 15px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--ink-soft);
+}
+.help-close {
+  width: 30px; height: 30px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+.help-sheet .game-help { border: 0; padding: 0; background: none; }
+.help-got {
+  margin-top: 14px;
+  width: 100%;
+  border: 1.5px solid var(--ink);
+  border-radius: 10px;
+  background: var(--ink);
+  color: var(--card);
+  padding: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.help-got:active { transform: translateY(2px); }
+
+/* ---------- Named runs inside a big category ---------- */
+
+.sub-group { margin-bottom: 4px; }
+.sub-head {
+  margin: 10px 2px 6px;
+  font-family: var(--display);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.1px;
+  color: var(--ink-soft);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sub-head::after {
+  content: "";
+  flex: 1;
+  height: 1.5px;
+  background: var(--grid-line);
+}
+
+/* ---------- Hub summary strip ---------- */
+
+.stats-strip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  border: 1.5px solid var(--ink);
+  border-radius: 10px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  padding: 9px 12px;
+  font-size: 13px;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+.stats-strip:active { transform: translateY(2px); box-shadow: none; }
+.stats-strip-main { flex: 1; }
+.stats-strip-main b { color: var(--ink); font-size: 15px; }
+.stats-strip-go { font-weight: 700; color: var(--blue); white-space: nowrap; }
+
+/* ---------- Your puzzles ---------- */
+
+.stats-empty {
+  margin: 4px 2px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+.stat-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 8px;
+  margin: 4px 0 6px;
+}
+.stat-tile {
+  background: var(--card);
+  border: 1.5px solid var(--ink);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.stat-tile.wide { grid-column: span 2; }
+.stat-tile b {
+  font-family: var(--display);
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+.stat-tile b small { font-size: 13px; font-weight: 600; color: var(--ink-soft); }
+.stat-tile span {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--ink-soft);
+}
+
+.stats-table {
+  background: var(--card);
+  border: 1.5px solid var(--ink);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.stats-row {
+  display: grid;
+  grid-template-columns: 1fr 62px 62px 56px;
+  gap: 6px;
+  align-items: center;
+  padding: 8px 12px;
+  font-size: 13px;
+  border-top: 1px solid var(--grid-line);
+}
+.stats-row:first-child { border-top: 0; }
+.stats-row > span:not(:first-child) {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--ink-soft);
+}
+.stats-row small { color: var(--ink-soft); }
+.stats-head {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+  color: var(--ink-soft);
+  background: var(--paper);
+}
+.stats-head > span:not(:first-child) { font-family: var(--body); }
+
+/* ---------- Preference switches ---------- */
+
+.prefs { display: flex; flex-direction: column; gap: 8px; }
+.pref-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  background: var(--card);
+  border: 1.5px solid var(--ink);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  padding: 10px 12px;
+  cursor: pointer;
+}
+.pref-row:active { transform: translateY(2px); box-shadow: none; }
+.pref-text { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.pref-label { font-size: 14px; font-weight: 700; }
+.pref-hint { font-size: 12px; line-height: 1.35; color: var(--ink-soft); }
+.pref-switch {
+  flex: 0 0 auto;
+  width: 44px; height: 26px;
+  border: 1.5px solid var(--ink);
+  border-radius: 999px;
+  background: var(--paper);
+  padding: 2px;
+  display: flex;
+  transition: background 140ms ease;
+}
+.pref-knob {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--ink-soft);
+  transition: transform 140ms ease, background 140ms ease;
+}
+.pref-row.on .pref-switch { background: var(--ok); }
+.pref-row.on .pref-knob { transform: translateX(18px); background: var(--card); }
+
+@media (prefers-reduced-motion: reduce) {
+  .pref-switch, .pref-knob { transition: none; }
+}
+
 /* Dark theme. Applied via the data-theme flag on <html>, which the
    header toggle controls; until the player picks, index.html stamps it
    from the OS preference before first paint. */
@@ -4734,3 +5017,4 @@ button { font-family: inherit; color: inherit; }
 :root[data-theme="dark"] .aq-cell.conflict { background: #45222f; }
 :root[data-theme="dark"] .aq-cell.water.conflict { background: #4d2b3f; }
 :root[data-theme="dark"] .result-backdrop { background: rgba(0, 0, 0, 0.55); }
+:root[data-theme="dark"] .help-backdrop { background: rgba(0, 0, 0, 0.55); }

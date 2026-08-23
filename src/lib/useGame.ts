@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { GameId, Diff, load, save, loadSlot, saveSlot } from "./storage";
 import { newSeed } from "./rng";
+import { tick } from "./haptics";
 import { useGameShell } from "./shell";
 
 /** Shared per-game plumbing: seed + difficulty management, persisted state
@@ -24,10 +25,11 @@ export function useGame<T>(game: GameId, fresh: (seed: string, diff: Diff) => T)
   const { publish } = useGameShell();
   useEffect(() => {
     const done = (saved as { done?: boolean }).done === true;
-    publish({ game, dirty: playMs > 0 && !done });
+    publish({ game, dirty: playMs > 0 && !done, playMs });
   }, [publish, game, playMs, saved]);
 
   function commit(next: T, opts?: { undoable?: boolean; hint?: boolean }) {
+    tick();
     const now = Date.now();
     const ms = playMs + Math.min(now - lastAction.current, 60000);
     lastAction.current = now;

@@ -9,7 +9,11 @@ export function GameShell({ children }: { children: ReactNode }) {
   const publish = useCallback((next: ShellInfo) => {
     // Games publish on every commit; only a real change re-renders.
     setInfo((prev) =>
-      prev.game === next.game && prev.dirty === next.dirty ? prev : next
+      prev.game === next.game &&
+      prev.dirty === next.dirty &&
+      prev.playMs === next.playMs
+        ? prev
+        : next
     );
   }, []);
   const value = useMemo(() => ({ info, publish }), [info, publish]);

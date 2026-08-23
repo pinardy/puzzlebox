@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { TEXT_GAMES, useGameShell } from "../lib/shell";
+import { useTheme } from "../lib/theme";
 
 export function GameHeader({
   title,
@@ -11,6 +12,7 @@ export function GameHeader({
   onNew?: () => void;
 }) {
   const { info } = useGameShell();
+  const { theme, toggle } = useTheme();
   // A board with progress asks twice — one stray tap shouldn't bin an
   // hour-long puzzle. The armed state lapses on its own.
   const [confirming, setConfirming] = useState(false);
@@ -61,6 +63,17 @@ export function GameHeader({
         ←
       </button>
       <h2>{title}</h2>
+      {/* Dimming the screen shouldn't cost you your place in the puzzle. */}
+      <button
+        className="theme-btn"
+        onClick={toggle}
+        aria-label={
+          theme === "dark" ? "Switch to the light theme" : "Switch to the dark theme"
+        }
+        aria-pressed={theme === "dark"}
+      >
+        {theme === "dark" ? "☾" : "☀"}
+      </button>
       {onNew ? (
         <button
           className={`new-btn${confirming ? " confirming" : ""}`}

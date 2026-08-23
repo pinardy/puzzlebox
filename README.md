@@ -153,8 +153,28 @@ counts accumulate per game.
   New puzzle / All games actions.
 - **New puzzle asks twice** once a board has progress, so one stray tap
   can't bin an hour of Killer Sudoku.
-- **Rules open themselves** the first time you visit each game, then
-  stay out of the way.
+- **Rules open themselves** the first time you visit each game, as a sheet
+  *over* the board rather than above it, so the words and the thing they
+  describe are on screen together. `Esc` closes the sheet; a second `Esc`
+  leaves the game.
+- **Gesture tips**: the games with an unadvertised second gesture — hold to
+  flag in Minesweeper, hold to cycle backwards in Slant, Train Tracks and
+  Magnets, drag-to-paint in the shading puzzles — say so once, the first
+  time you open them.
+- **Your puzzles** (`#/stats`): lifetime solved, played, win rate, longest
+  streak, games tried and most-played category, plus a game-by-game table
+  of wins, current streak and best time. Reached from a summary strip on
+  the hub, and also home to the preferences below.
+- **Theme toggle in every game header** (☀/☾), not just the hub — dimming
+  the screen at midnight shouldn't cost you your place in a puzzle.
+- **Optional clock** (off by default): times the board as you play. Best
+  times are recorded either way, so switching it on adds pressure, not
+  bookkeeping.
+- **Vibration** (on by default, phones only): a short tick on every move,
+  fired from the one place every move already passes through.
+- **Big categories are sub-grouped**: the 35 logic grids are shown in named
+  runs — Loops & paths, Shade the grid, Regions, Placement — instead of one
+  undifferentiated column.
 - **The hub remembers where you were** — scroll position per view, plus
   a ring around the game you just came back from.
 - **Favourites and recents**: star any game to pin it to the top of the
@@ -218,6 +238,9 @@ src/
     words.ts     360 curated answers + duplicate-aware guess scoring
     dict.ts      ~11k common words + letter-mask lookups for the letter games
     storage.ts   typed localStorage: current-puzzle slots + solve stats
+    theme.ts     light/dark choice, shared so any screen can toggle it
+    haptics.ts   the per-move tick, behind one preference
+    tips.ts      the once-only gesture hint per game
   games/
     Wordle.tsx   grid, on-screen + hardware keyboard, key-state colouring
     Sudoku.tsx   notes mode, conflict highlighting, remaining-digit counts
@@ -228,6 +251,7 @@ src/
     Queens.tsx     region-coloured board, conflict highlighting
     Tango.tsx      cycle suns/moons, live rule-violation marking
     Zip.tsx        drag-to-draw path, checkpoint order enforced, rewind
+  Stats.tsx      lifetime record + the preference switches
   App.tsx        hub: game cards with continue/play-again state + solve counts
 ```
 
