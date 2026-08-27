@@ -5519,3 +5519,30 @@ button { font-family: inherit; color: inherit; }
 :root[data-theme="dark"] .cw-cell.cw-same { background: #263a52; }
 :root[data-theme="dark"] .cw-key.cw-spent { background: #202b39; }
 :root[data-theme="dark"] .ts-letter.ts-used { background: #1f3126; }
+
+/* ---------- A board that couldn't be opened ---------- */
+
+.broken-card {
+  align-self: center;
+  width: min(100%, 360px);
+  margin-top: 12px;
+  background: var(--card);
+  border: 2px solid var(--amber);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 0 rgba(27, 39, 51, 0.24);
+  padding: 20px 22px 18px;
+  text-align: center;
+}
+.broken-glyph { font-size: 30px; display: block; color: var(--amber); }
+.broken-card h3 {
+  margin: 8px 0 6px;
+  font-family: var(--display);
+  font-size: 18px;
+  font-weight: 800;
+}
+.broken-card p {
+  margin: 0 0 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}

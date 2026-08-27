@@ -32,6 +32,7 @@ import {
   pushRecent
 } from "./lib/storage";
 import { GameShell } from "./games/GameShell";
+import { GameBoundary } from "./games/GameBoundary";
 import { soundEnabled, setSoundEnabled } from "./lib/sound";
 import { hapticsEnabled, setHapticsEnabled } from "./lib/haptics";
 import { useTheme } from "./lib/theme";
@@ -296,11 +297,16 @@ export default function App() {
 
   if (view !== "hub") {
     const Game = GAME_COMPONENT[view];
+    const title = GAMES.find((g) => g.id === view)?.name ?? "Puzzle";
     return (
       <GameShell>
-        <Suspense fallback={<div className="game" />}>
-          <Game onExit={exit} />
-        </Suspense>
+        {/* A board that can't be opened — an old save, a generator that
+            throws — offers a way out instead of a blank screen. */}
+        <GameBoundary game={view} title={title} onExit={exit}>
+          <Suspense fallback={<div className="game" />}>
+            <Game onExit={exit} />
+          </Suspense>
+        </GameBoundary>
       </GameShell>
     );
   }

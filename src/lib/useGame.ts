@@ -7,9 +7,17 @@ import { useGameShell } from "./shell";
 /** Shared per-game plumbing: seed + difficulty management, persisted state
  *  with an undo stack, an active-play-time counter (gaps over a minute
  *  don't count, so a paused game doesn't inflate the clock), and a hint
- *  counter that marks the puzzle as assisted. */
-export function useGame<T>(game: GameId, fresh: (seed: string, diff: Diff) => T) {
-  const slot = useRef(loadSlot<T>(game)).current;
+ *  counter that marks the puzzle as assisted.
+ *
+ *  Pass `stateV` when a game changes the shape of its saved state: boards
+ *  saved under a different version are dropped and dealt fresh instead of
+ *  being fed to code that no longer understands them. */
+export function useGame<T>(
+  game: GameId,
+  fresh: (seed: string, diff: Diff) => T,
+  stateV?: number
+) {
+  const slot = useRef(loadSlot<T>(game, stateV)).current;
   const [diff, setDiff] = useState<Diff>(
     slot?.diff ?? load<Diff>(`pref:diff:${game}`, "medium")
   );
@@ -38,7 +46,7 @@ export function useGame<T>(game: GameId, fresh: (seed: string, diff: Diff) => T)
     if (opts?.hint) setHints(h);
     if (opts?.undoable !== false) setHistory((prev) => [...prev.slice(-19), saved]);
     setSaved(next);
-    saveSlot(game, seed, next, diff, ms, h);
+    saveSlot(game, seed, next, diff, ms, h, stateV);
   }
 
   /** Apply a hint: commits like a normal move but marks the puzzle as
@@ -52,7 +60,7 @@ export function useGame<T>(game: GameId, fresh: (seed: string, diff: Diff) => T)
     const prev = history[history.length - 1];
     setHistory(history.slice(0, -1));
     setSaved(prev);
-    saveSlot(game, seed, prev, diff, playMs, hints);
+    saveSlot(game, seed, prev, diff, playMs, hints, stateV);
   }
 
   /** Deal a fresh puzzle; pass a difficulty to change it at the same time. */
@@ -67,7 +75,7 @@ export function useGame<T>(game: GameId, fresh: (seed: string, diff: Diff) => T)
     setPlayMs(0);
     setHints(0);
     lastAction.current = Date.now();
-    saveSlot(game, s, f, nextDiff, 0, 0);
+    saveSlot(game, s, f, nextDiff, 0, 0, stateV);
   }
 
   return {

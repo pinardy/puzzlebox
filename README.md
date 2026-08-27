@@ -152,6 +152,13 @@ time) persists in `localStorage`, so leaving and returning resumes where
 you left off. **New** in a game's header deals a fresh board; solve
 counts accumulate per game.
 
+A save is only resumed if it can be trusted. The envelope carries a
+version, a game can declare a `stateV` when it changes the shape of what
+it stores, and anything unreadable — wrong version, malformed blob — is
+dropped so a fresh board is dealt instead. If a board still fails to open,
+an error boundary catches it and offers "Deal a new board" rather than
+showing a blank screen; stats and every other game are untouched.
+
 ## UX features
 
 - **Undo** (20 steps) in every game where it makes sense, via a shared

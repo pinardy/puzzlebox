@@ -30,6 +30,16 @@ export function save<T>(key: string, value: T): void {
   }
 }
 
+export function forget(key: string): void {
+  const k = `${NS}:${key}`;
+  cache.delete(k);
+  try {
+    localStorage.removeItem(k);
+  } catch {
+    /* nothing to do — the in-memory mirror is already clear */
+  }
+}
+
 // The id union is derived from the game registry — one entry per game
 // there covers the type, the hub, routing, and code-splitting at once.
 export type { GameId } from "../games/registry";
@@ -120,6 +130,11 @@ export function recordResult(game: GameId, won: boolean): Stats {
   return next;
 }
 
+/** The shape of the envelope below. Bump only when these fields change —
+ *  it invalidates every in-progress board, so a game changing its own
+ *  state shape uses `stateV` instead. */
+const SLOT_V = 1;
+
 /** The current puzzle for a game: the seed and difficulty it was generated
  *  from plus the player's in-progress state, active play time, and hints
  *  taken, so leaving and returning resumes it. */
@@ -129,10 +144,33 @@ export interface Slot<T> {
   diff?: Diff;
   playMs?: number;
   hints?: number;
+  /** Envelope version; saves without one predate versioning. */
+  v?: number;
+  /** The game's own state-shape version, when it declares one. */
+  stateV?: number;
 }
 
-export function loadSlot<T>(game: GameId): Slot<T> | null {
-  return load<Slot<T> | null>(`current:${game}`, null);
+/** A saved board, or null if there isn't a readable one. A save is dropped
+ *  rather than handed back when it can't be trusted — a stale envelope, a
+ *  state shape the game has since changed, or an outright malformed blob.
+ *  Feeding one of those to a game is how you white-screen a player who
+ *  simply came back to an old puzzle. */
+export function loadSlot<T>(game: GameId, stateV?: number): Slot<T> | null {
+  const slot = load<Slot<T> | null>(`current:${game}`, null);
+  if (!slot || typeof slot !== "object" || typeof slot.seed !== "string") return null;
+  // Saves written before versioning have no `v`, and the envelope they used
+  // is exactly this one — so they still load. Only a version we don't
+  // recognise gets dropped, which keeps `v` as a kill switch for later
+  // without throwing away everyone's board the day it ships.
+  if (slot.v !== undefined && slot.v !== SLOT_V) return null;
+  // Every game stores an object (or an array of them); a primitive here
+  // means the blob was written by something else, or corrupted.
+  if (typeof slot.state !== "object" || slot.state === null) return null;
+  // Only the game itself knows its state shape; the hub's own reads (which
+  // just want "is there a board in progress") pass no version and take
+  // whatever is there.
+  if (stateV !== undefined && (slot.stateV ?? 0) !== stateV) return null;
+  return slot;
 }
 
 export function saveSlot<T>(
@@ -141,7 +179,22 @@ export function saveSlot<T>(
   state: T,
   diff?: Diff,
   playMs?: number,
-  hints?: number
+  hints?: number,
+  stateV?: number
 ): void {
-  save(`current:${game}`, { seed, state, diff, playMs, hints });
+  save(`current:${game}`, {
+    seed,
+    state,
+    diff,
+    playMs,
+    hints,
+    v: SLOT_V,
+    stateV
+  });
+}
+
+/** Throw away a game's in-progress board, so the next visit deals a fresh
+ *  one. The escape hatch behind the recovery screen. */
+export function clearSlot(game: GameId): void {
+  forget(`current:${game}`);
 }
