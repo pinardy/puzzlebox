@@ -4,6 +4,8 @@ export interface StarsPuzzle {
   n: number;
   stars: number; // stars per row/column/region
   regions: number[]; // cell → region id (0..n-1)
+  /** The star cells the regions were carved around (one valid answer). */
+  solution: number[];
 }
 
 /** Generate a Star Battle board: first place a valid 2-star layout
@@ -106,6 +108,6 @@ export function generateStars(seed: string, n: number): StarsPuzzle {
     }
     if (remaining > 0) continue;
 
-    return { n, stars: 2, regions: region };
+    return { n, stars: 2, regions: region, solution: stars };
   }
 }

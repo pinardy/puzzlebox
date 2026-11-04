@@ -1,4 +1,5 @@
 import { useEffect, useMemo, type CSSProperties } from "react";
+import { useGridNav } from "../lib/gridnav";
 import { makeRng, shuffled } from "../lib/rng";
 import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
@@ -117,6 +118,8 @@ export default function Norinori({ onExit }: { onExit: () => void }) {
     commit({ ...saved, shaded });
   }
 
+  const nav = useGridNav();
+
   return (
     <div className="game game-norinori">
       <GameHeader title="Norinori" onExit={onExit} onNew={() => newPuzzle()} />
@@ -137,6 +140,7 @@ export default function Norinori({ onExit }: { onExit: () => void }) {
         style={{ "--n": n } as CSSProperties}
         role="grid"
         aria-label="Norinori board"
+        {...nav}
       >
         {Array.from({ length: n * n }, (_, i) => {
           const r = Math.floor(i / n), c = i % n;
@@ -145,6 +149,7 @@ export default function Norinori({ onExit }: { onExit: () => void }) {
             <button
               key={i}
               role="gridcell"
+              data-cell={i}
               className={[
                 "nn-cell",
                 saved.shaded[i] ? "on" : "",
@@ -157,7 +162,9 @@ export default function Norinori({ onExit }: { onExit: () => void }) {
               ].join(" ")}
               onClick={() => toggle(i)}
               aria-pressed={saved.shaded[i]}
-              aria-label={`Row ${r + 1} column ${c + 1}`}
+              aria-label={`Row ${r + 1}, column ${c + 1}, ${
+                saved.shaded[i] ? "shaded" : "unshaded"
+              }${conflicts.has(i) ? ", conflict" : ""}`}
             />
           );
         })}

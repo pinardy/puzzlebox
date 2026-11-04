@@ -1,4 +1,4 @@
-import { useMemo, type CSSProperties } from "react";
+import { useEffect, useMemo, type CSSProperties } from "react";
 import { useCellDrag } from "../lib/drag";
 import { generateZip, areAdjacent } from "../lib/zip";
 import { Diff } from "../lib/storage";
@@ -19,13 +19,13 @@ interface SavedState {
 }
 
 export default function Zip({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, newPuzzle } = useGame<SavedState>((s, d) => {
+  const { seed, diff, saved, commit, commitHint, finish, newPuzzle } = useGame<SavedState>((s, d) => {
     const n = SIZE[d];
     const p = generateZip(`zip-${s}`, n, n + 1);
     return { path: [p.start], done: false };
   });
   const n = SIZE[diff];
-  const { checkpoints, start, last } = useMemo(
+  const { checkpoints, start, last, path: answer } = useMemo(
     () => generateZip(`zip-${seed}`, n, n + 1),
     [seed, n]
   );
@@ -40,10 +40,14 @@ export default function Zip({ onExit }: { onExit: () => void }) {
     return expect;
   }, [saved.path, checkpoints]);
 
-  function apply(path: number[]) {
+  function isDone(path: number[]) {
     let expect = 1;
     for (const cell of path) if (checkpoints.get(cell) === expect) expect++;
-    const done = path.length === n * n && expect > last;
+    return path.length === n * n && expect > last;
+  }
+
+  function apply(path: number[]) {
+    const done = isDone(path);
     // Drawing has its own rewind, so moves aren't undoable.
     commit(
       { path, done },
@@ -74,8 +78,27 @@ export default function Zip({ onExit }: { onExit: () => void }) {
     onStart: step,
     onEnter(i) {
       if (i !== head) step(i);
-    }
+    },
+    // Enter on a focused square steps the line there: extend from the
+    // head, or rewind to an earlier square.
+    onKey: (i) => step(i)
   });
+
+  /** Rewind to where the line last agreed with the generated route, then
+   *  draw one more square of it. */
+  function hint() {
+    if (saved.done) return;
+    let k = 0;
+    while (k < saved.path.length && saved.path[k] === answer[k]) k++;
+    if (k >= answer.length) return;
+    commitHint({ path: answer.slice(0, k + 1), done: false });
+  }
+
+  // A hint can draw the last square; finish the way a drawn move would.
+  const doneNow = useMemo(() => isDone(saved.path), [saved.path]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (doneNow) finish();
+  }, [doneNow, finish]);
 
   return (
     <div className="game game-zip">
@@ -83,7 +106,12 @@ export default function Zip({ onExit }: { onExit: () => void }) {
       <p className="game-hint">
         Draw one line through every square, hitting the numbers in order.
       </p>
-      <GameTools diff={diff} onDiff={newPuzzle} help={HELP} />
+      <GameTools
+        diff={diff}
+        onDiff={newPuzzle}
+        help={HELP}
+        onHint={saved.done ? undefined : hint}
+      />
 
       <div
         className="zip-grid"
@@ -99,6 +127,9 @@ export default function Zip({ onExit }: { onExit: () => void }) {
               key={i}
               role="gridcell"
               data-cell={i}
+              aria-label={`Row ${Math.floor(i / n) + 1}, column ${(i % n) + 1}${
+                cp !== undefined ? `, checkpoint ${cp}` : ""
+              }, ${i === head ? "line end" : onPath.has(i) ? "on the line" : "empty"}`}
               className={[
                 "zip-cell",
                 onPath.has(i) ? "on" : "",

@@ -114,10 +114,12 @@ export default function FillAPix({ onExit }: { onExit: () => void }) {
     write: (marks, undoable) => commit({ ...saved, marks }, { undoable })
   });
 
-  /** Correct one cell that disagrees with the hidden picture. */
+  /** Correct one cell that disagrees with the hidden picture — including
+   *  a blank one that should be crossed, since a win needs every square
+   *  marked. */
   function hint() {
     const wrong = [...Array(n * n).keys()].filter(
-      (i) => (saved.marks[i] === 1) !== (target[i] === 1)
+      (i) => saved.marks[i] !== (target[i] === 1 ? 1 : 2)
     );
     if (!wrong.length) return;
     const idx = wrong[Math.floor(Math.random() * wrong.length)];
@@ -144,6 +146,8 @@ export default function FillAPix({ onExit }: { onExit: () => void }) {
       <div
         className="fap-grid drag-paint"
         style={{ "--n": n } as CSSProperties}
+        role="grid"
+        aria-label="Fill-a-Pix board"
         {...drag}
       >
         {saved.marks.map((m, i) => {
@@ -152,13 +156,18 @@ export default function FillAPix({ onExit }: { onExit: () => void }) {
             <button
               key={i}
               data-cell={i}
+              role="gridcell"
               className={[
                 "fap-cell",
                 m === 1 ? "fill" : m === 2 ? "cross" : "",
                 state === "ok" ? "satisfied" : "",
                 state === "broken" ? "broken" : ""
               ].join(" ")}
-              aria-label={`Cell ${Math.floor(i / n) + 1},${(i % n) + 1}`}
+              aria-label={`Row ${Math.floor(i / n) + 1}, column ${(i % n) + 1}, ${
+                m === 1 ? "painted" : m === 2 ? "crossed" : "empty"
+              }${clues[i] !== null ? `, clue ${clues[i]}` : ""}${
+                state === "ok" ? ", satisfied" : state === "broken" ? ", broken" : ""
+              }`}
             >
               {clues[i] !== null ? clues[i] : m === 2 ? "×" : ""}
             </button>

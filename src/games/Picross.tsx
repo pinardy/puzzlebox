@@ -142,7 +142,11 @@ export default function Picross({ onExit }: { onExit: () => void }) {
         <div className="picross-corner" />
         <div className="picross-colclues">
           {colClues.map((clue, c) => (
-            <div key={c} className={`colclue${colDone[c] ? " satisfied" : ""}`}>
+            <div
+              key={c}
+              className={`colclue${colDone[c] ? " satisfied" : ""}`}
+              aria-label={`Column ${c + 1} clue: ${clue.join(" ")}${colDone[c] ? ", satisfied" : ""}`}
+            >
               {clue.map((n, i) => (
                 <span key={i}>{n}</span>
               ))}
@@ -151,7 +155,11 @@ export default function Picross({ onExit }: { onExit: () => void }) {
         </div>
         <div className="picross-rowclues">
           {rowClues.map((clue, r) => (
-            <div key={r} className={`rowclue${rowDone[r] ? " satisfied" : ""}`}>
+            <div
+              key={r}
+              className={`rowclue${rowDone[r] ? " satisfied" : ""}`}
+              aria-label={`Row ${r + 1} clue: ${clue.join(" ")}${rowDone[r] ? ", satisfied" : ""}`}
+            >
               {clue.map((n, i) => (
                 <span key={i}>{n}</span>
               ))}
@@ -160,6 +168,8 @@ export default function Picross({ onExit }: { onExit: () => void }) {
         </div>
         <div
           className="picross-grid drag-paint"
+          role="grid"
+          aria-label="Picross board"
           {...drag}
         >
           {saved.marks.map((m, i) => {
@@ -169,13 +179,16 @@ export default function Picross({ onExit }: { onExit: () => void }) {
               <button
                 key={i}
                 data-cell={i}
+                role="gridcell"
                 className={[
                   "pic-cell",
                   m === 1 ? "fill" : m === 2 ? "cross" : "",
                   c % 5 === 4 && c !== size - 1 ? "br" : "",
                   r % 5 === 4 && r !== size - 1 ? "bb" : ""
                 ].join(" ")}
-                aria-label={`Row ${r + 1} column ${c + 1}`}
+                aria-label={`Row ${r + 1}, column ${c + 1}, ${
+                  m === 1 ? "filled" : m === 2 ? "crossed" : "empty"
+                }`}
               >
                 {m === 2 ? "×" : ""}
               </button>

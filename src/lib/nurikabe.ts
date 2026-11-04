@@ -5,6 +5,8 @@ export interface NurikabePuzzle {
   n: number;
   /** clue cell index → island size */
   clues: Map<number, number>;
+  /** The sea the board was built from (one valid answer), for hints. */
+  sea: boolean[];
 }
 
 /** Generate a Nurikabe board by constraint repair: start with an all-sea
@@ -96,12 +98,13 @@ export function generateNurikabe(seed: string, n: number): NurikabePuzzle {
       const members = isle.flatMap((v, i) => (v === id ? [i] : []));
       clues.set(members[Math.floor(rng() * members.length)], sizes[id]);
     }
-    return { n, clues };
+    return { n, clues, sea };
   }
 
   // Practically unreachable on a 7×7 board; a fixed fallback keeps the
   // return type honest.
-  return { n, clues: new Map([[0, 1], [n * n - 1, 1]]) };
+  const sea = Array.from({ length: n * n }, (_, i) => i !== 0 && i !== n * n - 1);
+  return { n, clues: new Map([[0, 1], [n * n - 1, 1]]), sea };
 }
 
 /** Does the filled (sea) set solve the puzzle? Unfilled cells are treated

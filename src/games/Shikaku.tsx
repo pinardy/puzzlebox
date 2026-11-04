@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useGridNav } from "../lib/gridnav";
 import { makeRng } from "../lib/rng";
 import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
@@ -29,8 +30,12 @@ function cellsOf(t: Rect, n: number): number[] {
 }
 
 /** Recursively split the board into rectangles, then put each rectangle's
- *  area clue on one of its cells. */
-function generateShikaku(seed: string, n: number): Map<number, number> {
+ *  area clue on one of its cells. Also returns the rectangles (one valid
+ *  answer), for hints. */
+function generateShikaku(
+  seed: string,
+  n: number
+): { clues: Map<number, number>; rects: Rect[] } {
   const rng = makeRng(seed);
   const rects: Rect[] = [];
   const split = (t: Rect) => {
@@ -56,7 +61,7 @@ function generateShikaku(seed: string, n: number): Map<number, number> {
     const cells = cellsOf(t, n);
     clues.set(cells[Math.floor(rng() * cells.length)], area(t));
   }
-  return clues;
+  return { clues, rects };
 }
 
 interface SavedState {
@@ -65,10 +70,13 @@ interface SavedState {
 }
 
 export default function Shikaku({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, finish, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle } =
     useGame<SavedState>(() => ({ rects: [], done: false }));
   const n = SIZE[diff];
-  const clues = useMemo(() => generateShikaku(`shikaku-${seed}`, n), [seed, n]);
+  const { clues, rects: answer } = useMemo(
+    () => generateShikaku(`shikaku-${seed}`, n),
+    [seed, n]
+  );
   const [anchor, setAnchor] = useState<number | null>(null);
 
   /** cell → index of the player rect covering it */
@@ -113,6 +121,22 @@ export default function Shikaku({ onExit }: { onExit: () => void }) {
     commit({ ...saved, rects: [...saved.rects, t] });
   }
 
+  const nav = useGridNav();
+
+  /** Draw one box of the generated answer, clearing any box in its way. */
+  function hint() {
+    if (saved.done) return;
+    const same = (a: Rect, b: Rect) =>
+      a.r0 === b.r0 && a.r1 === b.r1 && a.c0 === b.c0 && a.c1 === b.c1;
+    const missing = answer.filter((t) => !saved.rects.some((u) => same(t, u)));
+    if (!missing.length) return;
+    const t = missing[Math.floor(Math.random() * missing.length)];
+    const covered = new Set(cellsOf(t, n));
+    const rects = saved.rects.filter((u) => !cellsOf(u, n).some((i) => covered.has(i)));
+    setAnchor(null);
+    commitHint({ ...saved, rects: [...rects, t] });
+  }
+
   function startNew(d?: Diff) {
     newPuzzle(d);
     setAnchor(null);
@@ -131,6 +155,7 @@ export default function Shikaku({ onExit }: { onExit: () => void }) {
         help={HELP}
         onUndo={undo}
         canUndo={canUndo && !saved.done}
+        onHint={saved.done ? undefined : hint}
       />
 
       <div
@@ -138,6 +163,7 @@ export default function Shikaku({ onExit }: { onExit: () => void }) {
         style={{ "--n": n } as CSSProperties}
         role="grid"
         aria-label="Shikaku board"
+        {...nav}
       >
         {Array.from({ length: n * n }).map((_, i) => {
           const k = rectAt.get(i);
@@ -147,6 +173,16 @@ export default function Shikaku({ onExit }: { onExit: () => void }) {
             <button
               key={i}
               role="gridcell"
+              data-cell={i}
+              aria-label={`Row ${r + 1}, column ${c + 1}${
+                clues.has(i) ? `, clue ${clues.get(i)}` : ""
+              }, ${
+                t
+                  ? `in a ${t.r1 - t.r0 + 1} by ${t.c1 - t.c0 + 1} box`
+                  : anchor === i
+                    ? "box corner picked"
+                    : "not boxed"
+              }`}
               className={[
                 "shikaku-cell",
                 k !== undefined ? `boxed hue-${k % 6}` : "",

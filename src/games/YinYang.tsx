@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useGridNav } from "../lib/gridnav";
 import { makeRng, shuffled } from "../lib/rng";
 import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
@@ -65,7 +66,11 @@ function connected(cells: Cell[], n: number, col: Cell): boolean {
  *  exactly one black cell, so black stays cycle-free (a 2×2 is a 4-cycle,
  *  so it can never form one) — while white must stay connected. Growth
  *  chases white's remaining 2×2 blocks until none are left. */
-function generateYinYang(seed: string, n: number, reveal: number): Cell[] {
+function generateYinYang(
+  seed: string,
+  n: number,
+  reveal: number
+): { givens: Cell[]; solution: Cell[] } {
   const rng = makeRng(seed);
   const total = n * n;
 
@@ -162,7 +167,7 @@ function generateYinYang(seed: string, n: number, reveal: number): Cell[] {
     // Guarantee both colours appear among the givens.
     if (!givens.includes(1)) givens[order.find((i) => solution[i] === 1)!] = 1;
     if (!givens.includes(2)) givens[order.find((i) => solution[i] === 2)!] = 2;
-    return givens;
+    return { givens, solution };
   }
 }
 
@@ -172,13 +177,13 @@ interface SavedState {
 }
 
 export default function YinYang({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, finish, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle } =
     useGame<SavedState>((_s, d) => ({
       cells: Array(SIZE[d] * SIZE[d]).fill(0) as Cell[],
       done: false
     }));
   const n = SIZE[diff];
-  const givens = useMemo(
+  const { givens, solution } = useMemo(
     () => generateYinYang(`yinyang-${seed}`, n, REVEAL[diff]),
     [seed, n, diff]
   );
@@ -201,12 +206,27 @@ export default function YinYang({ onExit }: { onExit: () => void }) {
     }
   }, [board, conflicts, saved.done, n, finish]);
 
-  function tap(i: number) {
+  /** white → black → empty (`back` runs the cycle the other way). */
+  function tap(i: number, back = false) {
     if (saved.done || givens[i] !== 0) return;
     const cells = saved.cells.slice() as Cell[];
-    cells[i] = ((cells[i] + 1) % 3) as Cell;
+    cells[i] = ((cells[i] + (back ? 2 : 1)) % 3) as Cell;
     setFlash(false);
     commit({ ...saved, cells });
+  }
+
+  const nav = useGridNav(tap);
+
+  /** Fill one empty or wrong cell from the generated colouring. */
+  function hint() {
+    if (saved.done) return;
+    const wrong = board.flatMap((v, i) => (v === solution[i] ? [] : [i]));
+    if (!wrong.length) return;
+    const i = wrong[Math.floor(Math.random() * wrong.length)];
+    const cells = saved.cells.slice() as Cell[];
+    cells[i] = solution[i];
+    setFlash(false);
+    commitHint({ ...saved, cells });
   }
 
   function startNew(d?: Diff) {
@@ -227,6 +247,7 @@ export default function YinYang({ onExit }: { onExit: () => void }) {
         help={HELP}
         onUndo={undo}
         canUndo={canUndo && !saved.done}
+        onHint={saved.done ? undefined : hint}
       />
 
       <div
@@ -234,18 +255,22 @@ export default function YinYang({ onExit }: { onExit: () => void }) {
         style={{ "--n": n } as CSSProperties}
         role="grid"
         aria-label="Yin-yang board"
+        {...nav}
       >
         {board.map((v, i) => (
           <button
             key={i}
             role="gridcell"
+            data-cell={i}
             className={[
               "yy-cell",
               givens[i] !== 0 ? "given" : "",
               conflicts.has(i) ? "conflict" : ""
             ].join(" ")}
             onClick={() => tap(i)}
-            aria-label={`Cell ${Math.floor(i / n) + 1},${(i % n) + 1}`}
+            aria-label={`Row ${Math.floor(i / n) + 1}, column ${(i % n) + 1}, ${
+              v === 1 ? "white" : v === 2 ? "black" : "empty"
+            }${givens[i] !== 0 ? ", given" : ""}${conflicts.has(i) ? ", conflict" : ""}`}
           >
             {v === 1 ? "○" : v === 2 ? "●" : ""}
           </button>

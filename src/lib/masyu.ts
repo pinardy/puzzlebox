@@ -5,6 +5,8 @@ import type { EdgeState } from "./slither";
 export interface MasyuPuzzle {
   n: number; // cells per side; the loop passes through cell centres
   pearls: Map<number, "black" | "white">;
+  /** The loop the pearls were placed on (1 = loop edge), for hints. */
+  solution: EdgeState;
 }
 
 /** Edge helpers for a loop drawn between cell centres:
@@ -59,9 +61,14 @@ export function generateMasyu(seed: string, n: number): MasyuPuzzle {
         if (rng() < 0.5) pearls.set(i, "white");
       }
     }
-    if (pearls.size >= Math.max(4, Math.floor(n * 0.8))) return { n, pearls };
+    if (pearls.size >= Math.max(4, Math.floor(n * 0.8))) return { n, pearls, solution: edges };
   }
-  return { n, pearls: new Map() }; // effectively unreachable
+  // Effectively unreachable.
+  return {
+    n,
+    pearls: new Map(),
+    solution: { h: Array(n * (n - 1)).fill(0), v: Array((n - 1) * n).fill(0) }
+  };
 }
 
 /** Does the player's loop satisfy every pearl? One closed loop; black

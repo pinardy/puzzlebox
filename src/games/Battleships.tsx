@@ -24,6 +24,8 @@ interface Puzzle {
   cols: number[];
   givenShip: number[];
   givenWater: number[];
+  /** The hidden fleet the counts were read from. */
+  ship: boolean[];
 }
 
 /** Hide the fleet (ships never touch, even diagonally), read off the
@@ -69,7 +71,8 @@ function generateShips(seed: string, n: number, fleet: number[]): Puzzle {
       rows,
       cols,
       givenShip: shuffled(shipCells, rng).slice(0, 2),
-      givenWater: shuffled(waterCells, rng).slice(0, 2)
+      givenWater: shuffled(waterCells, rng).slice(0, 2),
+      ship
     };
   }
 }
@@ -120,7 +123,7 @@ interface SavedState {
 }
 
 export default function Battleships({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, finish, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle } =
     useGame<SavedState>((_s, d) => ({
       marks: Array(SIZE[d] * SIZE[d]).fill(0) as Mark[],
       done: false
@@ -163,6 +166,20 @@ export default function Battleships({ onExit }: { onExit: () => void }) {
     locked: (i) => givenShip.has(i) || givenWater.has(i)
   });
 
+  /** Reveal one wrong or unmarked cell from the hidden fleet. */
+  function hint() {
+    if (saved.done) return;
+    const want = (i: number): Mark => (puzzle.ship[i] ? 1 : 2);
+    const wrong = saved.marks.flatMap((m, i) =>
+      givenShip.has(i) || givenWater.has(i) || m === want(i) ? [] : [i]
+    );
+    if (!wrong.length) return;
+    const i = wrong[Math.floor(Math.random() * wrong.length)];
+    const marks = saved.marks.slice();
+    marks[i] = want(i);
+    commitHint({ ...saved, marks });
+  }
+
   const G = n + 1;
 
   return (
@@ -177,6 +194,7 @@ export default function Battleships({ onExit }: { onExit: () => void }) {
         help={HELP}
         onUndo={undo}
         canUndo={canUndo && !saved.done}
+        onHint={saved.done ? undefined : hint}
       />
 
       <div
@@ -190,9 +208,25 @@ export default function Battleships({ onExit }: { onExit: () => void }) {
           const gr = Math.floor(k / G), gc = k % G;
           if (gr === 0 && gc === 0) return <span key={k} />;
           if (gr === 0)
-            return <span key={k} className="edge-count">{puzzle.cols[gc - 1]}</span>;
+            return (
+              <span
+                key={k}
+                className="edge-count"
+                aria-label={`Column ${gc}: ${puzzle.cols[gc - 1]} ship cells`}
+              >
+                {puzzle.cols[gc - 1]}
+              </span>
+            );
           if (gc === 0)
-            return <span key={k} className="edge-count">{puzzle.rows[gr - 1]}</span>;
+            return (
+              <span
+                key={k}
+                className="edge-count"
+                aria-label={`Row ${gr}: ${puzzle.rows[gr - 1]} ship cells`}
+              >
+                {puzzle.rows[gr - 1]}
+              </span>
+            );
           const i = (gr - 1) * n + (gc - 1);
           const isShip = givenShip.has(i) || saved.marks[i] === 1;
           const isWater = givenWater.has(i) || saved.marks[i] === 2;
@@ -202,6 +236,9 @@ export default function Battleships({ onExit }: { onExit: () => void }) {
               key={k}
               data-cell={i}
               role="gridcell"
+              aria-label={`Row ${gr}, column ${gc}, ${
+                isShip ? "ship" : isWater ? "water" : "unknown"
+              }${given ? ", given" : ""}`}
               className={[
                 "ships-cell",
                 isShip ? "ship" : "",

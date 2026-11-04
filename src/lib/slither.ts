@@ -3,6 +3,9 @@ import { makeRng, shuffled } from "./rng";
 export interface SlitherPuzzle {
   n: number; // cells per side
   clues: (number | null)[]; // per cell: boundary-edge count, or hidden
+  /** The blob's boundary, the loop the clues were read from: 1 on a loop
+   *  edge, 0 elsewhere. */
+  solution: EdgeState;
 }
 
 /** Grow a random blob of cells whose boundary is one simple loop —
@@ -81,7 +84,12 @@ export function generateSlither(seed: string, n: number): SlitherPuzzle {
         if (me !== inBlob(r + dr, c + dc)) count++;
       clues.push(rng() < 0.62 ? count : null);
     }
-  return { n, clues };
+  const solution: EdgeState = { h: [], v: [] };
+  for (let r = 0; r <= n; r++)
+    for (let c = 0; c < n; c++) solution.h.push(inBlob(r - 1, c) !== inBlob(r, c) ? 1 : 0);
+  for (let r = 0; r < n; r++)
+    for (let c = 0; c <= n; c++) solution.v.push(inBlob(r, c - 1) !== inBlob(r, c) ? 1 : 0);
+  return { n, clues, solution };
 }
 
 /** Edge marks: h[r][c] = edge above cell row r (r in 0..n, c in 0..n-1),

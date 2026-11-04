@@ -8,6 +8,7 @@ import {
   FWD,
   BACK
 } from "../lib/slant";
+import { useGridNav } from "../lib/gridnav";
 import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
@@ -61,6 +62,9 @@ export default function Slant({ onExit }: { onExit: () => void }) {
     commit({ ...saved, cells });
   }
 
+  // Enter cycles a square forward, Shift+Enter back (the long-press).
+  const nav = useGridNav(cycle);
+
   function hint() {
     const wrong = [...Array(n * n).keys()].filter(
       (i) => saved.cells[i] !== solution[i]
@@ -99,7 +103,7 @@ export default function Slant({ onExit }: { onExit: () => void }) {
       </div>
 
       <div className="sl-wrap" style={{ "--n": n } as CSSProperties}>
-        <div className="sl-grid" role="grid" aria-label="Slant board">
+        <div className="sl-grid" role="grid" aria-label="Slant board" {...nav}>
           {saved.cells.map((v, i) => {
             const r = Math.floor(i / n), c = i % n;
             const glyph =
@@ -108,12 +112,15 @@ export default function Slant({ onExit }: { onExit: () => void }) {
               <button
                 key={i}
                 role="gridcell"
+                data-cell={i}
                 className={[
                   "sl-cell",
                   v === FWD ? "fwd" : v === BACK ? "back" : "",
                   loops.has(i) ? "loop" : ""
                 ].join(" ")}
-                aria-label={`Row ${r + 1} column ${c + 1}, ${glyph}`}
+                aria-label={`Row ${r + 1}, column ${c + 1}, ${glyph}${
+                  loops.has(i) ? ", in a loop" : ""
+                }`}
                 onClick={() => {
                   if (!longPressed.current) cycle(i, false);
                 }}

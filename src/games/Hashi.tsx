@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { generateHashi, hashiSolved, corridor, edgeKey, Edges } from "../lib/hashi";
+import { useGridNav } from "../lib/gridnav";
 import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
@@ -27,7 +28,7 @@ interface BridgeMark {
 }
 
 export default function Hashi({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, finish, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle } =
     useGame<SavedState>(() => ({ edges: {}, done: false }));
   const [n, islandCount] = LEVELS[diff];
   const puzzle = useMemo(
@@ -97,6 +98,35 @@ export default function Hashi({ onExit }: { onExit: () => void }) {
     toggle(sel, idx);
   }
 
+  // Only the islands are in the keyboard grid: arrows hop to the nearest
+  // island that way, and Enter selects one / bridges to the selected one,
+  // exactly like a tap.
+  const nav = useGridNav((i) => tap(i));
+
+  /** Set one bridge to its count in the generated layout (removing a wrong
+   *  bridge counts too), clearing any bridge that crosses it. */
+  function hint() {
+    if (saved.done) return;
+    const want = puzzle.bridges;
+    const keys = new Set([...Object.keys(want), ...Object.keys(saved.edges)]);
+    const wrong = [...keys].filter((k) => (saved.edges[k] ?? 0) !== (want[k] ?? 0));
+    if (!wrong.length) return;
+    const key = wrong[Math.floor(Math.random() * wrong.length)];
+    const edges = { ...saved.edges };
+    if (want[key]) {
+      const [a, b] = key.split("-").map(Number);
+      const cells = new Set(corridor(a, b, n) ?? []);
+      for (const k of Object.keys(edges)) {
+        if (k === key) continue;
+        const [x, y] = k.split("-").map(Number);
+        if ((corridor(x, y, n) ?? []).some((i) => cells.has(i))) delete edges[k];
+      }
+      edges[key] = want[key];
+    } else delete edges[key];
+    setSel(null);
+    commitHint({ ...saved, edges });
+  }
+
   function startNew(d?: Diff) {
     newPuzzle(d);
     setSel(null);
@@ -114,6 +144,7 @@ export default function Hashi({ onExit }: { onExit: () => void }) {
         help={HELP}
         onUndo={undo}
         canUndo={canUndo && !saved.done}
+        onHint={saved.done ? undefined : hint}
       />
 
       <div
@@ -121,15 +152,21 @@ export default function Hashi({ onExit }: { onExit: () => void }) {
         style={{ "--n": n } as CSSProperties}
         role="grid"
         aria-label="Bridges board"
+        {...nav}
       >
         {Array.from({ length: n * n }).map((_, i) => {
           const clue = puzzle.islands.get(i);
+          const where = `Row ${Math.floor(i / n) + 1}, column ${(i % n) + 1}`;
           if (clue !== undefined) {
             const deg = degrees.get(i) ?? 0;
             return (
               <button
                 key={i}
                 role="gridcell"
+                data-cell={i}
+                aria-label={`${where}, island ${clue}, ${deg} bridge${deg === 1 ? "" : "s"}${
+                  sel === i ? ", selected" : ""
+                }`}
                 className={[
                   "hashi-island",
                   sel === i ? "selected" : "",
@@ -147,6 +184,13 @@ export default function Hashi({ onExit }: { onExit: () => void }) {
               key={i}
               role="gridcell"
               className="hashi-cell"
+              aria-label={`${where}, ${
+                bridge
+                  ? `${bridge.count === 2 ? "double" : "single"} ${
+                      bridge.horizontal ? "horizontal" : "vertical"
+                    } bridge`
+                  : "water"
+              }`}
               onClick={() => tap(i)}
               tabIndex={-1}
             >

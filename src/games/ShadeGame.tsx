@@ -1,4 +1,4 @@
-import { useEffect, useMemo, type CSSProperties, type ReactNode } from "react";
+import { isValidElement, useEffect, useMemo, type CSSProperties, type ReactNode } from "react";
 import { useMarkPaint } from "../lib/drag";
 import type { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
@@ -15,6 +15,15 @@ export interface ShadePuzzle {
   clue: (i: number) => ReactNode | null;
   solved: (filled: boolean[]) => boolean;
   solution: boolean[];
+}
+
+/** The text inside a drawn clue, for its accessible name ("1 3"). */
+function shadeClueText(node: ReactNode): string {
+  if (node === null || node === undefined || typeof node === "boolean") return "";
+  if (typeof node === "string" || typeof node === "number") return String(node);
+  if (Array.isArray(node)) return node.map(shadeClueText).filter(Boolean).join(" ");
+  if (isValidElement<{ children?: ReactNode }>(node)) return shadeClueText(node.props.children);
+  return "";
 }
 
 /** Shared board for Tapa, Kurodoko and Cave: tap a cell to cycle it
@@ -121,7 +130,14 @@ export function ShadeGame({
           const clue = puzzle.clue(i);
           if (clue !== null)
             return (
-              <div key={i} className="shade-cell shade-clue" role="gridcell">
+              <div
+                key={i}
+                className="shade-cell shade-clue"
+                role="gridcell"
+                aria-label={`Row ${Math.floor(i / n) + 1}, column ${(i % n) + 1}, clue ${
+                  shadeClueText(clue)
+                }`}
+              >
                 {clue}
               </div>
             );
@@ -139,9 +155,9 @@ export function ShadeGame({
                 // Pointer events already handled it; keep keyboards working.
                 if (e.detail === 0) cycle(i);
               }}
-              aria-label={
+              aria-label={`Row ${Math.floor(i / n) + 1}, column ${(i % n) + 1}, ${
                 m === 1 ? fillWord : m === 2 ? "marked empty" : "untouched"
-              }
+              }`}
             >
               {m === 2 ? "·" : ""}
             </button>

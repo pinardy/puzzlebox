@@ -1,4 +1,5 @@
 import { useEffect, useMemo, type CSSProperties } from "react";
+import { useGridNav } from "../lib/gridnav";
 import { generateStars } from "../lib/stars";
 import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
@@ -23,13 +24,13 @@ interface SavedState {
 }
 
 export default function Stars({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, finish, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle } =
     useGame<SavedState>((_s, d) => ({
       marks: Array(SIZE[d] * SIZE[d]).fill(0),
       done: false
     }));
   const n = SIZE[diff];
-  const { regions } = useMemo(() => generateStars(`stars-${seed}`, n), [seed, n]);
+  const { regions, solution } = useMemo(() => generateStars(`stars-${seed}`, n), [seed, n]);
 
   // A save from before sizes were difficulty-driven may not fit the board.
   useEffect(() => {
@@ -79,11 +80,27 @@ export default function Stars({ onExit }: { onExit: () => void }) {
     if (solved) finish();
   }, [solved, finish]);
 
-  function tap(idx: number) {
+  /** Cycle ✕ → star → clear (`back` runs the cycle the other way). */
+  function tap(idx: number, back = false) {
     if (saved.done) return;
     const marks = saved.marks.slice();
-    marks[idx] = (marks[idx] + 1) % 3;
+    marks[idx] = (marks[idx] + (back ? 2 : 1)) % 3;
     commit({ ...saved, marks });
+  }
+
+  const nav = useGridNav(tap);
+
+  /** Star or ✕ one wrong or unmarked square from the generated layout. */
+  function hint() {
+    if (saved.done || saved.marks.length !== n * n) return;
+    const starAt = new Set(solution);
+    const want = (i: number) => (starAt.has(i) ? 2 : 1);
+    const wrong = saved.marks.flatMap((m, i) => (m === want(i) ? [] : [i]));
+    if (!wrong.length) return;
+    const i = wrong[Math.floor(Math.random() * wrong.length)];
+    const marks = saved.marks.slice();
+    marks[i] = want(i);
+    commitHint({ ...saved, marks });
   }
 
   return (
@@ -99,6 +116,7 @@ export default function Stars({ onExit }: { onExit: () => void }) {
         help={HELP}
         onUndo={undo}
         canUndo={canUndo && !saved.done}
+        onHint={saved.done ? undefined : hint}
       />
 
       <div
@@ -106,11 +124,18 @@ export default function Stars({ onExit }: { onExit: () => void }) {
         style={{ "--n": n } as CSSProperties}
         role="grid"
         aria-label="Star Battle board"
+        {...nav}
       >
         {saved.marks.map((m, i) => (
           <button
             key={i}
             role="gridcell"
+            data-cell={i}
+            aria-label={`Row ${Math.floor(i / n) + 1}, column ${(i % n) + 1}, region ${
+              regions[i] + 1
+            }, ${m === 2 ? "star" : m === 1 ? "crossed" : "empty"}${
+              conflicts.has(i) ? ", conflict" : ""
+            }`}
             className={`q-cell${conflicts.has(i) ? " conflict" : ""}`}
             style={{ background: REGION_COLORS[regions[i]] }}
             onClick={() => tap(i)}

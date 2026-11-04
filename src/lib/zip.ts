@@ -10,6 +10,8 @@ export interface ZipPuzzle {
   checkpoints: Map<number, number>; // cell index → checkpoint number (1-based)
   start: number; // cell of checkpoint 1
   last: number; // highest checkpoint number
+  /** The Hamiltonian path the board was built from (one valid answer). */
+  path: number[];
 }
 
 function neighbours(idx: number, n: number): number[] {
@@ -59,7 +61,7 @@ export function generateZip(seed: string, n: number, checkpointCount: number): Z
     const pos = Math.round((k * (path.length - 1)) / (checkpointCount - 1));
     checkpoints.set(path[pos], k + 1);
   }
-  return { n, checkpoints, start: path[0], last: checkpointCount };
+  return { n, checkpoints, start: path[0], last: checkpointCount, path };
 }
 
 export function areAdjacent(a: number, b: number, n: number): boolean {

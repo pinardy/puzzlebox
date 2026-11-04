@@ -1,4 +1,5 @@
 import { useEffect, useMemo, type CSSProperties } from "react";
+import { useGridNav } from "../lib/gridnav";
 import { generateQueens } from "../lib/queens";
 import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
@@ -22,13 +23,13 @@ interface SavedState {
 }
 
 export default function Queens({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, finish, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle } =
     useGame<SavedState>((_s, d) => ({
       marks: Array(SIZE[d] * SIZE[d]).fill(0),
       done: false
     }));
   const n = SIZE[diff];
-  const { regions } = useMemo(() => generateQueens(`queens-${seed}`, n), [seed, n]);
+  const { regions, solution } = useMemo(() => generateQueens(`queens-${seed}`, n), [seed, n]);
 
   const crowns = useMemo(
     () => saved.marks.flatMap((m, i) => (m === 2 ? [i] : [])),
@@ -58,11 +59,26 @@ export default function Queens({ onExit }: { onExit: () => void }) {
     if (solved) finish();
   }, [solved, finish]);
 
-  function tap(idx: number) {
+  /** empty → ✕ → crown → empty (`back` runs the cycle the other way). */
+  function tap(idx: number, back = false) {
     if (saved.done) return;
     const marks = saved.marks.slice();
-    marks[idx] = (marks[idx] + 1) % 3; // empty → ✕ → crown → empty
+    marks[idx] = (marks[idx] + (back ? 2 : 1)) % 3;
     commit({ ...saved, marks });
+  }
+
+  const nav = useGridNav(tap);
+
+  /** Crown or ✕ one wrong or unmarked square from the unique solution. */
+  function hint() {
+    if (saved.done) return;
+    const want = (i: number) => (solution[Math.floor(i / n)] === i % n ? 2 : 1);
+    const wrong = saved.marks.flatMap((m, i) => (m === want(i) ? [] : [i]));
+    if (!wrong.length) return;
+    const i = wrong[Math.floor(Math.random() * wrong.length)];
+    const marks = saved.marks.slice();
+    marks[i] = want(i);
+    commitHint({ ...saved, marks });
   }
 
   return (
@@ -78,6 +94,7 @@ export default function Queens({ onExit }: { onExit: () => void }) {
         help={HELP}
         onUndo={undo}
         canUndo={canUndo && !saved.done}
+        onHint={saved.done ? undefined : hint}
       />
 
       <div
@@ -85,11 +102,18 @@ export default function Queens({ onExit }: { onExit: () => void }) {
         style={{ "--n": n } as CSSProperties}
         role="grid"
         aria-label="Queens board"
+        {...nav}
       >
         {saved.marks.map((m, i) => (
           <button
             key={i}
             role="gridcell"
+            data-cell={i}
+            aria-label={`Row ${Math.floor(i / n) + 1}, column ${(i % n) + 1}, region ${
+              regions[i] + 1
+            }, ${m === 2 ? "crown" : m === 1 ? "crossed" : "empty"}${
+              conflicts.has(i) ? ", conflict" : ""
+            }`}
             className={`q-cell${conflicts.has(i) ? " conflict" : ""}`}
             style={{ background: REGION_COLORS[regions[i]] }}
             onClick={() => tap(i)}

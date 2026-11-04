@@ -7,6 +7,7 @@ import {
   magnetsSolved,
   type Sign
 } from "../lib/magnets";
+import { useGridNav } from "../lib/gridnav";
 import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
@@ -71,6 +72,9 @@ export default function Magnets({ onExit }: { onExit: () => void }) {
     commit({ ...saved, board });
   }
 
+  // Enter cycles a square forward, Shift+Enter back (the long-press).
+  const nav = useGridNav(cycle);
+
   function hint() {
     const cands = [...Array(n * n).keys()].filter(
       (i) => saved.board[i] !== puzzle.solution[i]
@@ -132,6 +136,7 @@ export default function Magnets({ onExit }: { onExit: () => void }) {
         style={{ "--gn": G } as CSSProperties}
         role="grid"
         aria-label="Magnets board"
+        {...nav}
       >
         {Array.from({ length: G * G }, (_, k) => {
           const gr = Math.floor(k / G), gc = k % G;
@@ -167,6 +172,7 @@ export default function Magnets({ onExit }: { onExit: () => void }) {
             <button
               key={k}
               role="gridcell"
+              data-cell={i}
               className={[
                 "mg-cell",
                 s === 1 ? "plus" : s === 2 ? "minus" : "",
@@ -177,7 +183,9 @@ export default function Magnets({ onExit }: { onExit: () => void }) {
                 r === n - 1 ? "reg-b" : "",
                 c === n - 1 ? "reg-r" : ""
               ].join(" ")}
-              aria-label={`Row ${r + 1} column ${c + 1}, ${NAME[s]}`}
+              aria-label={`Row ${r + 1}, column ${c + 1}, ${NAME[s]}${
+                clashes.has(i) ? ", clashes" : ""
+              }${broken.has(id) ? ", slab incomplete" : ""}`}
               onClick={() => {
                 // A long-press or right-click already acted; swallow the
                 // click it leaves behind, then re-arm for the next tap.

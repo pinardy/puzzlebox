@@ -149,9 +149,9 @@ export default function Ripple({ onExit }: { onExit: () => void }) {
                 if (!given && saved.entries[i] !== 0 && selected === i) setCell(i, v);
                 else setSelected(i);
               }}
-              aria-label={`Row ${r + 1} column ${c + 1}, room of ${roomSize[i]}, ${
+              aria-label={`Row ${r + 1}, column ${c + 1}, room of ${roomSize[i]}, ${
                 v === 0 ? "empty" : v
-              }${conflicts.has(i) ? ", clashing" : ""}`}
+              }${given ? ", given" : ""}${conflicts.has(i) ? ", clashing" : ""}`}
             >
               {v || ""}
             </button>

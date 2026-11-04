@@ -108,3 +108,7 @@
 @media (min-width: 700px) {
   .yj-grid { width: min(100%, 520px); margin-top: auto; margin-bottom: auto; }
 }
+
+/* Thin edges: draw the keyboard ring around the edge, above its
+   neighbours, rather than inset where it would vanish. */
+.game-yajilin .yj-edge:focus-visible { outline-offset: 0; z-index: 2; }

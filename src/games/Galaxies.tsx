@@ -25,6 +25,8 @@ const HELP =
 interface Puzzle {
   n: number;
   dots: [number, number][]; // (y, x) in doubled coordinates
+  /** cell → galaxy in the partition the dots were built from. */
+  owner: number[];
 }
 
 function mirrorCell(i: number, n: number, cy: number, cx: number): number | null {
@@ -106,7 +108,7 @@ function generateGalaxies(seed: string, n: number): Puzzle {
     }
     dots.push([cy, cx]);
   }
-  return { n, dots };
+  return { n, dots, owner };
 }
 
 interface SavedState {
@@ -115,7 +117,7 @@ interface SavedState {
 }
 
 export default function Galaxies({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, finish, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle } =
     useGame<SavedState>((_s, d) => ({
       assign: Array(SIZE[d] * SIZE[d]).fill(-1),
       done: false
@@ -175,6 +177,17 @@ export default function Galaxies({ onExit }: { onExit: () => void }) {
     setSel(0);
   }
 
+  /** Put one misplaced or unplaced cell into its generated galaxy. */
+  function hint() {
+    if (saved.done) return;
+    const wrong = saved.assign.flatMap((g, i) => (g === puzzle.owner[i] ? [] : [i]));
+    if (!wrong.length) return;
+    const i = wrong[Math.floor(Math.random() * wrong.length)];
+    const assign = saved.assign.slice();
+    assign[i] = puzzle.owner[i];
+    commitHint({ ...saved, assign });
+  }
+
   const assigned = saved.assign.filter((g) => g !== -1).length;
 
   return (
@@ -190,6 +203,7 @@ export default function Galaxies({ onExit }: { onExit: () => void }) {
         help={HELP}
         onUndo={undo}
         canUndo={canUndo && !saved.done}
+        onHint={saved.done ? undefined : hint}
       />
 
       <div
@@ -209,6 +223,9 @@ export default function Galaxies({ onExit }: { onExit: () => void }) {
                 key={i}
                 data-cell={i}
                 role="gridcell"
+                aria-label={`Row ${r + 1}, column ${c + 1}, ${
+                  g === -1 ? "unassigned" : `galaxy ${g + 1}`
+                }`}
                 className={[
                   "gal-cell",
                   g === sel && g !== -1 ? "current" : "",
@@ -220,7 +237,6 @@ export default function Galaxies({ onExit }: { onExit: () => void }) {
                     ? ({ background: HUES[g % HUES.length] } as CSSProperties)
                     : undefined
                 }
-                tabIndex={-1}
               />
             );
           })}
