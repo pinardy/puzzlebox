@@ -1,24 +1,18 @@
 import { useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult } from "../lib/storage";
+import { RANKS, SUITS, isRed, nextRank, rank, suit } from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { Foundation, PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
 
-const SUITS = ["♠", "♥", "♦", "♣"];
-const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
-const rank = (id: number) => Math.floor(id / 4) + 1;
-const suit = (id: number) => id % 4;
-const isRed = (id: number) => suit(id) === 1 || suit(id) === 2;
-const label = (id: number) => `${RANKS[rank(id) - 1]}${SUITS[suit(id)]}`;
 const HELP =
   "The foundations start on whatever rank the first card happens to be, " +
   "and both foundations and columns wrap around — after a king comes an " +
   "ace. Columns build DOWN in alternating colours; a gap is refilled from " +
   "the reserve. The deck turns three at a time, over and over.";
 
-// One step up (foundations) or down (tableau), wrapping past king/ace.
-const nextUp = (r: number) => (r === 13 ? 1 : r + 1);
+// One step down (tableau), wrapping past the ace; `nextRank` goes up.
 const nextDown = (r: number) => (r === 1 ? 13 : r - 1);
 
 interface SavedState {
@@ -89,7 +83,7 @@ export default function Canfield({ onExit }: { onExit: () => void }) {
     return next.tableau[sel.pile].splice(sel.index);
   }
 
-  function finish(next: SavedState) {
+  function play(next: SavedState) {
     next.moves++;
     // A gap is refilled from the reserve while any card is left there.
     for (let p = 0; p < 4; p++)
@@ -97,9 +91,8 @@ export default function Canfield({ onExit }: { onExit: () => void }) {
         next.tableau[p] = [next.reserve.pop()!];
     if (!next.done && next.foundations.every((f) => f === nextDown(next.base))) {
       next.done = true;
-      recordResult("canfield", true);
-    }
-    commit(next);
+      commit(next, { outcome: "won" });
+    } else commit(next);
     setSel(null);
   }
 
@@ -111,7 +104,7 @@ export default function Canfield({ onExit }: { onExit: () => void }) {
     }
     const card = cards[0];
     const f = saved.foundations[suit(card)];
-    const want = f === 0 ? saved.base : nextUp(f);
+    const want = f === 0 ? saved.base : nextRank(f);
     if (rank(card) !== want) {
       setSel(null);
       return;
@@ -119,7 +112,7 @@ export default function Canfield({ onExit }: { onExit: () => void }) {
     const next = clone();
     take(next);
     next.foundations[suit(card)] = rank(card);
-    finish(next);
+    play(next);
   }
 
   function tapTableau(pile: number, index: number | null) {
@@ -149,7 +142,7 @@ export default function Canfield({ onExit }: { onExit: () => void }) {
       const next = clone();
       const moved = take(next);
       next.tableau[pile].push(...moved);
-      finish(next);
+      play(next);
       return;
     }
     if (index !== null) setSel({ from: "tableau", pile, index });
@@ -165,7 +158,7 @@ export default function Canfield({ onExit }: { onExit: () => void }) {
       next.stock = next.waste.reverse();
       next.waste = [];
     } else return;
-    finish(next);
+    play(next);
   }
 
   function startNew() {
@@ -188,20 +181,17 @@ export default function Canfield({ onExit }: { onExit: () => void }) {
       <GameTools help={HELP} onUndo={undo} canUndo={canUndo && !saved.done} />
 
       <div className="kl-top">
-        <button
-          className={`kl-card ${saved.stock.length ? "kl-back" : "kl-empty"}`}
+        <PlayingCard
+          card={null}
+          faceDown={saved.stock.length > 0}
           onClick={tapStock}
           aria-label="Stock"
         >
           {saved.stock.length || "↻"}
-        </button>
-        <button
-          className={[
-            "kl-card",
-            wasteTop === null ? "kl-empty" : "",
-            wasteTop !== null && isRed(wasteTop) ? "red" : "",
-            sel?.from === "waste" ? "selected" : ""
-          ].join(" ")}
+        </PlayingCard>
+        <PlayingCard
+          card={wasteTop}
+          selected={sel?.from === "waste"}
           onClick={() => {
             if (!saved.waste.length) return;
             if (sel?.from === "waste") {
@@ -210,32 +200,23 @@ export default function Canfield({ onExit }: { onExit: () => void }) {
             } else setSel({ from: "waste" });
           }}
           aria-label="Waste"
-        >
-          {wasteTop !== null ? label(wasteTop) : ""}
-        </button>
+        />
         <span className="kl-gap" />
         {saved.foundations.map((f, s) => (
-          <button
+          <Foundation
             key={s}
-            className={`kl-card kl-found${f === 0 ? " kl-empty" : ""}${
-              f > 0 && (s === 1 || s === 2) ? " red" : ""
-            }`}
+            suit={s}
+            top={f}
             onClick={toFoundation}
             aria-label={`${SUITS[s]} foundation`}
-          >
-            {f === 0 ? SUITS[s] : `${RANKS[f - 1]}${SUITS[s]}`}
-          </button>
+          />
         ))}
       </div>
 
       <div className="kl-top cf-reserve">
-        <button
-          className={[
-            "kl-card",
-            reserveTop === null ? "kl-empty" : "",
-            reserveTop !== null && isRed(reserveTop) ? "red" : "",
-            sel?.from === "reserve" ? "selected" : ""
-          ].join(" ")}
+        <PlayingCard
+          card={reserveTop}
+          selected={sel?.from === "reserve"}
           onClick={() => {
             if (!saved.reserve.length) return;
             if (sel?.from === "reserve") {
@@ -244,9 +225,7 @@ export default function Canfield({ onExit }: { onExit: () => void }) {
             } else setSel({ from: "reserve" });
           }}
           aria-label="Reserve"
-        >
-          {reserveTop !== null ? label(reserveTop) : ""}
-        </button>
+        />
         <span className="tp-left">reserve {saved.reserve.length}</span>
       </div>
 
@@ -260,20 +239,14 @@ export default function Canfield({ onExit }: { onExit: () => void }) {
             }}
           >
             {pile.map((card, i) => (
-              <button
+              <PlayingCard
                 key={card}
-                className={[
-                  "kl-card kl-stacked",
-                  isRed(card) ? "red" : "",
-                  sel?.from === "tableau" && sel.pile === p && i >= sel.index
-                    ? "selected"
-                    : ""
-                ].join(" ")}
+                card={card}
+                selected={sel?.from === "tableau" && sel.pile === p && i >= sel.index}
+                className="kl-stacked"
                 style={{ "--stack": i } as CSSProperties}
                 onClick={() => tapTableau(p, i)}
-              >
-                {label(card)}
-              </button>
+              />
             ))}
           </div>
         ))}

@@ -1,15 +1,18 @@
-/** Shared single-pack card primitives. Card id 0–51:
+/** Shared card primitives. Card id 0–51:
  *  suit = id % 4 (♠ ♥ ♦ ♣), rank = 1 (ace) … 13 (king) — the same encoding
- *  the older card games each declared for themselves. */
+ *  the older card games each declared for themselves. A two-pack game uses
+ *  ids 52–103 for the second pack; every helper here accepts those too. */
 
 export const SUITS = ["♠", "♥", "♦", "♣"];
 export const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
 
-export const rank = (id: number) => Math.floor(id / 4) + 1;
+export const rank = (id: number) => (Math.floor(id / 4) % 13) + 1;
 export const suit = (id: number) => id % 4;
 export const isRed = (id: number) => suit(id) === 1 || suit(id) === 2;
 export const label = (id: number) => `${RANKS[rank(id) - 1]}${SUITS[suit(id)]}`;
 export const rankName = (r: number) => RANKS[r - 1];
+/** The id of the card with rank `r` (1–13) in suit `s` (0–3). */
+export const cardId = (r: number, s: number) => (r - 1) * 4 + s;
 
 /** Rank one above `r`, wrapping king → ace. Used by the games whose
  *  foundations start on a dealt card instead of an ace. */

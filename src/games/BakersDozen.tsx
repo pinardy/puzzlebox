@@ -1,16 +1,11 @@
 import { useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult } from "../lib/storage";
+import { SUITS, rank, suit } from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { Foundation, PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
 
-const SUITS = ["♠", "♥", "♦", "♣"];
-const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
-const rank = (id: number) => Math.floor(id / 4) + 1;
-const suit = (id: number) => id % 4;
-const isRed = (id: number) => suit(id) === 1 || suit(id) === 2;
-const label = (id: number) => `${RANKS[rank(id) - 1]}${SUITS[suit(id)]}`;
 const HELP =
   "Thirteen columns, everything face up, no deck to fall back on. Build " +
   "DOWN by rank, suit ignored, one card at a time — and an emptied column " +
@@ -50,13 +45,12 @@ export default function BakersDozen({ onExit }: { onExit: () => void }) {
     };
   }
 
-  function finish(next: SavedState) {
+  function play(next: SavedState) {
     next.moves++;
     if (!next.done && next.foundations.every((f) => f === 13)) {
       next.done = true;
-      recordResult("bakers", true);
-    }
-    commit(next);
+      commit(next, { outcome: "won" });
+    } else commit(next);
     setSel(null);
   }
 
@@ -71,7 +65,7 @@ export default function BakersDozen({ onExit }: { onExit: () => void }) {
     const next = clone();
     next.cols[pile].pop();
     next.foundations[suit(card)]++;
-    finish(next);
+    play(next);
   }
 
   function tapPile(pile: number) {
@@ -97,7 +91,7 @@ export default function BakersDozen({ onExit }: { onExit: () => void }) {
       const next = clone();
       next.cols[sel].pop();
       next.cols[pile].push(card);
-      finish(next);
+      play(next);
       return;
     }
     if (saved.cols[pile].length) setSel(pile);
@@ -121,16 +115,13 @@ export default function BakersDozen({ onExit }: { onExit: () => void }) {
       <div className="kl-top">
         <span className="kl-gap" />
         {saved.foundations.map((f, s) => (
-          <button
+          <Foundation
             key={s}
-            className={`kl-card kl-found${f === 0 ? " kl-empty" : ""}${
-              f > 0 && (s === 1 || s === 2) ? " red" : ""
-            }`}
+            suit={s}
+            top={f}
             onClick={() => sel !== null && toFoundation(sel)}
             aria-label={`${SUITS[s]} foundation`}
-          >
-            {f === 0 ? SUITS[s] : `${RANKS[f - 1]}${SUITS[s]}`}
-          </button>
+          />
         ))}
       </div>
 
@@ -144,18 +135,14 @@ export default function BakersDozen({ onExit }: { onExit: () => void }) {
             }}
           >
             {pile.map((card, i) => (
-              <button
+              <PlayingCard
                 key={card}
-                className={[
-                  "kl-card kl-stacked",
-                  isRed(card) ? "red" : "",
-                  sel === p && i === pile.length - 1 ? "selected" : ""
-                ].join(" ")}
+                card={card}
+                selected={sel === p && i === pile.length - 1}
+                className="kl-stacked"
                 style={{ "--stack": i } as CSSProperties}
                 onClick={() => tapPile(p)}
-              >
-                {label(card)}
-              </button>
+              />
             ))}
           </div>
         ))}

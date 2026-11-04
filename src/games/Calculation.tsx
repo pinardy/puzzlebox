@@ -1,8 +1,8 @@
 import { makeRng, shuffled } from "../lib/rng";
 import { RANKS, isRed, label, rank } from "../lib/cards";
-import { recordResult } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
 
 // Foundation k counts up in steps of k+1, wrapping past the king: the ace
@@ -62,12 +62,12 @@ export default function Calculation({ onExit }: { onExit: () => void }) {
     };
   }
 
-  function finish(next: SavedState) {
+  function play(next: SavedState) {
     next.moves++;
     if (!next.done && next.founds.every((f) => f === 13)) {
       next.done = true;
       next.won = true;
-      recordResult("calculation", true);
+      return commit(next, { outcome: "won" });
     } else if (!next.done && !next.stock.length) {
       // Out of deck: only playable waste tops can still move.
       const canMove = next.wastes.some((w) => {
@@ -77,7 +77,7 @@ export default function Calculation({ onExit }: { onExit: () => void }) {
       if (!canMove) {
         next.done = true;
         next.won = false;
-        recordResult("calculation", false);
+        return commit(next, { outcome: "lost" });
       }
     }
     commit(next);
@@ -97,7 +97,7 @@ export default function Calculation({ onExit }: { onExit: () => void }) {
     if (from === "stock") next.stock.pop();
     else next.wastes[from].pop();
     next.founds[k]++;
-    finish(next);
+    play(next);
   }
 
   /** Park the turned card on a waste heap. */
@@ -106,7 +106,7 @@ export default function Calculation({ onExit }: { onExit: () => void }) {
     const next = clone();
     next.stock.pop();
     next.wastes[w].push(current);
-    finish(next);
+    play(next);
   }
 
   function startNew() {
@@ -166,13 +166,9 @@ export default function Calculation({ onExit }: { onExit: () => void }) {
             saved.founds.some((f, k) => f < 13 && wants(k, f) === rank(top));
           return (
             <div key={i} className="ca-heap">
-              <button
-                className={[
-                  "kl-card",
-                  top === null ? "kl-empty" : "",
-                  top !== null && isRed(top) ? "red" : "",
-                  playable ? "bc-live" : ""
-                ].join(" ")}
+              <PlayingCard
+                card={top}
+                className={playable ? "bc-live" : undefined}
                 onClick={() => {
                   if (current !== null) {
                     toWaste(i);
@@ -191,8 +187,8 @@ export default function Calculation({ onExit }: { onExit: () => void }) {
                     : `Heap ${i + 1}, ${label(top)}, ${w.length} cards`
                 }
               >
-                {top === null ? "·" : label(top)}
-              </button>
+                {top === null ? "·" : undefined}
+              </PlayingCard>
               <span className="ca-heap-n">{w.length || ""}</span>
             </div>
           );

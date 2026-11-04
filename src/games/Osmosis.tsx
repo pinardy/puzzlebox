@@ -1,8 +1,8 @@
 import { makeRng, shuffled } from "../lib/rng";
 import { SUITS, isRed, label, rank, suit } from "../lib/cards";
-import { recordResult } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
 
 const HELP =
@@ -79,14 +79,13 @@ export default function Osmosis({ onExit }: { onExit: () => void }) {
     };
   }
 
-  function finish(next: SavedState) {
+  function commitMove(next: SavedState) {
     next.moves++;
     if (!next.done && next.rows.every((r) => r.length === 13)) {
       next.done = true;
       next.won = true;
-      recordResult("osmosis", true);
-    }
-    commit(next);
+      commit(next, { outcome: "won" });
+    } else commit(next);
   }
 
   /** Play a specific card from wherever it is showing. */
@@ -98,7 +97,7 @@ export default function Osmosis({ onExit }: { onExit: () => void }) {
     if (source === "waste") next.waste.pop();
     else next.reserve[source].pop();
     next.rows[target].push(card);
-    finish(next);
+    commitMove(next);
   }
 
   /** Turn one card; when the deck is out, gather the waste and go again. */
@@ -114,7 +113,7 @@ export default function Osmosis({ onExit }: { onExit: () => void }) {
     } else {
       return;
     }
-    finish(next);
+    commitMove(next);
   }
 
   function startNew() {
@@ -170,14 +169,10 @@ export default function Osmosis({ onExit }: { onExit: () => void }) {
           const top = pile.length ? pile[pile.length - 1] : null;
           const live = top !== null && [0, 1, 2, 3].some((r) => canPlay(top, r));
           return (
-            <button
+            <PlayingCard
               key={p}
-              className={[
-                "kl-card",
-                top === null ? "kl-empty" : "",
-                top !== null && isRed(top) ? "red" : "",
-                live ? "bc-live" : ""
-              ].join(" ")}
+              card={top}
+              className={live ? "bc-live" : undefined}
               onClick={() => top !== null && play(top, p)}
               aria-label={
                 top === null
@@ -185,29 +180,29 @@ export default function Osmosis({ onExit }: { onExit: () => void }) {
                   : `Reserve ${p + 1}, ${label(top)}, ${pile.length} cards`
               }
             >
-              {top === null ? "·" : label(top)}
-            </button>
+              {top === null ? "·" : undefined}
+            </PlayingCard>
           );
         })}
       </div>
 
       <div className="os-deck">
-        <button
-          className={`kl-card${saved.stock.length ? " kl-back" : " kl-empty"}`}
+        <PlayingCard
+          card={null}
+          faceDown={saved.stock.length > 0}
           onClick={tapStock}
           aria-label={`Deck, ${saved.stock.length} left, ${saved.redeals} redeals`}
         >
           {saved.stock.length ? "" : saved.redeals > 0 ? "⟳" : "·"}
-        </button>
-        <button
-          className={`kl-card${wasteTop === null ? " kl-empty" : ""}${
-            wasteTop !== null && isRed(wasteTop) ? " red" : ""
-          }${playableWaste ? " bc-live" : ""}`}
+        </PlayingCard>
+        <PlayingCard
+          card={wasteTop}
+          className={playableWaste ? "bc-live" : undefined}
           onClick={() => wasteTop !== null && play(wasteTop, "waste")}
           aria-label={wasteTop === null ? "Waste, empty" : `Waste, ${label(wasteTop)}`}
         >
-          {wasteTop === null ? "·" : label(wasteTop)}
-        </button>
+          {wasteTop === null ? "·" : undefined}
+        </PlayingCard>
         <span className="os-deck-note">
           deck {saved.stock.length} · {saved.redeals} redeals
         </span>

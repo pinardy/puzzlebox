@@ -1,9 +1,9 @@
 import { useMemo, useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { isRed, label, rank, suit } from "../lib/cards";
-import { recordResult, type GameId } from "../lib/storage";
+import { downAnySuit, downInSuit, label, rank, suit } from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
 
 /** Single-pack Spider: seven columns, four suits, four runs to clear.
@@ -63,7 +63,6 @@ function clearRuns(next: SavedState): void {
 type Sel = { pile: number; index: number } | null;
 
 export function SpiderGame({
-  game,
   title,
   hint,
   help,
@@ -71,7 +70,6 @@ export function SpiderGame({
   wonMessage,
   onExit
 }: {
-  game: GameId;
   title: string;
   hint: string;
   help: string;
@@ -91,8 +89,7 @@ export function SpiderGame({
   /** Only a same-suit descending run travels as one unit. */
   function validRun(cards: number[]): boolean {
     for (let i = 0; i + 1 < cards.length; i++)
-      if (rank(cards[i]) !== rank(cards[i + 1]) + 1 || suit(cards[i]) !== suit(cards[i + 1]))
-        return false;
+      if (!downInSuit(cards[i + 1], cards[i])) return false;
     return true;
   }
 
@@ -105,14 +102,13 @@ export function SpiderGame({
     };
   }
 
-  function finish(next: SavedState) {
+  function play(next: SavedState) {
     next.moves++;
     clearRuns(next);
     if (!next.done && next.completed === 4) {
       next.done = true;
-      recordResult(game, true);
-    }
-    commit(next);
+      commit(next, { outcome: "won" });
+    } else commit(next);
     setSel(null);
   }
 
@@ -132,7 +128,7 @@ export function SpiderGame({
       }
       const top = cards.length ? cards[cards.length - 1] : null;
       // Stacking ignores suit; an empty column takes any run.
-      const fits = top === null || rank(run[0]) === rank(top) - 1;
+      const fits = top === null || downAnySuit(run[0], top);
       if (!fits) {
         setSel(null);
         return;
@@ -143,7 +139,7 @@ export function SpiderGame({
       const src = next.cols[sel.pile];
       if (src.length > 0 && src.length === next.faceDown[sel.pile])
         next.faceDown[sel.pile]--;
-      finish(next);
+      play(next);
       return;
     }
 
@@ -159,7 +155,7 @@ export function SpiderGame({
     const next = clone();
     for (let p = 0; p < PILES && next.stock.length; p++)
       next.cols[p].push(next.stock.shift()!);
-    finish(next);
+    play(next);
   }
 
   function startNew() {
@@ -193,32 +189,29 @@ export function SpiderGame({
             }}
           >
             {pile.length === 0 && (
-              <button
-                className="kl-card kl-empty kl-stacked"
+              <PlayingCard
+                card={null}
+                className="kl-stacked"
                 style={{ "--stack": 0 } as CSSProperties}
                 onClick={() => tapPile(p, null)}
                 aria-label={`Column ${p + 1}, empty`}
               >
                 ·
-              </button>
+              </PlayingCard>
             )}
             {pile.map((card, i) => {
               const down = i < saved.faceDown[p];
               return (
-                <button
+                <PlayingCard
                   key={card}
-                  className={[
-                    "kl-card kl-stacked",
-                    down ? "kl-back" : "",
-                    !down && isRed(card) ? "red" : "",
-                    isSelected(p, i) ? "selected" : ""
-                  ].join(" ")}
+                  card={card}
+                  faceDown={down}
+                  selected={isSelected(p, i)}
+                  className="kl-stacked"
                   style={{ "--stack": i } as CSSProperties}
                   onClick={() => tapPile(p, i)}
                   aria-label={down ? "Face-down card" : label(card)}
-                >
-                  {down ? "" : label(card)}
-                </button>
+                />
               );
             })}
           </div>

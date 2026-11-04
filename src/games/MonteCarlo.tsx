@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { isRed, label, rank } from "../lib/cards";
-import { recordResult } from "../lib/storage";
+import { label, rank } from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
 
 const SIZE = 5;
@@ -93,13 +93,11 @@ export default function MonteCarlo({ onExit }: { onExit: () => void }) {
       if (!left && !next.stock.length) {
         next.done = true;
         next.won = true;
-        recordResult("montecarlo", true);
       } else if (!hasPair(next.grid)) {
         next.done = true;
         next.won = false;
-        recordResult("montecarlo", false);
       }
-      commit(next);
+      commit(next, { outcome: next.done ? (next.won ? "won" : "lost") : undefined });
       setSel(null);
       return;
     }
@@ -128,21 +126,15 @@ export default function MonteCarlo({ onExit }: { onExit: () => void }) {
 
       <div className="mc-grid" role="grid" aria-label="Monte Carlo layout">
         {saved.grid.map((card, i) => (
-          <button
+          <PlayingCard
             key={i}
+            card={card}
             role="gridcell"
-            className={[
-              "kl-card mc-cell",
-              card === null ? "kl-empty" : "",
-              card !== null && isRed(card) ? "red" : "",
-              sel === i ? "selected" : "",
-              targets.has(i) ? "bc-target" : ""
-            ].join(" ")}
+            selected={sel === i}
+            className={targets.has(i) ? "mc-cell bc-target" : "mc-cell"}
             onClick={() => tap(i)}
             aria-label={card === null ? "Empty" : label(card)}
-          >
-            {card === null ? "" : label(card)}
-          </button>
+          />
         ))}
       </div>
 

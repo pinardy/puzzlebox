@@ -8,22 +8,18 @@ import {
   GOAL,
   isWon,
   legalMoves,
-  rank,
   redeal,
   ROWS,
   runLength,
-  suit,
   type Board
 } from "../lib/gaps";
-import { recordResult } from "../lib/storage";
+import { RANKS, SUITS, rank, suit } from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
 
-const SUITS = ["♠", "♥", "♦", "♣"];
 const NAMES = ["spades", "hearts", "diamonds", "clubs"];
-const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
-const isRed = (id: number) => suit(id) === 1 || suit(id) === 2;
 const name = (id: number) => `${RANKS[rank(id) - 1]} of ${NAMES[suit(id)]}`;
 const REDEALS = 2;
 const HELP =
@@ -66,16 +62,17 @@ export default function Gaps({ onExit }: { onExit: () => void }) {
   const pickCards =
     sel?.kind === "gap" ? moves.filter((m) => m.gap === sel.at).map((m) => m.card) : [];
 
-  function judge(next: SavedState) {
+  /** Mark `next` finished if it is won or dead, returning the outcome for
+   *  the commit that ends the game. */
+  function judge(next: SavedState): "won" | "lost" | undefined {
     if (isWon(next.board)) {
       next.done = true;
       next.won = true;
-      recordResult("gaps", true);
-      return;
+      return "won";
     }
     if (next.redeals >= REDEALS && !legalMoves(next.board).length) {
       next.done = true;
-      recordResult("gaps", false);
+      return "lost";
     }
   }
 
@@ -87,8 +84,7 @@ export default function Gaps({ onExit }: { onExit: () => void }) {
       done: false,
       won: false
     };
-    judge(next);
-    commit(next);
+    commit(next, { outcome: judge(next) });
     setSel(null);
   }
 
@@ -101,8 +97,7 @@ export default function Gaps({ onExit }: { onExit: () => void }) {
       done: false,
       won: false
     };
-    judge(next);
-    commit(next);
+    commit(next, { outcome: judge(next) });
     setSel(null);
   }
 
@@ -159,14 +154,12 @@ export default function Gaps({ onExit }: { onExit: () => void }) {
                   const want = fillers(saved.board, i);
                   const picked = sel?.kind === "card" && pickGaps.includes(i);
                   return (
-                    <button
+                    <PlayingCard
                       key={c}
+                      card={null}
                       role="gridcell"
-                      className={[
-                        "kl-card kl-empty gp-cell",
-                        want.length ? "gp-target" : "",
-                        picked || (sel?.kind === "gap" && sel.at === i) ? "selected" : ""
-                      ].join(" ")}
+                      className={want.length ? "gp-cell gp-target" : "gp-cell"}
+                      selected={picked || (sel?.kind === "gap" && sel.at === i)}
                       aria-label={
                         want.length === 1
                           ? `${where}, gap for the ${name(want[0])}`
@@ -186,25 +179,25 @@ export default function Gaps({ onExit }: { onExit: () => void }) {
                       ) : (
                         want.length > 0 && <span className="gp-r gp-ghost">2</span>
                       )}
-                    </button>
+                    </PlayingCard>
                   );
                 }
                 const live = movable.has(card);
                 const settled = c < runs[r];
                 return (
-                  <button
+                  <PlayingCard
                     key={c}
+                    card={card}
                     role="gridcell"
                     className={[
-                      "kl-card gp-cell",
-                      isRed(card) ? "red" : "",
+                      "gp-cell",
                       live ? "gp-live" : "",
-                      settled ? "gp-home" : "",
+                      settled ? "gp-home" : ""
+                    ].join(" ")}
+                    selected={
                       (sel?.kind === "card" && sel.card === card) ||
                       (sel?.kind === "gap" && pickCards.includes(card))
-                        ? "selected"
-                        : ""
-                    ].join(" ")}
+                    }
                     aria-label={`${where}, ${name(card)}${
                       settled ? ", home" : live ? ", can move" : ""
                     }`}
@@ -217,7 +210,7 @@ export default function Gaps({ onExit }: { onExit: () => void }) {
                         ▸
                       </small>
                     )}
-                  </button>
+                  </PlayingCard>
                 );
               })}
             </div>

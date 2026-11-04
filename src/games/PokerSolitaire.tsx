@@ -1,9 +1,10 @@
 import { useMemo } from "react";
 import { makeRng, shuffled } from "../lib/rng";
 import { isRed, label, rank, suit } from "../lib/cards";
-import { recordResult, type Diff } from "../lib/storage";
+import type { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
 
 const SIZE = 5;
@@ -102,9 +103,8 @@ export default function PokerSolitaire({ onExit }: { onExit: () => void }) {
         [0, 1, 2, 3, 4].reduce((a, c) => a + scoreHand(read(colOf(c))), 0);
       next.done = true;
       next.won = next.score >= TARGET[diff];
-      recordResult("poker", next.won);
     }
-    commit(next);
+    commit(next, { outcome: next.done ? (next.won ? "won" : "lost") : undefined });
   }
 
   function startNew(d?: Diff) {
@@ -128,20 +128,14 @@ export default function PokerSolitaire({ onExit }: { onExit: () => void }) {
       <div className="pk-wrap">
         <div className="pk-grid" role="grid" aria-label="Poker square">
           {saved.grid.map((card, i) => (
-            <button
+            <PlayingCard
               key={i}
+              card={card}
               role="gridcell"
-              className={[
-                "kl-card pk-cell",
-                card === null ? "kl-empty" : "",
-                card !== null && isRed(card) ? "red" : "",
-                card === null && current !== null ? "pk-open" : ""
-              ].join(" ")}
+              className={card === null && current !== null ? "pk-cell pk-open" : "pk-cell"}
               onClick={() => place(i)}
               aria-label={card === null ? `Empty cell ${i + 1}` : label(card)}
-            >
-              {card === null ? "" : label(card)}
-            </button>
+            />
           ))}
         </div>
         <div className="pk-cols" aria-hidden="true">

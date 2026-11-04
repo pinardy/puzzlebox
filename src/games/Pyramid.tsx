@@ -1,15 +1,12 @@
 import { useMemo, useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import type { Diff } from "../lib/storage";
+import { rank } from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
 
-const SUITS = ["♠", "♥", "♦", "♣"];
-const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
-const rank = (id: number) => Math.floor(id / 4) + 1;
-const isRed = (id: number) => id % 4 === 1 || id % 4 === 2;
-const label = (id: number) => `${RANKS[rank(id) - 1]}${SUITS[id % 4]}`;
 const HELP =
   "Clear the pyramid by removing pairs that add to 13 — J is 11, Q is 12, " +
   "and a K is 13 by itself. Only uncovered pyramid cards and the waste " +
@@ -75,13 +72,13 @@ export default function Pyramid({ onExit }: { onExit: () => void }) {
       : rank(saved.pyramid[sel]);
 
   /** Any play available? Pairs among exposed cards + waste top, a lone
-   *  king, a flip, or a redeal. */
-  function judge(next: SavedState) {
+   *  king, a flip, or a redeal. Marks `next` finished if not (or if it is
+   *  won), returning the outcome for the commit that ends the game. */
+  function judge(next: SavedState): "won" | "lost" | undefined {
     if (next.removed.every(Boolean)) {
       next.done = true;
       next.won = true;
-      recordResult("pyramid", true);
-      return;
+      return "won";
     }
     if (next.stock.length > 0 || (next.redeals > 0 && next.waste.length > 1)) return;
     const open = next.pyramid
@@ -97,7 +94,7 @@ export default function Pyramid({ onExit }: { onExit: () => void }) {
     // Exposed pyramid pairs are checked above; the same-rank double-count
     // (a card pairing with itself) can't happen since a+b uses two entries.
     next.done = true;
-    recordResult("pyramid", false);
+    return "lost";
   }
 
   function removePair(a: "waste" | number, b: "waste" | number | null) {
@@ -111,8 +108,7 @@ export default function Pyramid({ onExit }: { onExit: () => void }) {
       if (sel === "waste") next.waste.pop();
       else next.removed[sel] = true;
     }
-    judge(next);
-    commit(next);
+    commit(next, { outcome: judge(next) });
     setSelected(null);
   }
 
@@ -145,8 +141,7 @@ export default function Pyramid({ onExit }: { onExit: () => void }) {
       const stock = saved.stock.slice();
       const card = stock.pop()!;
       const next = { ...saved, stock, waste: [...saved.waste, card] };
-      judge(next);
-      commit(next);
+      commit(next, { outcome: judge(next) });
       setSelected(null);
     } else if (saved.redeals > 0 && saved.waste.length) {
       const next = {
@@ -155,8 +150,7 @@ export default function Pyramid({ onExit }: { onExit: () => void }) {
         waste: [],
         redeals: saved.redeals - 1
       };
-      judge(next);
-      commit(next);
+      commit(next, { outcome: judge(next) });
       setSelected(null);
     }
   }
@@ -185,14 +179,12 @@ export default function Pyramid({ onExit }: { onExit: () => void }) {
           if (saved.removed[s]) return null;
           const open = exposed(saved.removed, s);
           return (
-            <button
+            <PlayingCard
               key={card}
-              className={[
-                "kl-card tp-card pyr-card",
-                open ? "" : "kl-back",
-                open && isRed(card) ? "red" : "",
-                selected === s ? "selected" : ""
-              ].join(" ")}
+              card={card}
+              faceDown={!open}
+              selected={selected === s}
+              className="tp-card pyr-card"
               style={
                 {
                   "--x": COL_OF[s] + (6 - ROW_OF[s]) / 2,
@@ -200,33 +192,26 @@ export default function Pyramid({ onExit }: { onExit: () => void }) {
                 } as CSSProperties
               }
               onClick={() => tap(s)}
-            >
-              {open ? label(card) : ""}
-            </button>
+            />
           );
         })}
       </div>
 
       <div className="kl-top tp-bottom" style={{ "--cols": 8 } as CSSProperties}>
-        <button
-          className={`kl-card ${saved.stock.length ? "kl-back" : "kl-empty"}`}
+        <PlayingCard
+          card={null}
+          faceDown={saved.stock.length > 0}
           onClick={tapStock}
           aria-label="Stock"
         >
           {saved.stock.length || (saved.redeals > 0 ? "↺" : "—")}
-        </button>
-        <button
-          className={[
-            "kl-card",
-            wasteTop === null ? "kl-empty" : "",
-            wasteTop !== null && isRed(wasteTop) ? "red" : "",
-            selected === "waste" ? "selected" : ""
-          ].join(" ")}
+        </PlayingCard>
+        <PlayingCard
+          card={wasteTop}
+          selected={selected === "waste"}
           onClick={() => tap("waste")}
           aria-label="Waste"
-        >
-          {wasteTop !== null ? label(wasteTop) : ""}
-        </button>
+        />
         <span className="kl-gap" />
         <span className="tp-left">
           {left} left · {saved.redeals}↺

@@ -14,9 +14,9 @@ import {
   type PileState
 } from "../lib/piles";
 import { RANKS, SUITS, isRed, label, rank, suit } from "../lib/cards";
-import { recordResult, type GameId } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { Foundation, PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
 
 // Beyond this depth a fan would run off a narrow phone, so deeper cards
@@ -27,7 +27,6 @@ const FAN_MAX = 15;
  *  Streets & Alleys, Fortress, La Belle Lucie and Trefoil are this
  *  component plus a `PileRules` config. */
 export function PileGame({
-  game,
   title,
   hint,
   help,
@@ -36,7 +35,6 @@ export function PileGame({
   wonMessage,
   onExit
 }: {
-  game: GameId;
   title: string;
   hint: string;
   help: string;
@@ -68,13 +66,12 @@ export function PileGame({
   /** Piles whose end card has somewhere to go, hinted while nothing is held. */
   const live = useMemo(() => new Set(moves.map((m) => m.from)), [moves]);
 
-  function finish(next: PileState) {
+  function play(next: PileState) {
     if (!next.done && isWon(next)) {
       next.done = true;
       next.won = true;
-      recordResult(game, true);
-    }
-    commit(next);
+      commit(next, { outcome: "won" });
+    } else commit(next);
     setSel(null);
   }
 
@@ -86,7 +83,7 @@ export function PileGame({
     }
     if (sel !== null && targets.has(p)) {
       const next = applyMove(saved, { from: sel, to: p }, rules);
-      if (next) finish(next);
+      if (next) play(next);
       else setSel(null);
       return;
     }
@@ -96,18 +93,18 @@ export function PileGame({
   function tapFoundation(s: number) {
     if (saved.done || sel === null || homeSuit !== s) return;
     const next = applyMove(saved, { from: sel, to: "home" }, rules);
-    if (next) finish(next);
+    if (next) play(next);
     else setSel(null);
   }
 
   function sendUp() {
     const next = sendHome(saved, rules);
-    if (next) finish(next);
+    if (next) play(next);
   }
 
   function reshuffle() {
     const next = redeal(saved, seed, rules);
-    if (next) finish(next);
+    if (next) play(next);
   }
 
   function startNew() {
@@ -133,12 +130,14 @@ export function PileGame({
 
       <div className="bc-founds" role="group" aria-label="Foundations">
         {saved.foundations.map((f, s) => (
-          <button
+          <Foundation
             key={s}
+            suit={s}
+            top={f}
+            // Unlike the other games, an empty foundation here keeps its
+            // suit's colour.
             className={[
-              "kl-card kl-found",
-              f === 0 ? "kl-empty" : "",
-              s === 1 || s === 2 ? "red" : "",
+              f === 0 && (s === 1 || s === 2) ? "red" : "",
               homeSuit === s ? "bc-target" : ""
             ].join(" ")}
             onClick={() => tapFoundation(s)}
@@ -147,9 +146,7 @@ export function PileGame({
                 ? `${SUITS[s]} foundation, empty`
                 : `${SUITS[s]} foundation, up to ${RANKS[f - 1]}`
             }
-          >
-            {f === 0 ? SUITS[s] : `${RANKS[f - 1]}${SUITS[s]}`}
-          </button>
+          />
         ))}
       </div>
 
@@ -167,48 +164,43 @@ export function PileGame({
             }}
           >
             {pile.length === 0 ? (
-              <button
-                className={`kl-card bc-card kl-empty${
-                  targets.has(p) ? " bc-target" : ""
-                }`}
+              <PlayingCard
+                card={null}
+                className={targets.has(p) ? "bc-card bc-target" : "bc-card"}
                 style={{ "--stack": 0 } as CSSProperties}
                 onClick={() => tapPile(p)}
                 aria-label={`Pile ${p + 1}, empty`}
               >
                 ·
-              </button>
+              </PlayingCard>
             ) : (
               pile.map((card, i) => {
-                const open = i === pile.length - 1;
-                const cls = [
-                  "kl-card bc-card",
-                  isRed(card) ? "red" : "",
-                  open ? "bc-open" : "bc-buried",
-                  open && sel === p ? "selected" : "",
-                  open && targets.has(p) ? "bc-target" : "",
-                  open && sel === null && live.has(p) ? "bc-live" : ""
-                ].join(" ");
+                const stack = { "--stack": Math.min(i, FAN_MAX) } as CSSProperties;
+                if (i === pile.length - 1)
+                  return (
+                    <PlayingCard
+                      key={card}
+                      card={card}
+                      selected={sel === p}
+                      className={[
+                        "bc-card bc-open",
+                        targets.has(p) ? "bc-target" : "",
+                        sel === null && live.has(p) ? "bc-live" : ""
+                      ].join(" ")}
+                      style={stack}
+                      onClick={() => tapPile(p)}
+                      aria-label={`${label(card)}, end of pile ${p + 1}`}
+                    />
+                  );
                 // Buried cards show rank only where suit does not matter;
                 // in-suit games need the pip, so they keep the full label.
-                const buriedText =
-                  rules.fit === "downAny" ? RANKS[rank(card) - 1] : label(card);
-                return open ? (
-                  <button
-                    key={card}
-                    className={cls}
-                    style={{ "--stack": Math.min(i, FAN_MAX) } as CSSProperties}
-                    onClick={() => tapPile(p)}
-                    aria-label={`${label(card)}, end of pile ${p + 1}`}
-                  >
-                    {label(card)}
-                  </button>
-                ) : (
+                return (
                   <span
                     key={card}
-                    className={cls}
-                    style={{ "--stack": Math.min(i, FAN_MAX) } as CSSProperties}
+                    className={`kl-card bc-card bc-buried${isRed(card) ? " red" : ""}`}
+                    style={stack}
                   >
-                    {buriedText}
+                    {rules.fit === "downAny" ? RANKS[rank(card) - 1] : label(card)}
                   </span>
                 );
               })

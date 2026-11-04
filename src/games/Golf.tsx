@@ -1,15 +1,11 @@
 import { useMemo, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult } from "../lib/storage";
+import { rank } from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
 
-const SUITS = ["♠", "♥", "♦", "♣"];
-const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
-const rank = (id: number) => Math.floor(id / 4) + 1;
-const isRed = (id: number) => id % 4 === 1 || id % 4 === 2;
-const label = (id: number) => `${RANKS[rank(id) - 1]}${SUITS[id % 4]}`;
 const HELP =
   "Clear the seven columns onto the waste pile: only the bottom card of a " +
   "column can go, and it must be one rank above or below the waste card — " +
@@ -53,12 +49,13 @@ export default function Golf({ onExit }: { onExit: () => void }) {
     [saved.columns]
   );
 
-  function judge(next: SavedState) {
+  /** Mark `next` finished if the course is clear or dead, returning the
+   *  outcome for the commit that ends the game. */
+  function judge(next: SavedState): "won" | "lost" | undefined {
     if (next.columns.every((col) => col.length === 0)) {
       next.done = true;
       next.won = true;
-      recordResult("golf", true);
-      return;
+      return "won";
     }
     if (next.stock.length > 0) return;
     const top = rank(next.waste[next.waste.length - 1]);
@@ -70,7 +67,7 @@ export default function Golf({ onExit }: { onExit: () => void }) {
     });
     if (!anyPlay) {
       next.done = true;
-      recordResult("golf", false);
+      return "lost";
     }
   }
 
@@ -81,8 +78,7 @@ export default function Golf({ onExit }: { onExit: () => void }) {
     const columns = saved.columns.map((col) => col.slice());
     columns[c].pop();
     const next: SavedState = { ...saved, columns, waste: [...saved.waste, card] };
-    judge(next);
-    commit(next);
+    commit(next, { outcome: judge(next) });
   }
 
   function tapStock() {
@@ -90,8 +86,7 @@ export default function Golf({ onExit }: { onExit: () => void }) {
     const stock = saved.stock.slice();
     const card = stock.pop()!;
     const next: SavedState = { ...saved, stock, waste: [...saved.waste, card] };
-    judge(next);
-    commit(next);
+    commit(next, { outcome: judge(next) });
   }
 
   return (
@@ -115,19 +110,14 @@ export default function Golf({ onExit }: { onExit: () => void }) {
               const isBottom = i === col.length - 1;
               const hot = isBottom && !saved.done && playable(card);
               return (
-                <button
+                <PlayingCard
                   key={card}
-                  className={[
-                    "kl-card golf-card",
-                    isRed(card) ? "red" : "",
-                    hot ? "tp-hot" : ""
-                  ].join(" ")}
+                  card={card}
+                  className={hot ? "golf-card tp-hot" : "golf-card"}
                   style={{ "--stack": i } as CSSProperties}
                   onClick={() => tapColumn(c)}
                   disabled={!isBottom}
-                >
-                  {label(card)}
-                </button>
+                />
               );
             })}
           </div>
@@ -135,16 +125,15 @@ export default function Golf({ onExit }: { onExit: () => void }) {
       </div>
 
       <div className="kl-top tp-bottom" style={{ "--cols": 8 } as CSSProperties}>
-        <button
-          className={`kl-card ${saved.stock.length ? "kl-back" : "kl-empty"}`}
+        <PlayingCard
+          card={null}
+          faceDown={saved.stock.length > 0}
           onClick={tapStock}
           aria-label="Stock"
         >
           {saved.stock.length || "—"}
-        </button>
-        <button className={`kl-card${isRed(wasteTop) ? " red" : ""}`} tabIndex={-1}>
-          {label(wasteTop)}
-        </button>
+        </PlayingCard>
+        <PlayingCard card={wasteTop} tabIndex={-1} />
         <span className="kl-gap" />
         <span className="tp-left">{left} cards left</span>
       </div>

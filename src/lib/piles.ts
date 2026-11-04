@@ -1,5 +1,5 @@
 import { makeRng, shuffled } from "./rng";
-import { rank, suit } from "./cards";
+import { downAnySuit, downInSuit, rank, suit } from "./cards";
 
 /** One engine for the "only the exposed card moves" solitaires: the castle
  *  family (Streets & Alleys, Fortress) and the fan family (La Belle Lucie,
@@ -79,10 +79,9 @@ export function fitsPile(card: number, dest: number[], rules: PileRules): boolea
     if (rules.empty === "none") return false;
     return rules.empty === "any" || rank(card) === 13;
   }
-  if (rules.fit === "downAny") return rank(card) === rank(top) - 1;
-  if (suit(card) !== suit(top)) return false;
-  if (rules.fit === "downSuit") return rank(card) === rank(top) - 1;
-  return Math.abs(rank(card) - rank(top)) === 1; // upDownSuit
+  if (rules.fit === "downAny") return downAnySuit(card, top);
+  if (rules.fit === "downSuit") return downInSuit(card, top);
+  return suit(card) === suit(top) && Math.abs(rank(card) - rank(top)) === 1; // upDownSuit
 }
 
 export function legalMoves(st: PileState, rules: PileRules): PileMove[] {
