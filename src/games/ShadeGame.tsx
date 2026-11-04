@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useMemo, type CSSProperties, type ReactNode } from "react";
+import { useMarkPaint } from "../lib/drag";
 import type { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
@@ -49,7 +50,6 @@ export function ShadeGame({
       done: false
     }));
   const puzzle = useMemo(() => build(seed, diff), [seed, diff, build]);
-  const [drag, setDrag] = useState<number | null>(null);
 
   const filled = useMemo(() => saved.marks.map((m) => m === 1), [saved.marks]);
 
@@ -58,17 +58,21 @@ export function ShadeGame({
     if (solved) finish();
   }, [solved, finish]);
 
-  function setMark(i: number, value: number) {
-    if (saved.done || puzzle.clue(i) !== null) return;
-    if (saved.marks[i] === value) return;
-    const marks = saved.marks.slice();
-    marks[i] = value;
-    commit({ ...saved, marks });
-  }
+  // A press cycles untouched → filled → dotted; the drag paints that mark
+  // over the cells that differ, and the whole stroke is one undo step.
+  const drag = useMarkPaint<number>({
+    marks: saved.marks,
+    next: (i) => (saved.done ? null : (saved.marks[i] + 1) % 3),
+    write: (marks, undoable) => commit({ ...saved, marks }, { undoable }),
+    locked: (i) => puzzle.clue(i) !== null
+  });
 
+  /** Keyboard activation: the same cycle a tap does. */
   function cycle(i: number) {
     if (saved.done || puzzle.clue(i) !== null) return;
-    setMark(i, (saved.marks[i] + 1) % 3);
+    const marks = saved.marks.slice();
+    marks[i] = (marks[i] + 1) % 3;
+    commit({ ...saved, marks });
   }
 
   /** Fill in one cell from the grid this puzzle was generated from. */
@@ -87,10 +91,7 @@ export function ShadeGame({
     commitHint({ ...saved, marks });
   }
 
-  function startNew(d?: Diff) {
-    newPuzzle(d);
-    setDrag(null);
-  }
+  const startNew = (d?: Diff) => newPuzzle(d);
 
   const n = puzzle.n;
   const fillCount = filled.filter(Boolean).length;
@@ -113,8 +114,7 @@ export function ShadeGame({
         role="grid"
         aria-label={`${title} board`}
         style={{ "--n": n } as CSSProperties}
-        onPointerUp={() => setDrag(null)}
-        onPointerLeave={() => setDrag(null)}
+        {...drag}
       >
         {saved.marks.map((m, i) => {
           const clue = puzzle.clue(i);
@@ -128,17 +128,12 @@ export function ShadeGame({
             <button
               key={i}
               role="gridcell"
+              data-cell={i}
               className={[
                 "shade-cell",
                 m === 1 ? "shade-on" : "",
                 m === 2 ? "shade-off" : ""
               ].join(" ")}
-              onPointerDown={() => {
-                const next = (m + 1) % 3;
-                setDrag(next);
-                setMark(i, next);
-              }}
-              onPointerEnter={() => drag !== null && setMark(i, drag)}
               onClick={(e) => {
                 // Pointer events already handled it; keep keyboards working.
                 if (e.detail === 0) cycle(i);
