@@ -1,5 +1,5 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
-import { SUITS, cardId, isRed, label } from "../lib/cards";
+import { SUITS, SUIT_NAMES, cardId, isRed, label, spoken } from "../lib/cards";
 import "./cards.css";
 
 type ButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children">;
@@ -9,7 +9,9 @@ type ButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children">;
  *  card back — with `card` null too, that is a stock whose top card does
  *  not matter. `children` replace the default rank+suit label (a foundation
  *  showing its suit, or a stock's count). Any other button attribute
- *  passes through. */
+ *  passes through. Screen readers hear the card by name ("queen of
+ *  hearts", "face-down card", "empty space") unless `aria-label` says
+ *  otherwise, and a selected card is announced as pressed. */
 export function PlayingCard({
   card,
   faceDown,
@@ -31,7 +33,15 @@ export function PlayingCard({
   if (selected) cls.push("selected");
   if (className) cls.push(className);
   return (
-    <button type="button" className={cls.join(" ")} {...rest}>
+    <button
+      type="button"
+      className={cls.join(" ")}
+      aria-label={
+        faceDown ? "face-down card" : card === null ? "empty space" : spoken(card)
+      }
+      aria-pressed={selected || undefined}
+      {...rest}
+    >
       {children ?? (card !== null && !faceDown ? label(card) : "")}
     </button>
   );
@@ -50,6 +60,7 @@ export function Foundation({
     <PlayingCard
       card={top ? cardId(top, suit) : null}
       className={className ? `kl-found ${className}` : "kl-found"}
+      aria-label={`${SUIT_NAMES[suit]} foundation${top ? `, ${spoken(cardId(top, suit))}` : ", empty"}`}
       {...rest}
     >
       {top ? undefined : SUITS[suit]}

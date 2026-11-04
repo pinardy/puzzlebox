@@ -11,6 +11,12 @@ export const suit = (id: number) => id % 4;
 export const isRed = (id: number) => suit(id) === 1 || suit(id) === 2;
 export const label = (id: number) => `${RANKS[rank(id) - 1]}${SUITS[suit(id)]}`;
 export const rankName = (r: number) => RANKS[r - 1];
+
+const SPOKEN_RANK = ["ace", "2", "3", "4", "5", "6", "7", "8", "9", "10", "jack", "queen", "king"];
+export const SUIT_NAMES = ["spades", "hearts", "diamonds", "clubs"];
+/** What a screen reader should say for a card: "queen of hearts". */
+export const spoken = (id: number) =>
+  `${SPOKEN_RANK[rank(id) - 1]} of ${SUIT_NAMES[suit(id)]}`;
 /** The id of the card with rank `r` (1–13) in suit `s` (0–3). */
 export const cardId = (r: number, s: number) => (r - 1) * 4 + s;
 

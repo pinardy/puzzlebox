@@ -13,15 +13,13 @@ import {
   runLength,
   type Board
 } from "../lib/gaps";
-import { RANKS, SUITS, rank, suit } from "../lib/cards";
+import { RANKS, SUITS, rank, spoken, suit } from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
 import "./Gaps.css";
 
-const NAMES = ["spades", "hearts", "diamonds", "clubs"];
-const name = (id: number) => `${RANKS[rank(id) - 1]} of ${NAMES[suit(id)]}`;
 const REDEALS = 2;
 const HELP =
   "The pack is dealt into four rows of thirteen and the four aces are " +
@@ -163,7 +161,7 @@ export default function Gaps({ onExit }: { onExit: () => void }) {
                       selected={picked || (sel?.kind === "gap" && sel.at === i)}
                       aria-label={
                         want.length === 1
-                          ? `${where}, gap for the ${name(want[0])}`
+                          ? `${where}, gap for the ${spoken(want[0])}`
                           : want.length
                             ? `${where}, gap for any 2`
                             : `${where}, dead gap`
@@ -199,7 +197,7 @@ export default function Gaps({ onExit }: { onExit: () => void }) {
                       (sel?.kind === "card" && sel.card === card) ||
                       (sel?.kind === "gap" && pickCards.includes(card))
                     }
-                    aria-label={`${where}, ${name(card)}${
+                    aria-label={`${where}, ${spoken(card)}${
                       settled ? ", home" : live ? ", can move" : ""
                     }`}
                     onClick={() => tap(i)}
