@@ -167,12 +167,12 @@ showing a blank screen; stats and every other game are untouched.
   alone. Solving on consecutive days builds a daily streak.
 - **Undo** (20 steps) in every game where it makes sense, via a shared
   `useGame` hook that also tracks active play time.
-- **Hints** (💡) in the solution-backed games — Sudoku, Killer Sudoku,
-  Picross, Fill-a-Pix, Fillomino, Futoshiki, Skyscrapers, KenKen,
-  Kropki, Kakuro, Suguru, Cryptogram, the Mini Crossword, Sujiko,
-  Str8ts, Numbrix, Jigsaw Sudoku, Sandwich, and Knight's Tour — reveal
-  one cell; hinted solves still count, but never set a best time or
-  extend a streak.
+- **Hints** (💡) in 68 games — every puzzle with a known answer or a
+  cheap, always-correct next step: reveal a cell, an edge, a bridge, a
+  word, a rung, or play the next optimal move. Hinted solves still count,
+  but never set a best time or extend a streak. Card, dice and AI games,
+  and ones where a correct step needs a full search (Sokoban, Unblock,
+  Fifteen…), have none.
 - **Streaks & best times**: per-game win streaks, longest streak, a
   fastest-solve time per difficulty, and per-difficulty play splits —
   all surfaced on the win banner ("★ New best time!").
@@ -224,11 +224,16 @@ showing a blank screen; stats and every other game are untouched.
 - **Drag-to-paint** in Picross, Nurikabe, Tents, Battleships, Hitori,
   Aquarium, Fill-a-Pix, Galaxies, Tapa, Kurodoko and Cave (a whole stroke
   is one undo step).
-- **Keyboard play** on desktop: digits, arrows, and Backspace in all six
-  number-grid games; arrows/letters in 2048, Word Guess, Hangman. Shell
-  shortcuts too — `Esc` back to the hub, `Ctrl`/`Cmd`+`Z` to undo, and
-  bare `u`/`n` for undo and new board in games that don't read letters
-  as guesses.
+- **Keyboard play** in every game but Untangle: on the grids, Tab enters
+  the board once, arrow keys move to the nearest square, and Enter/Space
+  acts (Shift+Enter for the second action — flag, cycle backwards);
+  digits fill the number grids (two-digit numbers too), and the solitaires
+  are tab-and-Enter. Shell shortcuts too — `Esc` back to the hub,
+  `Ctrl`/`Cmd`+`Z` to undo, and bare `u`/`n` for undo and new board in
+  games that don't read letters as guesses.
+- **Screen readers**: every square says where it is and what's in it
+  ("Row 2, column 3, shaded"), clues are read out, and cards are named
+  ("Column 3, card 2 of 5, queen of hearts").
 - **Minesweeper**: long-press (or right-click) to flag, chording on
   satisfied numbers.
 - **2048**: animated tile slides, merges, and spawns via identity-keyed
