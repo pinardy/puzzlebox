@@ -75,9 +75,10 @@ export function useGame<T>(fresh: (seed: string, diff: Diff) => T, stateV?: numb
   }
 
   /** Apply a hint: commits like a normal move but marks the puzzle as
-   *  assisted, so the win won't count toward streaks or best times. */
-  function commitHint(next: T) {
-    commit(next, { hint: true });
+   *  assisted, so the win won't count toward streaks or best times. Pass
+   *  `outcome` when the hinted move is the one that ends the game. */
+  function commitHint(next: T, opts?: Omit<CommitOpts, "hint">) {
+    commit(next, { ...opts, hint: true });
   }
 
   // `finish` is stable so a "has the player solved it?" effect can list it

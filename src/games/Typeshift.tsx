@@ -24,7 +24,7 @@ interface SavedState {
 }
 
 export default function Typeshift({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
     useGame<SavedState>((s, d) => fresh(s, d));
   const { cols, source } = useMemo(() => makeShift(seed, COUNT[diff]), [seed, diff]);
   const [toast, setToast] = useState<string | null>(null);
@@ -106,7 +106,7 @@ export default function Typeshift({ onExit }: { onExit: () => void }) {
     };
     const left = cols.reduce((n, col, c) => n + col.length - next.used[c].length, 0);
     if (left === 0) next.done = true;
-    commit(next, { hint: true, outcome: left === 0 ? "won" : undefined });
+    commitHint(next, { outcome: left === 0 ? "won" : undefined });
   }
 
   function startNew(d?: Diff) {

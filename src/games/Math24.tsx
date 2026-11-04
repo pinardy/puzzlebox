@@ -90,7 +90,7 @@ interface SavedState {
 }
 
 export default function Math24({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
     useGame<SavedState>((s, d) => ({
       tiles: generate24(s, d).map((v) => frac(v, 1)),
       merges: 0,
@@ -146,9 +146,9 @@ export default function Math24({ onExit }: { onExit: () => void }) {
     const next = tiles.filter((_, k) => k !== i && k !== j);
     next.push(result);
     const done = next.length === 1 && result.n === 24 && result.d === 1;
-    commit(
+    commitHint(
       { tiles: next, merges: merges + 1, done },
-      done ? { hint: true, outcome: "won" } : { hint: true }
+      { outcome: done ? "won" : undefined }
     );
     setPick(null);
     setOp(null);

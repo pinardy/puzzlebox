@@ -84,7 +84,7 @@ interface SavedState {
 }
 
 export default function WordSearch({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, newPuzzle } = useGame<SavedState>(() => ({
+  const { seed, diff, saved, commit, commitHint, newPuzzle } = useGame<SavedState>(() => ({
     found: [],
     done: false
   }));
@@ -129,7 +129,7 @@ export default function WordSearch({ onExit }: { onExit: () => void }) {
     const found = [...saved.found, pick.word];
     const done = found.length === placed.length;
     setAnchor(null);
-    commit({ found, done }, { hint: true, outcome: done ? "won" : undefined });
+    commitHint({ found, done }, { outcome: done ? "won" : undefined });
   }
 
   const nav = useGridNav();

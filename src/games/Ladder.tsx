@@ -66,7 +66,7 @@ interface SavedState {
 }
 
 export default function Ladder({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
     useGame<SavedState>((s, d) => ({
       chain: [generateLadder(`ladder-${s}`, PAR[d]).start],
       done: false,
@@ -139,10 +139,7 @@ export default function Ladder({ onExit }: { onExit: () => void }) {
     const won = next === target;
     const done = won || chain.length - 1 >= budget;
     setSlot(null);
-    commit(
-      { chain, done, won },
-      { hint: true, outcome: done ? (won ? "won" : "lost") : undefined }
-    );
+    commitHint({ chain, done, won }, { outcome: done ? (won ? "won" : "lost") : undefined });
   }
 
   function startNew(d?: Diff) {

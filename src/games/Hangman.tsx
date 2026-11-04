@@ -29,7 +29,7 @@ function answerFor(seed: string, diff: Diff): string {
 }
 
 export default function Hangman({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, newPuzzle }= useGame<SavedState>(() => ({ guessed: [], done: false, won: false })
+  const { seed, diff, saved, commit, commitHint, newPuzzle }= useGame<SavedState>(() => ({ guessed: [], done: false, won: false })
   );
   const LIVES = LIVES_BY[diff];
   const answer = answerFor(seed, diff);
@@ -56,7 +56,7 @@ export default function Hangman({ onExit }: { onExit: () => void }) {
     const letter = left[Math.floor(Math.random() * left.length)];
     const guessed = [...saved.guessed, letter];
     const won = [...answer].every((c) => guessed.includes(c));
-    commit({ guessed, done: won, won }, { hint: true, outcome: won ? "won" : undefined });
+    commitHint({ guessed, done: won, won }, { outcome: won ? "won" : undefined });
   }
 
   useEffect(() => {

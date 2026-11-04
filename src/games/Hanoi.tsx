@@ -37,7 +37,7 @@ function fresh(disks: number): SavedState {
 }
 
 export default function Hanoi({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
     useGame<SavedState>((_s, d) => fresh(DISKS[d]));
   const disks = DISKS[diff];
   const optimal = 2 ** disks - 1;
@@ -81,7 +81,7 @@ export default function Hanoi({ onExit }: { onExit: () => void }) {
     pegs[mv[1]].push(pegs[mv[0]].pop()!);
     setPicked(null);
     const done = pegs[2].length === disks;
-    commit({ pegs, moves: saved.moves + 1, done }, { hint: true, outcome: done ? "won" : undefined });
+    commitHint({ pegs, moves: saved.moves + 1, done }, { outcome: done ? "won" : undefined });
   }
 
   // Digits 1–3 tap a peg; Tab / Enter work on the peg buttons as usual.
