@@ -4,6 +4,7 @@ import { useGameId, useGameShell } from "../lib/shell";
 import { playWin, playLose, playHint } from "../lib/sound";
 import { fmtTime } from "../lib/format";
 import { GAME_BY_ID } from "./registry";
+import { DAILY_SLOT, currentStreak, loadDaily } from "../lib/daily";
 
 const DIFFS: Diff[] = ["easy", "medium", "hard"];
 const DIFF_LABEL: Record<Diff, string> = { easy: "Easy", medium: "Medium", hard: "Hard" };
@@ -179,7 +180,7 @@ export function GameTools({
   return (
     <>
       <div className="game-tools">
-        {diff && onDiff && (
+        {diff && onDiff && !info.daily && (
           <div className="diff-picker" role="radiogroup" aria-label="Difficulty">
             {DIFFS.map((d) => (
               <button
@@ -320,11 +321,13 @@ export function Result({
   onExit: () => void;
 }) {
   const game = useGameId();
+  const { daily } = useGameShell().info;
   const [hidden, setHidden] = useState(false);
   const stats = loadStats(game);
   // The finishing commit saved the slot before this rendered, so it holds
   // this puzzle's final difficulty, play time, and hint count.
-  const slot = loadSlot<unknown>(game);
+  const slot = loadSlot<unknown>(daily ? DAILY_SLOT : game);
+  const dailyStreak = daily ? currentStreak(loadDaily(), daily) : 0;
   const diff = slot?.diff;
   const playMs = slot?.playMs;
   const hinted = (slot?.hints ?? 0) > 0;
@@ -376,11 +379,25 @@ export function Result({
           </p>
         )}
         {won && hinted && <p className="result-hinted">💡 Solved with hints</p>}
+        {daily && (
+          <p className="result-streak">
+            {dailyStreak > 0 ? (
+              <>📅 {dailyStreak}-day streak · back tomorrow for the next one</>
+            ) : (
+              <>📅 A new puzzle of the day arrives tomorrow</>
+            )}
+          </p>
+        )}
         <div className="result-actions">
-          <button className="result-primary" onClick={onNew}>
-            New puzzle
+          {/* The daily can't be re-dealt; the way on is back to the hub. */}
+          {!daily && (
+            <button className="result-primary" onClick={onNew}>
+              New puzzle
+            </button>
+          )}
+          <button className={daily ? "result-primary" : undefined} onClick={onExit}>
+            All games
           </button>
-          <button onClick={onExit}>All games</button>
         </div>
       </div>
     </div>

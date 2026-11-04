@@ -7,18 +7,21 @@ import type { GameId } from "./storage";
  *  thread any of it through as props. */
 export interface ShellInfo {
   game: GameId | null;
+  /** The date when this is the puzzle of the day, which plays one fixed
+   *  board at Medium in its own slot; null for a regular board. */
+  daily: string | null;
   /** The board holds progress worth a confirm before discarding it. */
   dirty: boolean;
   /** Active play time banked so far, for the optional on-board clock. */
   playMs: number;
 }
 
-export type Progress = Omit<ShellInfo, "game">;
+export type Progress = Omit<ShellInfo, "game" | "daily">;
 
 export const ShellContext = createContext<{
   info: ShellInfo;
   publish: (progress: Progress) => void;
-}>({ info: { game: null, dirty: false, playMs: 0 }, publish: () => {} });
+}>({ info: { game: null, daily: null, dirty: false, playMs: 0 }, publish: () => {} });
 
 export function useGameShell() {
   return useContext(ShellContext);

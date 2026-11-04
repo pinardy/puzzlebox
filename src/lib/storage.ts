@@ -93,12 +93,13 @@ export function loadStats(game: GameId): Stats {
 }
 
 /** Record a finished puzzle. The finishing commit has already saved the
- *  slot, so difficulty, play time, and hint usage are read from there —
- *  no call-site changes needed. Hinted wins keep played/won credit but
- *  never set a best time and don't extend the streak. */
-export function recordResult(game: GameId, won: boolean): Stats {
+ *  slot (`slotKey`, the game's own unless it was the daily), so difficulty,
+ *  play time, and hint usage are read from there. Hinted wins keep
+ *  played/won credit but never set a best time and don't extend the
+ *  streak. */
+export function recordResult(game: GameId, won: boolean, slotKey: string = game): Stats {
   const s = loadStats(game);
-  const slot = loadSlot<unknown>(game);
+  const slot = loadSlot<unknown>(slotKey);
   const diff = slot?.diff;
   const playMs = slot?.playMs ?? 0;
   const hinted = (slot?.hints ?? 0) > 0;
@@ -137,7 +138,9 @@ const SLOT_V = 1;
 
 /** The current puzzle for a game: the seed and difficulty it was generated
  *  from plus the player's in-progress state, active play time, and hints
- *  taken, so leaving and returning resumes it. */
+ *  taken, so leaving and returning resumes it. Slots are keyed by game id,
+ *  except the puzzle of the day, which has its own ("daily") so playing it
+ *  never disturbs your regular board of the same game. */
 export interface Slot<T> {
   seed: string;
   state: T;
@@ -155,8 +158,8 @@ export interface Slot<T> {
  *  state shape the game has since changed, or an outright malformed blob.
  *  Feeding one of those to a game is how you white-screen a player who
  *  simply came back to an old puzzle. */
-export function loadSlot<T>(game: GameId, stateV?: number): Slot<T> | null {
-  const slot = load<Slot<T> | null>(`current:${game}`, null);
+export function loadSlot<T>(key: string, stateV?: number): Slot<T> | null {
+  const slot = load<Slot<T> | null>(`current:${key}`, null);
   if (!slot || typeof slot !== "object" || typeof slot.seed !== "string") return null;
   // Saves written before versioning have no `v`, and the envelope they used
   // is exactly this one — so they still load. Only a version we don't
@@ -174,7 +177,7 @@ export function loadSlot<T>(game: GameId, stateV?: number): Slot<T> | null {
 }
 
 export function saveSlot<T>(
-  game: GameId,
+  key: string,
   seed: string,
   state: T,
   diff?: Diff,
@@ -182,7 +185,7 @@ export function saveSlot<T>(
   hints?: number,
   stateV?: number
 ): void {
-  save(`current:${game}`, {
+  save(`current:${key}`, {
     seed,
     state,
     diff,
@@ -195,6 +198,6 @@ export function saveSlot<T>(
 
 /** Throw away a game's in-progress board, so the next visit deals a fresh
  *  one. The escape hatch behind the recovery screen. */
-export function clearSlot(game: GameId): void {
-  forget(`current:${game}`);
+export function clearSlot(key: string): void {
+  forget(`current:${key}`);
 }

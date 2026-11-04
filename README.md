@@ -161,6 +161,10 @@ showing a blank screen; stats and every other game are untouched.
 
 ## UX features
 
+- **Puzzle of the day** at the top of the hub (`#/daily`): one logic,
+  number or word puzzle per date, the same board for everyone, played at
+  Medium in its own save slot so your regular board of that game is left
+  alone. Solving on consecutive days builds a daily streak.
 - **Undo** (20 steps) in every game where it makes sense, via a shared
   `useGame` hook that also tracks active play time.
 - **Hints** (💡) in the solution-backed games — Sudoku, Killer Sudoku,

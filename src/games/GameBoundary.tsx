@@ -11,7 +11,14 @@ import { clearSlot, type GameId } from "../lib/storage";
  *  A class component because that is the only thing React lets catch a
  *  render error. */
 export class GameBoundary extends Component<
-  { game: GameId; title: string; onExit: () => void; children: ReactNode },
+  {
+    game: GameId;
+    /** The save slot to bin: the game's own, or the daily's. */
+    slot: string;
+    title: string;
+    onExit: () => void;
+    children: ReactNode;
+  },
   { failed: boolean; attempt: number }
 > {
   state = { failed: false, attempt: 0 };
@@ -29,7 +36,7 @@ export class GameBoundary extends Component<
   /** Bin the unreadable board and remount the game, which deals a new one.
    *  The `attempt` counter is the remount key. */
   private retry = () => {
-    clearSlot(this.props.game);
+    clearSlot(this.props.slot);
     this.setState((s) => ({ failed: false, attempt: s.attempt + 1 }));
   };
 

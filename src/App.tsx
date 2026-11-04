@@ -36,6 +36,14 @@ import { GameBoundary } from "./games/GameBoundary";
 import { soundEnabled, setSoundEnabled } from "./lib/sound";
 import { hapticsEnabled, setHapticsEnabled } from "./lib/haptics";
 import { useTheme } from "./lib/theme";
+import {
+  currentStreak,
+  dailyGame,
+  dailyProgress,
+  loadDaily,
+  today,
+  DAILY_SLOT
+} from "./lib/daily";
 const Stats = lazy(() => import("./Stats"));
 
 // Each game is its own chunk (the registry's `load` thunks are separate
@@ -45,7 +53,7 @@ const GAME_COMPONENT = Object.fromEntries(
   GAMES.map((g) => [g.id, lazy(g.load)])
 ) as Record<string, ComponentType<GameProps>>;
 
-type View = "hub" | "stats" | GameId;
+type View = "hub" | "stats" | "daily" | GameId;
 
 /** Narrow screens get a two-level hub: categories first, then games. */
 function useIsWide(): boolean {
@@ -74,6 +82,7 @@ function parseRoute(): Route {
   const [kind, id] = window.location.hash.replace(/^#\/?/, "").split("/");
   if (kind === "game" && GAME_IDS.has(id)) return { view: id as GameId, cat: null };
   if (kind === "stats") return { view: "stats", cat: null };
+  if (kind === "daily") return { view: "daily", cat: null };
   if (kind === "cat" && (CATEGORIES as string[]).includes(id))
     return { view: "hub", cat: id as Category };
   return { view: "hub", cat: null };
@@ -145,6 +154,36 @@ function Card({
   );
 }
 
+const DAILY_LABEL = { fresh: "Play →", started: "Continue →", done: "Solved ✓" };
+
+/** The puzzle of the day, above everything else on the hub: same game and
+ *  board for everyone today, with the run of days solved in a row. */
+function DailyCard({ onOpen }: { onOpen: () => void }) {
+  const date = today();
+  const game = GAMES.find((g) => g.id === dailyGame(date))!;
+  const progress = dailyProgress(date);
+  const streak = currentStreak(loadDaily(), date);
+  return (
+    <button
+      className={`daily-card is-${progress}`}
+      style={{ "--accent": game.accent } as CSSProperties}
+      onClick={onOpen}
+    >
+      <span className="card-glyph" aria-hidden="true">
+        {game.glyph}
+      </span>
+      <span className="daily-body">
+        <span className="daily-kicker">Puzzle of the day</span>
+        <span className="card-name">{game.name}</span>
+        <span className="card-tag">
+          {streak > 0 ? `📅 ${streak}-day streak` : game.tagline}
+        </span>
+      </span>
+      <span className="card-state">{DAILY_LABEL[progress]}</span>
+    </button>
+  );
+}
+
 export default function App() {
   const [{ view, cat: openCat }, setRoute] = useState<Route>(parseRoute);
   const [online, setOnline] = useState(navigator.onLine);
@@ -186,7 +225,7 @@ export default function App() {
 
   // Catches deep links and back/forward too, not just taps on a card.
   useEffect(() => {
-    if (view === "hub" || view === "stats") return;
+    if (view === "hub" || view === "stats" || view === "daily") return;
     setLastGame(view);
     setRecents(pushRecent(view));
   }, [view]);
@@ -296,13 +335,22 @@ export default function App() {
   }
 
   if (view !== "hub") {
-    const Game = GAME_COMPONENT[view];
-    const title = GAMES.find((g) => g.id === view)?.name ?? "Puzzle";
+    // The puzzle of the day is a regular game mounted with the date, which
+    // switches it to the fixed daily board in its own slot.
+    const date = view === "daily" ? today() : null;
+    const id = date ? dailyGame(date) : (view as GameId);
+    const Game = GAME_COMPONENT[id];
+    const title = GAMES.find((g) => g.id === id)?.name ?? "Puzzle";
     return (
-      <GameShell game={view}>
+      <GameShell game={id} daily={date} key={view}>
         {/* A board that can't be opened — an old save, a generator that
             throws — offers a way out instead of a blank screen. */}
-        <GameBoundary game={view} title={title} onExit={exit}>
+        <GameBoundary
+          game={id}
+          slot={date ? DAILY_SLOT : id}
+          title={title}
+          onExit={exit}
+        >
           <Suspense fallback={<div className="game" />}>
             <Game onExit={exit} />
           </Suspense>
@@ -507,6 +555,8 @@ export default function App() {
         }}
         aria-label="Search games"
       />
+
+      <DailyCard onOpen={() => navigate("/daily")} />
 
       <button className="stats-strip" onClick={() => navigate("/stats")}>
         <span className="stats-strip-main">

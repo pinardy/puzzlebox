@@ -3,6 +3,7 @@ import { Diff, load, save, loadSlot, saveSlot, recordResult } from "./storage";
 import { newSeed } from "./rng";
 import { tick } from "./haptics";
 import { useGameId, useGameShell } from "./shell";
+import { DAILY_SLOT, dailySeed, recordDaily } from "./daily";
 
 export interface CommitOpts {
   /** Push the previous state onto the undo stack (default true). Pass
@@ -19,18 +20,30 @@ export interface CommitOpts {
  *  with an undo stack, an active-play-time counter (gaps over a minute
  *  don't count, so a paused game doesn't inflate the clock), a hint
  *  counter that marks the puzzle as assisted, and recording the result.
- *  The game's id comes from the surrounding `GameShell`.
+ *  The game's id comes from the surrounding `GameShell`, and so does the
+ *  puzzle-of-the-day flag: a daily board is one fixed seed at Medium, kept
+ *  in its own slot, and can't be re-dealt.
  *
  *  Pass `stateV` when a game changes the shape of its saved state: boards
  *  saved under a different version are dropped and dealt fresh instead of
  *  being fed to code that no longer understands them. */
 export function useGame<T>(fresh: (seed: string, diff: Diff) => T, stateV?: number) {
   const game = useGameId();
-  const slot = useRef(loadSlot<T>(game, stateV)).current;
+  const { info, publish } = useGameShell();
+  const daily = info.daily;
+  const slotKey = daily ? DAILY_SLOT : game;
+  const fixedSeed = daily ? dailySeed(daily, game) : null;
+  const slot = useRef(
+    (() => {
+      const s = loadSlot<T>(slotKey, stateV);
+      // Yesterday's daily is no use today.
+      return fixedSeed && s?.seed !== fixedSeed ? null : s;
+    })()
+  ).current;
   const [diff, setDiff] = useState<Diff>(
-    slot?.diff ?? load<Diff>(`pref:diff:${game}`, "medium")
+    daily ? "medium" : (slot?.diff ?? load<Diff>(`pref:diff:${game}`, "medium"))
   );
-  const [seed, setSeed] = useState(slot?.seed ?? newSeed());
+  const [seed, setSeed] = useState(slot?.seed ?? fixedSeed ?? newSeed());
   const [saved, setSaved] = useState<T>(() => slot?.state ?? fresh(seed, diff));
   const [history, setHistory] = useState<T[]>([]);
   const [playMs, setPlayMs] = useState(slot?.playMs ?? 0);
@@ -39,7 +52,6 @@ export function useGame<T>(fresh: (seed: string, diff: Diff) => T, stateV?: numb
 
   // Tell the shared header/toolbar how it's going. Play time is restored
   // from the slot, so a resumed board counts as progress too.
-  const { publish } = useGameShell();
   const done = (saved as { done?: boolean }).done === true;
   useEffect(() => {
     publish({ dirty: playMs > 0 && !done, playMs });
@@ -55,8 +67,11 @@ export function useGame<T>(fresh: (seed: string, diff: Diff) => T, stateV?: numb
     if (opts?.hint) setHints(h);
     if (opts?.undoable !== false) setHistory((prev) => [...prev.slice(-19), saved]);
     setSaved(next);
-    saveSlot(game, seed, next, diff, ms, h, stateV);
-    if (opts?.outcome) recordResult(game, opts.outcome === "won");
+    saveSlot(slotKey, seed, next, diff, ms, h, stateV);
+    if (opts?.outcome) {
+      recordResult(game, opts.outcome === "won", slotKey);
+      if (daily) recordDaily(daily, opts.outcome === "won");
+    }
   }
 
   /** Apply a hint: commits like a normal move but marks the puzzle as
@@ -88,11 +103,13 @@ export function useGame<T>(fresh: (seed: string, diff: Diff) => T, stateV?: numb
     const prev = history[history.length - 1];
     setHistory(history.slice(0, -1));
     setSaved(prev);
-    saveSlot(game, seed, prev, diff, playMs, hints, stateV);
+    saveSlot(slotKey, seed, prev, diff, playMs, hints, stateV);
   }
 
-  /** Deal a fresh puzzle; pass a difficulty to change it at the same time. */
+  /** Deal a fresh puzzle; pass a difficulty to change it at the same time.
+   *  The puzzle of the day is fixed, so there it does nothing. */
   function newPuzzle(nextDiff: Diff = diff) {
+    if (daily) return;
     const s = newSeed();
     const f = fresh(s, nextDiff);
     setSeed(s);
@@ -103,7 +120,7 @@ export function useGame<T>(fresh: (seed: string, diff: Diff) => T, stateV?: numb
     setPlayMs(0);
     setHints(0);
     lastAction.current = Date.now();
-    saveSlot(game, s, f, nextDiff, 0, 0, stateV);
+    saveSlot(slotKey, s, f, nextDiff, 0, 0, stateV);
   }
 
   return {
