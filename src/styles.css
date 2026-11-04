@@ -664,6 +664,9 @@ button { font-family: inherit; color: inherit; }
 /* ---------- Accessibility ---------- */
 
 :focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+/* Grid cells sit edge to edge (often inside overflow: hidden), so their
+   ring is drawn inside the cell where neighbours can't cover it. */
+[data-cell]:focus-visible { outline-offset: -3px; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
