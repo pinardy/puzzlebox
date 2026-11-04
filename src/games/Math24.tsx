@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { makeRng } from "../lib/rng";
 import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
@@ -50,6 +50,24 @@ function solutions(nums: Frac[]): number {
     }
   return count;
 }
+
+/** One merge that keeps 24 reachable from these tiles, or null when the
+ *  position is already a dead end. */
+function nextStep(nums: Frac[]): { i: number; j: number; op: Op } | null {
+  for (let i = 0; i < nums.length; i++)
+    for (let j = 0; j < nums.length; j++) {
+      if (i === j) continue;
+      const rest = nums.filter((_, k) => k !== i && k !== j);
+      for (const op of OPS) {
+        const r = apply(nums[i], nums[j], op);
+        if (r && solutions([...rest, r]) > 0) return { i, j, op };
+      }
+    }
+  return null;
+}
+
+const OP_NAME: Record<Op, string> = { "+": "plus", "−": "minus", "×": "times", "÷": "divided by" };
+const OP_KEYS: Record<string, Op> = { "+": "+", "-": "−", "*": "×", x: "×", X: "×", "/": "÷" };
 
 function generate24(seed: string, diff: Diff): number[] {
   const rng = makeRng(`math24-${seed}`);
@@ -109,6 +127,46 @@ export default function Math24({ onExit }: { onExit: () => void }) {
     );
   }
 
+  /** Make one merge that still leads to 24. From a dead end, start over
+   *  from the deal and make its first good merge instead. Counts as a
+   *  hint, so a win after it is marked assisted. */
+  function hint() {
+    if (saved.done) return;
+    let tiles = saved.tiles;
+    let merges = saved.merges;
+    let step = nextStep(tiles);
+    if (!step) {
+      tiles = generate24(seed, diff).map((v) => frac(v, 1));
+      merges = 0;
+      step = nextStep(tiles);
+      if (!step) return;
+    }
+    const { i, j, op: o } = step;
+    const result = apply(tiles[i], tiles[j], o)!;
+    const next = tiles.filter((_, k) => k !== i && k !== j);
+    next.push(result);
+    const done = next.length === 1 && result.n === 24 && result.d === 1;
+    commit(
+      { tiles: next, merges: merges + 1, done },
+      done ? { hint: true, outcome: "won" } : { hint: true }
+    );
+    setPick(null);
+    setOp(null);
+  }
+
+  // Typing an operator (+ - * x /) picks it once a number is chosen; the
+  // numbers themselves are buttons, reached with Tab.
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      const o = OP_KEYS[e.key];
+      if (!o || pick === null || saved.done) return;
+      e.preventDefault();
+      setOp((cur) => (cur === o ? null : o));
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [pick, saved.done]);
+
   function reset() {
     commit({
       tiles: generate24(seed, diff).map((v) => frac(v, 1)),
@@ -137,9 +195,10 @@ export default function Math24({ onExit }: { onExit: () => void }) {
         help={HELP}
         onUndo={undo}
         canUndo={canUndo && !saved.done}
+        onHint={saved.done ? undefined : hint}
       />
 
-      <div className="m24-tiles">
+      <div className="m24-tiles" role="group" aria-label="Numbers">
         {saved.tiles.map((f, i) => (
           <button
             key={i}
@@ -147,13 +206,15 @@ export default function Math24({ onExit }: { onExit: () => void }) {
               saved.done && saved.tiles.length === 1 ? " win" : ""
             }`}
             onClick={() => tapTile(i)}
+            aria-pressed={pick === i}
+            aria-label={`${show(f)}${pick === i ? ", picked" : ""}`}
           >
             {show(f)}
           </button>
         ))}
       </div>
 
-      <div className="m24-ops">
+      <div className="m24-ops" role="group" aria-label="Operators">
         {OPS.map((o) => (
           <button
             key={o}
@@ -161,6 +222,7 @@ export default function Math24({ onExit }: { onExit: () => void }) {
             disabled={pick === null || saved.done}
             onClick={() => setOp(op === o ? null : o)}
             aria-pressed={op === o}
+            aria-label={OP_NAME[o]}
           >
             {o}
           </button>

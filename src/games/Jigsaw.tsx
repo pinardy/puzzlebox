@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { generateJigsaw, jigsawPeers } from "../lib/jigsaw";
 import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
-import { useGridKeys } from "../lib/keys";
+import { cellLabel, notesLabel, useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
 import { Numpad } from "./Numpad";
@@ -145,6 +145,16 @@ export default function Jigsaw({ onExit }: { onExit: () => void }) {
                 r === 8 ? "jr-b" : "",
                 c === 8 ? "jr-r" : ""
               ].join(" ")}
+              aria-label={cellLabel(
+                i,
+                9,
+                v,
+                `region ${regionOf[i] + 1}`,
+                given && "given",
+                v === 0 && notesLabel(saved.notes[i]),
+                conflicts.has(i) && "conflict"
+              )}
+              aria-selected={selected === i}
               onClick={() => setSelected(i)}
             >
               {v !== 0 ? (

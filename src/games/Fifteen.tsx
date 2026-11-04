@@ -2,6 +2,8 @@ import { type CSSProperties } from "react";
 import { makeRng } from "../lib/rng";
 import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
+import { useGridNav } from "../lib/gridnav";
+import { cellLabel } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
 import "./Fifteen.css";
@@ -70,6 +72,14 @@ export default function Fifteen({ onExit }: { onExit: () => void }) {
     );
   }
 
+  // Arrows move between tiles; Enter / Space slides the focused one (its
+  // onClick), like a tap.
+  const nav = useGridNav();
+  const blank = saved.cells.indexOf(0);
+  const canSlide = (i: number) =>
+    i !== blank &&
+    (Math.floor(i / n) === Math.floor(blank / n) || i % n === blank % n);
+
   return (
     <div className="game game-fifteen">
       <GameHeader title="Fifteen" onExit={onExit} onNew={() => newPuzzle()} />
@@ -93,11 +103,20 @@ export default function Fifteen({ onExit }: { onExit: () => void }) {
         style={{ "--n": n } as CSSProperties}
         role="grid"
         aria-label="Sliding puzzle"
+        {...nav}
       >
         {saved.cells.map((v, i) => (
           <button
             key={i}
+            data-cell={i}
             role="gridcell"
+            aria-label={cellLabel(
+              i,
+              n,
+              v ? `tile ${v}` : "gap",
+              v !== 0 && v === (i + 1) % (n * n) && "in place",
+              !saved.done && canSlide(i) && "can slide"
+            )}
             className={`fifteen-tile${v === 0 ? " blank" : ""}${
               v !== 0 && v === (i + 1) % (n * n) ? " home" : ""
             }`}

@@ -3,7 +3,7 @@ import { makeRng, shuffled } from "../lib/rng";
 import { generateSudoku, peersConflict, Grid } from "../lib/sudoku";
 import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
-import { useGridKeys } from "../lib/keys";
+import { cellLabel, useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
 import { Numpad } from "./Numpad";
@@ -52,6 +52,8 @@ interface SavedState {
   entries: Grid;
   done: boolean;
 }
+
+const STATE_SAY = { ok: ", correct", bad: ", wrong", open: "" } as const;
 
 export default function Sandwich({ onExit }: { onExit: () => void }) {
   const { seed, diff, saved, commit, commitHint, finish, undo, canUndo, newPuzzle } =
@@ -149,14 +151,24 @@ export default function Sandwich({ onExit }: { onExit: () => void }) {
         <span className="sw-corner" />
         <div className="sw-top">
           {colSums.map((s, c) => (
-            <span key={c} className={`sw-clue ${lineState.cols[c]}`}>
+            <span
+              key={c}
+              className={`sw-clue ${lineState.cols[c]}`}
+              role="img"
+              aria-label={`Column ${c + 1} sandwich sum ${s}${STATE_SAY[lineState.cols[c]]}`}
+            >
               {s}
             </span>
           ))}
         </div>
         <div className="sw-left">
           {rowSums.map((s, r) => (
-            <span key={r} className={`sw-clue ${lineState.rows[r]}`}>
+            <span
+              key={r}
+              className={`sw-clue ${lineState.rows[r]}`}
+              role="img"
+              aria-label={`Row ${r + 1} sandwich sum ${s}${STATE_SAY[lineState.rows[r]]}`}
+            >
               {s}
             </span>
           ))}
@@ -177,6 +189,14 @@ export default function Sandwich({ onExit }: { onExit: () => void }) {
                   c % 3 === 2 && c !== 8 ? "br" : "",
                   r % 3 === 2 && r !== 8 ? "bb" : ""
                 ].join(" ")}
+                aria-label={cellLabel(
+                  i,
+                  9,
+                  v,
+                  given && "given",
+                  v !== 0 && !given && peersConflict(board, i, v) && "conflict"
+                )}
+                aria-selected={selected === i}
                 onClick={() => setSelected(i)}
               >
                 {v || ""}

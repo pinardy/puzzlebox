@@ -3,6 +3,7 @@ import { makeRng, shuffled } from "../lib/rng";
 import { hamiltonianPath } from "../lib/zip";
 import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
+import { cellLabel, useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
 import "./Numbrix.css";
@@ -102,12 +103,13 @@ export default function Numbrix({ onExit }: { onExit: () => void }) {
     if (solved) finish();
   }, [solved, finish]);
 
-  function place(value: number) {
-    if (saved.done || selected === null || givens[selected] !== 0) return;
+  function place(value: number, at = selected) {
+    if (saved.done || at === null || givens[at] !== 0) return;
+    if (saved.entries[at] === value) return;
     const entries = saved.entries.slice();
     // Each number appears once, so placing it lifts it from anywhere else.
     for (let i = 0; i < n * n; i++) if (entries[i] === value) entries[i] = 0;
-    entries[selected] = value;
+    entries[at] = value;
     commit({ ...saved, entries });
   }
 
@@ -117,6 +119,18 @@ export default function Numbrix({ onExit }: { onExit: () => void }) {
     entries[i] = 0;
     commit({ ...saved, entries });
   }
+
+  // Typing: arrows walk the open squares, digits (two for numbers past 9)
+  // place a number, Backspace takes one back.
+  useGridKeys({
+    cols: n,
+    rows: n,
+    max: n * n,
+    selected,
+    setSelected,
+    setCell: (i, v) => (v === 0 ? clear(i) : place(v, i)),
+    isCell: (i) => givens[i] === 0
+  });
 
   function hint() {
     const open = (i: number) => givens[i] === 0 && board[i] !== solution[i];
@@ -176,6 +190,14 @@ export default function Numbrix({ onExit }: { onExit: () => void }) {
                 selected === i ? "selected" : "",
                 conflicts.has(i) ? "conflict" : ""
               ].join(" ")}
+              aria-label={cellLabel(
+                i,
+                n,
+                v,
+                given && "given",
+                conflicts.has(i) && "broken chain"
+              )}
+              aria-selected={selected === i}
               onClick={() => {
                 if (!given && saved.entries[i] !== 0 && selected === i) clear(i);
                 else setSelected(i);

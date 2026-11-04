@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { makeRng, shuffled } from "../lib/rng";
 import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
-import { useGridKeys } from "../lib/keys";
+import { cellLabel, useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
 import { Numpad } from "./Numpad";
@@ -78,6 +78,8 @@ interface SavedState {
   entries: number[];
   done: boolean;
 }
+
+const CORNER = ["top left", "top right", "bottom left", "bottom right"];
 
 export default function Sujiko({ onExit }: { onExit: () => void }) {
   const { seed, diff, saved, commit, commitHint, finish, undo, canUndo, newPuzzle } =
@@ -167,6 +169,14 @@ export default function Sujiko({ onExit }: { onExit: () => void }) {
               givens[i] !== 0 ? "given" : "",
               selected === i ? "selected" : ""
             ].join(" ")}
+            aria-label={cellLabel(
+              i,
+              3,
+              v,
+              givens[i] !== 0 && "given",
+              `feeds the ${QUADS.flatMap((q, k) => (q.includes(i) ? [CORNER[k]] : [])).join(", ")} circle`
+            )}
+            aria-selected={selected === i}
             onClick={() => setSelected(i)}
           >
             {v || ""}
@@ -176,6 +186,10 @@ export default function Sujiko({ onExit }: { onExit: () => void }) {
           <span
             key={k}
             className={`sj-sum ${quadState[k]}`}
+            role="gridcell"
+            aria-label={`${CORNER[k]} circle: ${s}${
+              quadState[k] === "ok" ? ", correct" : quadState[k] === "bad" ? ", wrong" : ""
+            }`}
             style={{
               left: `${(k % 2) * 33.33 + 33.33}%`,
               top: `${Math.floor(k / 2) * 33.33 + 33.33}%`

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { generateLatin } from "../lib/latin";
 import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
-import { useGridKeys } from "../lib/keys";
+import { cellLabel, useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
 import { Numpad } from "./Numpad";
@@ -134,6 +134,23 @@ export default function Skyscrapers({ onExit }: { onExit: () => void }) {
     `sky-clue${ok === true ? " ok" : ok === false ? " bad" : ""}`;
 
   const G = n + 2;
+  /** An edge clue, named for screen readers: "Column 2 from the top: 3
+   *  visible". */
+  const clue = (k: number, side: keyof typeof clues, at: number, line: string) => {
+    const ok = clueOk[side][at];
+    return (
+      <span
+        key={k}
+        className={clueClass(ok)}
+        role="gridcell"
+        aria-label={`${line === "row" ? "Row" : "Column"} ${at + 1} from the ${side}: ${
+          clues[side][at]
+        } visible${ok === true ? ", met" : ok === false ? ", broken" : ""}`}
+      >
+        {clues[side][at]}
+      </span>
+    );
+  };
 
   return (
     <div className="game game-sky">
@@ -171,6 +188,8 @@ export default function Skyscrapers({ onExit }: { onExit: () => void }) {
                   selected === i ? "selected" : "",
                   conflicts.has(i) ? "conflict" : ""
                 ].join(" ")}
+                aria-label={cellLabel(i, n, board[i], conflicts.has(i) && "conflict")}
+                aria-selected={selected === i}
                 onClick={() => setSelected(i)}
               >
                 {board[i] || ""}
@@ -178,13 +197,13 @@ export default function Skyscrapers({ onExit }: { onExit: () => void }) {
             );
           }
           if (gr === 0 && gc > 0 && gc <= n)
-            return <span key={k} className={clueClass(clueOk.top[gc - 1])}>{clues.top[gc - 1]}</span>;
+            return clue(k, "top", gc - 1, "column");
           if (gr === G - 1 && gc > 0 && gc <= n)
-            return <span key={k} className={clueClass(clueOk.bottom[gc - 1])}>{clues.bottom[gc - 1]}</span>;
+            return clue(k, "bottom", gc - 1, "column");
           if (gc === 0 && gr > 0 && gr <= n)
-            return <span key={k} className={clueClass(clueOk.left[gr - 1])}>{clues.left[gr - 1]}</span>;
+            return clue(k, "left", gr - 1, "row");
           if (gc === G - 1 && gr > 0 && gr <= n)
-            return <span key={k} className={clueClass(clueOk.right[gr - 1])}>{clues.right[gr - 1]}</span>;
+            return clue(k, "right", gr - 1, "row");
           return <span key={k} />;
         })}
       </div>

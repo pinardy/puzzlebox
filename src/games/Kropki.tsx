@@ -3,7 +3,7 @@ import { makeRng } from "../lib/rng";
 import { generateLatin } from "../lib/latin";
 import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
-import { useGridKeys } from "../lib/keys";
+import { cellLabel, useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
 import { Numpad } from "./Numpad";
@@ -139,6 +139,29 @@ export default function Kropki({ onExit }: { onExit: () => void }) {
   const G = 2 * n - 1;
   const track = Array(n - 1).fill("1fr 0.3fr").join(" ") + " 1fr";
   const dotChar = (d: Dot) => (d === "black" ? "●" : d === "white" ? "○" : "");
+  const dotName = (d: Dot) =>
+    d === "black" ? "black dot, one is double the other" : "white dot, consecutive";
+  /** The dots touching a cell, in words, for its accessible name. */
+  const dotsAround = (i: number): string | null => {
+    const r = Math.floor(i / n), c = i % n;
+    const out: string[] = [];
+    const say = (d: Dot, where: string) => {
+      if (d) out.push(`${d} dot ${where}`);
+    };
+    if (c < n - 1) say(h[r * (n - 1) + c], "right");
+    if (c > 0) say(h[r * (n - 1) + c - 1], "left");
+    if (r < n - 1) say(v[r * n + c], "below");
+    if (r > 0) say(v[(r - 1) * n + c], "above");
+    return out.length ? out.join(", ") : null;
+  };
+  const dot = (k: number, d: Dot) =>
+    d ? (
+      <span key={k} className="kropki-dot" role="img" aria-label={dotName(d)}>
+        {dotChar(d)}
+      </span>
+    ) : (
+      <span key={k} className="kropki-dot" aria-hidden="true" />
+    );
 
   return (
     <div className="game game-kropki">
@@ -175,6 +198,14 @@ export default function Kropki({ onExit }: { onExit: () => void }) {
                   selected === i ? "selected" : "",
                   conflicts.has(i) ? "conflict" : ""
                 ].join(" ")}
+                aria-label={cellLabel(
+                  i,
+                  n,
+                  board[i],
+                  dotsAround(i),
+                  conflicts.has(i) && "conflict"
+                )}
+                aria-selected={selected === i}
                 onClick={() => setSelected(i)}
               >
                 {board[i] || ""}
@@ -182,17 +213,9 @@ export default function Kropki({ onExit }: { onExit: () => void }) {
             );
           }
           if (gr % 2 === 0 && gc % 2 === 1)
-            return (
-              <span key={k} className="kropki-dot" aria-hidden="true">
-                {dotChar(h[(gr / 2) * (n - 1) + (gc - 1) / 2])}
-              </span>
-            );
+            return dot(k, h[(gr / 2) * (n - 1) + (gc - 1) / 2]);
           if (gr % 2 === 1 && gc % 2 === 0)
-            return (
-              <span key={k} className="kropki-dot" aria-hidden="true">
-                {dotChar(v[((gr - 1) / 2) * n + gc / 2])}
-              </span>
-            );
+            return dot(k, v[((gr - 1) / 2) * n + gc / 2]);
           return <span key={k} />;
         })}
       </div>

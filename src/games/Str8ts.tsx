@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
 import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
-import { useGridKeys } from "../lib/keys";
+import { cellLabel, useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
 import { Numpad } from "./Numpad";
@@ -271,7 +271,12 @@ export default function Str8ts({ onExit }: { onExit: () => void }) {
         {board.map((v, i) => {
           if (puzzle.black[i])
             return (
-              <span key={i} className="st-black">
+              <span
+                key={i}
+                className="st-black"
+                role="gridcell"
+                aria-label={cellLabel(i, n, "black", puzzle.blackDigit[i] && `clue ${puzzle.blackDigit[i]}`)}
+              >
                 {puzzle.blackDigit[i] || ""}
               </span>
             );
@@ -286,6 +291,14 @@ export default function Str8ts({ onExit }: { onExit: () => void }) {
                 selected === i ? "selected" : "",
                 conflicts.has(i) ? "conflict" : ""
               ].join(" ")}
+              aria-label={cellLabel(
+                i,
+                n,
+                v,
+                given && "given",
+                conflicts.has(i) && "conflict"
+              )}
+              aria-selected={selected === i}
               onClick={() => setSelected(i)}
             >
               {v || ""}

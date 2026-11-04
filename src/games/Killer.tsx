@@ -3,7 +3,7 @@ import { makeRng, shuffled } from "../lib/rng";
 import { generateSudoku, peersConflict, Grid } from "../lib/sudoku";
 import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
-import { useGridKeys } from "../lib/keys";
+import { cellLabel, notesLabel, useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
 import { Numpad } from "./Numpad";
@@ -236,6 +236,16 @@ export default function Killer({ onExit }: { onExit: () => void }) {
                 r > 0 && cageOf[i - 9] !== cageOf[i] ? "kc-t" : "",
                 c > 0 && cageOf[i - 1] !== cageOf[i] ? "kc-l" : ""
               ].join(" ")}
+              aria-label={cellLabel(
+                i,
+                9,
+                v,
+                `cage of ${cages[cageOf[i]].cells.length} summing to ${cages[cageOf[i]].sum}`,
+                given && "given",
+                v === 0 && notesLabel(saved.notes[i]),
+                conflict && "conflict"
+              )}
+              aria-selected={selected === i}
               onClick={() => setSelected(i)}
             >
               {clue && <span className="killer-sum">{clue.sum}</span>}
