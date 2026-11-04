@@ -6,7 +6,7 @@ import {
   useState,
   type CSSProperties
 } from "react";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import {
   SIDE_NAMES,
@@ -51,7 +51,7 @@ interface SavedState {
 }
 
 export default function LetterBoxed({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle } =
     useGame<SavedState>(() => ({
       words: [],
       hint: null,
@@ -132,11 +132,8 @@ export default function LetterBoxed({ onExit }: { onExit: () => void }) {
   }, [submit, type]);
 
   useEffect(() => {
-    if (saved.done || used !== allMask) return;
-    commit({ ...saved, done: true }, { undoable: false });
-    recordResult("boxed", true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [used, allMask, saved]);
+    if (used === allMask) finish();
+  }, [used, allMask, finish]);
 
   /** Nudge first — a length and an opening letter — then the whole word. */
   function hint() {

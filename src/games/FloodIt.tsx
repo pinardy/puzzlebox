@@ -1,6 +1,6 @@
 import { useEffect, useMemo, type CSSProperties } from "react";
 import { makeRng } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -90,7 +90,7 @@ function deal(seed: string, diff: Diff): SavedState {
 }
 
 export default function FloodIt({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, undo, canUndo, newPuzzle } =
     useGame<SavedState>((s, d) => deal(s, d));
   const n = SIZE[diff];
   const colors = COLORS[diff];
@@ -98,16 +98,9 @@ export default function FloodIt({ onExit }: { onExit: () => void }) {
   const owned = useMemo(() => new Set(region(saved.cells, n)), [saved.cells, n]);
 
   useEffect(() => {
-    if (saved.done) return;
-    if (owned.size === n * n) {
-      commit({ ...saved, done: true, won: true }, { undoable: false });
-      recordResult("flood", true);
-    } else if (saved.moves >= saved.budget) {
-      commit({ ...saved, done: true, won: false }, { undoable: false });
-      recordResult("flood", false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [owned, saved]);
+    if (owned.size === n * n) finish(true, { won: true });
+    else if (saved.moves >= saved.budget) finish(false, { won: false });
+  }, [owned, n, saved.moves, saved.budget, finish]);
 
   function pick(color: number) {
     if (saved.done || color === saved.cells[0]) return;

@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { makeRng } from "../lib/rng";
 import { ANSWERS } from "../lib/words";
 import { COMMON4 } from "../lib/words4";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -41,8 +41,10 @@ export default function Hangman({ onExit }: { onExit: () => void }) {
     const guessed = [...saved.guessed, letter];
     const won = [...answer].every((c) => guessed.includes(c));
     const lost = guessed.filter((g) => !answer.includes(g)).length >= LIVES;
-    commit({ guessed, done: won || lost, won });
-    if (won || lost) recordResult("hangman", won);
+    commit(
+      { guessed, done: won || lost, won },
+      { outcome: won ? "won" : lost ? "lost" : undefined }
+    );
   }
 
   useEffect(() => {

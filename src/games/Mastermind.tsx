@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { makeRng } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -59,9 +59,11 @@ export default function Mastermind({ onExit }: { onExit: () => void }) {
     const { exact } = score(current, code);
     const won = exact === codeLen;
     const done = won || guesses.length >= MAX_GUESSES;
-    commit({ guesses, done, won });
+    commit(
+      { guesses, done, won },
+      { outcome: done ? (won ? "won" : "lost") : undefined }
+    );
     setCurrent([]);
-    if (done) recordResult("mastermind", won);
   }
 
   function startNew(d?: Diff) {

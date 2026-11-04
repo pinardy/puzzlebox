@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { makeRng } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -97,15 +97,19 @@ export default function Farkle({ onExit }: { onExit: () => void }) {
     setPicked(next);
   }
 
+  /** Commit the move to the next turn, recording the result if it ended
+   *  the game. */
+  function commitTurn(next: SavedState) {
+    commit(next, { outcome: next.done ? (next.won ? "won" : "lost") : undefined });
+  }
+
   function nextTurn(state: SavedState, banked: number): SavedState {
     const total = state.total + banked;
     const turn = state.turn + 1;
     if (total >= target) {
-      recordResult("farkle", true);
       return { ...state, total, done: true, won: true };
     }
     if (turn > TURNS) {
-      recordResult("farkle", false);
       return { ...state, total, turn: TURNS, done: true, won: false };
     }
     return {
@@ -141,14 +145,14 @@ export default function Farkle({ onExit }: { onExit: () => void }) {
     if (saved.done || busted) return;
     const extra = pickedScore ?? 0;
     if (saved.turnPoints + extra <= 0) return;
-    commit(nextTurn(saved, saved.turnPoints + extra));
+    commitTurn(nextTurn(saved, saved.turnPoints + extra));
     setPicked([]);
   }
 
   /** Acknowledge a busted roll and move on. */
   function acceptFarkle() {
     if (saved.done) return;
-    commit(nextTurn({ ...saved, turnPoints: 0 }, 0));
+    commitTurn(nextTurn({ ...saved, turnPoints: 0 }, 0));
     setPicked([]);
   }
 

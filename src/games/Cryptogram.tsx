@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { makeRng, shuffled } from "../lib/rng";
 import { QUOTES } from "../lib/quotes";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -48,7 +48,7 @@ interface SavedState {
 }
 
 export default function Cryptogram({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle } =
     useGame<SavedState>(() => ({ mapping: {}, done: false }));
   const { answer, cipherText, givens } = useMemo(
     () => generateCryptogram(`crypto-${seed}`, GIVENS[diff]),
@@ -75,12 +75,8 @@ export default function Cryptogram({ onExit }: { onExit: () => void }) {
   }, [cipherText, saved.mapping, givens]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (!saved.done && decoded === answer) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("crypto", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [decoded, answer, saved]);
+    if (decoded === answer) finish();
+  }, [decoded, answer, finish]);
 
   const assign = (plain: string) => {
     if (saved.done || selected === null || givens[selected]) return;

@@ -1,6 +1,6 @@
 import { useMemo, useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -96,8 +96,7 @@ export default function Knight({ onExit }: { onExit: () => void }) {
     const path = [...saved.path, i];
     const done = path.length === n * n;
     setSuggested(null);
-    commit({ path, done });
-    if (done) recordResult("knight", true);
+    commit({ path, done }, { outcome: done ? "won" : undefined });
   }
 
   /** Point at a square that still leaves the tour finishable — searched

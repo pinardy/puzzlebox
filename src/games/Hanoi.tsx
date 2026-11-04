@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -58,8 +58,7 @@ export default function Hanoi({ onExit }: { onExit: () => void }) {
     pegs[peg].push(disk);
     setPicked(null);
     const done = pegs[2].length === disks;
-    commit({ pegs, moves: saved.moves + 1, done });
-    if (done) recordResult("hanoi", true);
+    commit({ pegs, moves: saved.moves + 1, done }, { outcome: done ? "won" : undefined });
   }
 
   function startNew(d?: Diff) {

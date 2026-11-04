@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { makeRng } from "../lib/rng";
-import { recordResult } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -103,8 +102,7 @@ export default function Yahtzee({ onExit }: { onExit: () => void }) {
     scores[cat] = potential(cat, saved.dice);
     const done = scores.every((s) => s !== null);
     if (done) {
-      commit({ ...saved, scores, done }, { undoable: false });
-      recordResult("yahtzee", true);
+      commit({ ...saved, scores, done }, { undoable: false, outcome: "won" });
       return;
     }
     // Next round: fresh roll, nothing held.

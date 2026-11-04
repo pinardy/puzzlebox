@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { makeRng, shuffled } from "../lib/rng";
 import { ANSWERS } from "../lib/words";
 import { COMMON4 } from "../lib/words4";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -69,11 +69,15 @@ export default function Anagram({ onExit }: { onExit: () => void }) {
     if (next.some((t) => t === null)) return;
     const attempt = next.map((t) => scrambled[t!]).join("");
     if (attempt === word) {
-      commit({ ...saved, tries: saved.tries + 1, done: true, won: true });
-      recordResult("anagram", true);
+      commit(
+        { ...saved, tries: saved.tries + 1, done: true, won: true },
+        { outcome: "won" }
+      );
     } else if (diff === "hard" && saved.tries + 1 >= MAX_TRIES_HARD) {
-      commit({ ...saved, tries: saved.tries + 1, done: true, won: false });
-      recordResult("anagram", false);
+      commit(
+        { ...saved, tries: saved.tries + 1, done: true, won: false },
+        { outcome: "lost" }
+      );
     } else {
       commit({ ...saved, tries: saved.tries + 1 });
       setShake(true);

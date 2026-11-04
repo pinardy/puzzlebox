@@ -1,6 +1,6 @@
 import { useMemo, type CSSProperties } from "react";
 import { makeRng } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -109,8 +109,10 @@ export default function SameGame({ onExit }: { onExit: () => void }) {
     const stuck = !cleared && !anyGroup(cells, w, h);
     if (cleared) score += 1000;
     const done = cleared || stuck;
-    commit({ ...saved, cells, score, done, won: cleared });
-    if (done) recordResult("samegame", cleared);
+    commit(
+      { ...saved, cells, score, done, won: cleared },
+      { outcome: done ? (cleared ? "won" : "lost") : undefined }
+    );
   }
 
   return (

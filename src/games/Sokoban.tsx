@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, type CSSProperties } from "react";
 import { makeRng } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -104,8 +104,10 @@ export default function Sokoban({ onExit }: { onExit: () => void }) {
         boxes[boxAt] = beyond;
       }
       const done = boxes.every((b) => goalSet.has(b));
-      commit({ player: target, boxes, moves: saved.moves + 1, done });
-      if (done) recordResult("sokoban", true);
+      commit(
+        { player: target, boxes, moves: saved.moves + 1, done },
+        { outcome: done ? "won" : undefined }
+      );
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [saved, level, goalSet]
