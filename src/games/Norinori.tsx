@@ -1,6 +1,6 @@
 import { useEffect, useMemo, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -74,7 +74,7 @@ interface SavedState {
 }
 
 export default function Norinori({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, undo, canUndo, newPuzzle } =
     useGame<SavedState>((_s, d) => ({
       shaded: Array(SIZE[d] * SIZE[d]).fill(false),
       done: false
@@ -104,13 +104,10 @@ export default function Norinori({ onExit }: { onExit: () => void }) {
     return bad;
   }, [saved.shaded, regions, counts, n]);
 
+  const solved = counts.every((k) => k === 2) && conflicts.size === 0;
   useEffect(() => {
-    if (!saved.done && counts.every((k) => k === 2) && conflicts.size === 0) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("norinori", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [counts, conflicts, saved]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   function toggle(i: number) {
     if (saved.done) return;

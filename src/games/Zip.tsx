@@ -1,6 +1,7 @@
-import { useMemo, useRef, type CSSProperties } from "react";
+import { useMemo, type CSSProperties } from "react";
+import { useCellDrag } from "../lib/drag";
 import { generateZip, areAdjacent } from "../lib/zip";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -17,18 +18,16 @@ interface SavedState {
 }
 
 export default function Zip({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, newPuzzle }= useGame<SavedState>((s, d) => {
-      const n = SIZE[d];
-      const p = generateZip(`zip-${s}`, n, n + 1);
-      return { path: [p.start], done: false };
-    }
-  );
+  const { seed, diff, saved, commit, newPuzzle } = useGame<SavedState>((s, d) => {
+    const n = SIZE[d];
+    const p = generateZip(`zip-${s}`, n, n + 1);
+    return { path: [p.start], done: false };
+  });
   const n = SIZE[diff];
   const { checkpoints, start, last } = useMemo(
     () => generateZip(`zip-${seed}`, n, n + 1),
     [seed, n]
   );
-  const dragging = useRef(false);
 
   const onPath = useMemo(() => new Set(saved.path), [saved.path]);
   const head = saved.path[saved.path.length - 1];
@@ -44,8 +43,11 @@ export default function Zip({ onExit }: { onExit: () => void }) {
     let expect = 1;
     for (const cell of path) if (checkpoints.get(cell) === expect) expect++;
     const done = path.length === n * n && expect > last;
-    commit({ path, done }, { undoable: false }); // drawing has its own rewind
-    if (done && !saved.done) recordResult("zip", true);
+    // Drawing has its own rewind, so moves aren't undoable.
+    commit(
+      { path, done },
+      { undoable: false, outcome: done && !saved.done ? "won" : undefined }
+    );
   }
 
   /** Try to move the path head onto `idx` (extend, backtrack, or rewind). */
@@ -67,11 +69,12 @@ export default function Zip({ onExit }: { onExit: () => void }) {
     apply([...path, idx]);
   }
 
-  function cellFromPoint(x: number, y: number): number | null {
-    const el = document.elementFromPoint(x, y)?.closest("[data-zip-idx]");
-    const v = el instanceof HTMLElement ? el.dataset.zipIdx : undefined;
-    return v === undefined ? null : Number(v);
-  }
+  const drag = useCellDrag({
+    onStart: step,
+    onEnter(i) {
+      if (i !== head) step(i);
+    }
+  });
 
   return (
     <div className="game game-zip">
@@ -86,19 +89,7 @@ export default function Zip({ onExit }: { onExit: () => void }) {
         style={{ "--n": n } as CSSProperties}
         role="grid"
         aria-label="Zip board"
-        onPointerDown={(e) => {
-          dragging.current = true;
-          (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-          const idx = cellFromPoint(e.clientX, e.clientY);
-          if (idx !== null) step(idx);
-        }}
-        onPointerMove={(e) => {
-          if (!dragging.current) return;
-          const idx = cellFromPoint(e.clientX, e.clientY);
-          if (idx !== null && idx !== head) step(idx);
-        }}
-        onPointerUp={() => { dragging.current = false; }}
-        onPointerCancel={() => { dragging.current = false; }}
+        {...drag}
       >
         {Array.from({ length: n * n }).map((_, i) => {
           const cp = checkpoints.get(i);
@@ -106,7 +97,7 @@ export default function Zip({ onExit }: { onExit: () => void }) {
             <div
               key={i}
               role="gridcell"
-              data-zip-idx={i}
+              data-cell={i}
               className={[
                 "zip-cell",
                 onPath.has(i) ? "on" : "",

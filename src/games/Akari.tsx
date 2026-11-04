@@ -1,6 +1,6 @@
 import { useEffect, useMemo, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -75,7 +75,7 @@ interface SavedState {
 }
 
 export default function Akari({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, undo, canUndo, newPuzzle } =
     useGame<SavedState>((_s, d) => ({
       marks: Array(SIZE[d] * SIZE[d]).fill(0) as Mark[],
       done: false
@@ -106,10 +106,10 @@ export default function Akari({ onExit }: { onExit: () => void }) {
     return bad;
   }, [bulbs, saved.marks, puzzle, n]);
 
-  useEffect(() => {
-    if (saved.done || conflicts.size > 0) return;
+  const solved = useMemo(() => {
+    if (conflicts.size > 0) return false;
     const allLit = puzzle.walls.every((w, i) => w || lit.has(i));
-    if (!allLit) return;
+    if (!allLit) return false;
     for (const [wall, want] of puzzle.numbers) {
       const r = Math.floor(wall / n), c = wall % n;
       let count = 0;
@@ -118,12 +118,14 @@ export default function Akari({ onExit }: { onExit: () => void }) {
         if (rr >= 0 && rr < n && cc >= 0 && cc < n && saved.marks[rr * n + cc] === 1)
           count++;
       }
-      if (count !== want) return;
+      if (count !== want) return false;
     }
-    commit({ ...saved, done: true }, { undoable: false });
-    recordResult("akari", true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lit, conflicts, puzzle, saved, n]);
+    return true;
+  }, [lit, conflicts, puzzle, saved.marks, n]);
+
+  useEffect(() => {
+    if (solved) finish();
+  }, [solved, finish]);
 
   function tap(i: number) {
     if (saved.done || puzzle.walls[i]) return;

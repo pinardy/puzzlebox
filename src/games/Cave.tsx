@@ -29,7 +29,6 @@ export default function Cave({ onExit }: { onExit: () => void }) {
 
   return (
     <ShadeGame
-      game="cave"
       title="Cave"
       hint="One cave holding every number; all rock must reach the edge."
       help={HELP}

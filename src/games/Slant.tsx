@@ -8,7 +8,7 @@ import {
   FWD,
   BACK
 } from "../lib/slant";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -29,7 +29,7 @@ interface SavedState {
 }
 
 export default function Slant({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle } =
     useGame<SavedState>((_s, d) => ({
       cells: Array(SIZE[d] * SIZE[d]).fill(EMPTY),
       done: false
@@ -45,13 +45,13 @@ export default function Slant({ onExit }: { onExit: () => void }) {
   const degrees = useMemo(() => cornerDegrees(saved.cells, n), [saved.cells, n]);
   const loops = useMemo(() => loopCells(saved.cells, n), [saved.cells, n]);
 
+  const solved = useMemo(
+    () => slantSolved(saved.cells, clues, n),
+    [saved.cells, clues, n]
+  );
   useEffect(() => {
-    if (!saved.done && slantSolved(saved.cells, clues, n)) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("slant", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [saved, clues, n]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   function cycle(i: number, back: boolean) {
     if (saved.done) return;

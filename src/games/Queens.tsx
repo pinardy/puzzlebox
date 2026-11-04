@@ -1,6 +1,6 @@
 import { useEffect, useMemo, type CSSProperties } from "react";
 import { generateQueens } from "../lib/queens";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -22,7 +22,7 @@ interface SavedState {
 }
 
 export default function Queens({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, undo, canUndo, newPuzzle } =
     useGame<SavedState>((_s, d) => ({
       marks: Array(SIZE[d] * SIZE[d]).fill(0),
       done: false
@@ -53,13 +53,10 @@ export default function Queens({ onExit }: { onExit: () => void }) {
     return bad;
   }, [crowns, regions, n]);
 
+  const solved = crowns.length === n && conflicts.size === 0;
   useEffect(() => {
-    if (!saved.done && crowns.length === n && conflicts.size === 0) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("queens", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [crowns, conflicts, n, saved]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   function tap(idx: number) {
     if (saved.done) return;

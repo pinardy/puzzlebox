@@ -1,6 +1,6 @@
 import { useEffect, useMemo, type CSSProperties } from "react";
 import { generateStars } from "../lib/stars";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -22,7 +22,7 @@ interface SavedState {
 }
 
 export default function Stars({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, undo, canUndo, newPuzzle } =
     useGame<SavedState>((_s, d) => ({
       marks: Array(SIZE[d] * SIZE[d]).fill(0),
       done: false
@@ -64,20 +64,19 @@ export default function Stars({ onExit }: { onExit: () => void }) {
     return bad;
   }, [stars, regions, n]);
 
-  useEffect(() => {
-    if (saved.done || conflicts.size > 0 || stars.length !== 2 * n) return;
+  const solved = useMemo(() => {
+    if (conflicts.size > 0 || stars.length !== 2 * n) return false;
     const rows = Array(n).fill(0), cols = Array(n).fill(0), regs = Array(n).fill(0);
     for (const s of stars) {
       rows[Math.floor(s / n)]++;
       cols[s % n]++;
       regs[regions[s]]++;
     }
-    if ([...rows, ...cols, ...regs].every((v) => v === 2)) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("stars", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stars, conflicts, regions, n, saved]);
+    return [...rows, ...cols, ...regs].every((v) => v === 2);
+  }, [stars, conflicts, regions, n]);
+  useEffect(() => {
+    if (solved) finish();
+  }, [solved, finish]);
 
   function tap(idx: number) {
     if (saved.done) return;

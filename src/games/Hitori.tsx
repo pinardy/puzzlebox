@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useRef, type CSSProperties } from "react";
+import { useEffect, useMemo, type CSSProperties } from "react";
+import { useMarkPaint } from "../lib/drag";
 import { makeRng, shuffled } from "../lib/rng";
 import { generateLatin, floodCount } from "../lib/latin";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -64,14 +65,13 @@ interface SavedState {
 }
 
 export default function Hitori({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, undo, canUndo, newPuzzle } =
     useGame<SavedState>((_s, d) => ({
       marks: Array(SIZE[d] * SIZE[d]).fill(0) as Mark[],
       done: false
     }));
   const n = SIZE[diff];
   const grid = useMemo(() => generateHitori(seed, n, SHADED[diff]), [seed, n, diff]);
-  const paint = useRef<Mark | null>(null);
 
   /** Only rule breaks the player caused: two shaded cells touching. */
   const conflicts = useMemo(() => {
@@ -102,24 +102,16 @@ export default function Hitori({ onExit }: { onExit: () => void }) {
   }, [saved.marks, conflicts, grid, n]);
 
   useEffect(() => {
-    if (!saved.done && solved) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("hitori", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [solved, saved]);
+    if (solved) finish();
+  }, [solved, finish]);
 
-  function apply(i: number, v: Mark, undoable: boolean) {
-    const marks = saved.marks.slice() as Mark[];
-    marks[i] = v;
-    commit({ ...saved, marks }, { undoable });
-  }
-
-  function cellFromPoint(x: number, y: number): number | null {
-    const el = document.elementFromPoint(x, y)?.closest("[data-hit-idx]");
-    const v = el instanceof HTMLElement ? el.dataset.hitIdx : undefined;
-    return v === undefined ? null : Number(v);
-  }
+  // A press cycles shade → circle → clear; the drag paints that mark over
+  // the cells that differ, and the whole stroke is one undo step.
+  const drag = useMarkPaint<Mark>({
+    marks: saved.marks,
+    next: (i) => (saved.done ? null : (((saved.marks[i] + 1) % 3) as Mark)),
+    write: (marks, undoable) => commit({ ...saved, marks }, { undoable })
+  });
 
   return (
     <div className="game game-hitori">
@@ -141,28 +133,12 @@ export default function Hitori({ onExit }: { onExit: () => void }) {
         style={{ "--n": n } as CSSProperties}
         role="grid"
         aria-label="Hitori board"
-        onPointerDown={(e) => {
-          if (saved.done) return;
-          (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-          const i = cellFromPoint(e.clientX, e.clientY);
-          if (i === null) return;
-          const v = ((saved.marks[i] + 1) % 3) as Mark;
-          paint.current = v;
-          apply(i, v, true);
-        }}
-        onPointerMove={(e) => {
-          if (paint.current === null) return;
-          const i = cellFromPoint(e.clientX, e.clientY);
-          if (i !== null && saved.marks[i] !== paint.current)
-            apply(i, paint.current, false); // whole stroke = one undo step
-        }}
-        onPointerUp={() => { paint.current = null; }}
-        onPointerCancel={() => { paint.current = null; }}
+        {...drag}
       >
         {grid.map((v, i) => (
           <button
             key={i}
-            data-hit-idx={i}
+            data-cell={i}
             role="gridcell"
             className={[
               "hitori-cell",

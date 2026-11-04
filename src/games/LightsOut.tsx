@@ -1,6 +1,6 @@
 import { useMemo, type CSSProperties } from "react";
 import { makeRng } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -56,8 +56,7 @@ export default function LightsOut({ onExit }: { onExit: () => void }) {
     if (saved.done) return;
     const cells = press(saved.cells, idx);
     const done = cells.every((c) => !c);
-    commit({ cells, moves: saved.moves + 1, done });
-    if (done) recordResult("lights", true);
+    commit({ cells, moves: saved.moves + 1, done }, { outcome: done ? "won" : undefined });
   }
 
   return (

@@ -1,7 +1,8 @@
 import { useMemo, useRef, type CSSProperties } from "react";
+import { useCellDrag } from "../lib/drag";
 import { makeRng } from "../lib/rng";
 import { hamiltonianPath, areAdjacent } from "../lib/zip";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -48,8 +49,8 @@ interface SavedState {
 }
 
 export default function Flow({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, newPuzzle }= useGame<SavedState>(() => ({ paths: {}, done: false })
-  );
+  const { seed, diff, saved, commit, newPuzzle } =
+    useGame<SavedState>(() => ({ paths: {}, done: false }));
   const n = SIZE[diff];
   const pipes = SIZE[diff];
   const { ends } = useMemo(
@@ -57,7 +58,6 @@ export default function Flow({ onExit }: { onExit: () => void }) {
     [seed, n, pipes]
   );
   const active = useRef<number | null>(null);
-  const dragging = useRef(false);
 
   const endColor = useMemo(() => {
     const map = new Map<number, number>();
@@ -81,8 +81,11 @@ export default function Flow({ onExit }: { onExit: () => void }) {
         ((p[0] === a && p[p.length - 1] === b) || (p[0] === b && p[p.length - 1] === a));
     });
     const done = complete && covered.size === n * n;
-    commit({ paths, done }, { undoable: false }); // drawing has its own rewind
-    if (done && !saved.done) recordResult("flow", true);
+    // Drawing has its own rewind, so moves aren't undoable.
+    commit(
+      { paths, done },
+      { undoable: false, outcome: done && !saved.done ? "won" : undefined }
+    );
   }
 
   function startAt(idx: number) {
@@ -127,11 +130,18 @@ export default function Flow({ onExit }: { onExit: () => void }) {
     apply({ ...saved.paths, [c]: [...p, idx] });
   }
 
-  function cellFromPoint(x: number, y: number): number | null {
-    const el = document.elementFromPoint(x, y)?.closest("[data-flow-idx]");
-    const v = el instanceof HTMLElement ? el.dataset.flowIdx : undefined;
-    return v === undefined ? null : Number(v);
-  }
+  const drag = useCellDrag({
+    onStart(i) {
+      if (saved.done) return false;
+      startAt(i);
+    },
+    onEnter(i) {
+      if (!saved.done) extend(i);
+    },
+    onEnd() {
+      active.current = null;
+    }
+  });
 
   function startNew(d?: Diff) {
     newPuzzle(d);
@@ -153,20 +163,7 @@ export default function Flow({ onExit }: { onExit: () => void }) {
         style={{ "--n": n } as CSSProperties}
         role="grid"
         aria-label="Flow board"
-        onPointerDown={(e) => {
-          if (saved.done) return;
-          dragging.current = true;
-          (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-          const idx = cellFromPoint(e.clientX, e.clientY);
-          if (idx !== null) startAt(idx);
-        }}
-        onPointerMove={(e) => {
-          if (!dragging.current || saved.done) return;
-          const idx = cellFromPoint(e.clientX, e.clientY);
-          if (idx !== null) extend(idx);
-        }}
-        onPointerUp={() => { dragging.current = false; active.current = null; }}
-        onPointerCancel={() => { dragging.current = false; active.current = null; }}
+        {...drag}
       >
         {Array.from({ length: n * n }).map((_, i) => {
           const dot = endColor.get(i);
@@ -175,7 +172,7 @@ export default function Flow({ onExit }: { onExit: () => void }) {
             <div
               key={i}
               role="gridcell"
-              data-flow-idx={i}
+              data-cell={i}
               className="flow-cell"
               style={
                 pipe !== undefined

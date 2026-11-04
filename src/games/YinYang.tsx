@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -171,7 +171,7 @@ interface SavedState {
 }
 
 export default function YinYang({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, undo, canUndo, newPuzzle } =
     useGame<SavedState>((_s, d) => ({
       cells: Array(SIZE[d] * SIZE[d]).fill(0) as Cell[],
       done: false
@@ -193,14 +193,12 @@ export default function YinYang({ onExit }: { onExit: () => void }) {
   useEffect(() => {
     if (saved.done || board.some((v) => v === 0) || conflicts.size > 0) return;
     if (connected(board, n, 1) && connected(board, n, 2)) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("yinyang", true);
+      finish();
       setFlash(false);
     } else {
       setFlash(true); // full board, no 2×2, but a colour is split
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [board, conflicts, saved]);
+  }, [board, conflicts, saved.done, n, finish]);
 
   function tap(i: number) {
     if (saved.done || givens[i] !== 0) return;

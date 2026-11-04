@@ -1,6 +1,6 @@
 import { useEffect, useMemo, type CSSProperties } from "react";
 import { generateHeyawake } from "../lib/heyawake";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -19,7 +19,7 @@ interface SavedState {
 }
 
 export default function Heyawake({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, undo, canUndo, newPuzzle } =
     useGame<SavedState>((_s, d) => ({
       shaded: Array(SIZE[d] * SIZE[d]).fill(false),
       done: false
@@ -102,14 +102,13 @@ export default function Heyawake({ onExit }: { onExit: () => void }) {
     return true;
   }, [saved.shaded, roomOf, n]);
 
+  const solved =
+    conflicts.size === 0 &&
+    globalsOk &&
+    clue.every((want, id) => want === null || counts[id] === want);
   useEffect(() => {
-    const cluesOk = clue.every((want, id) => want === null || counts[id] === want);
-    if (!saved.done && cluesOk && conflicts.size === 0 && globalsOk) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("heyawake", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [counts, conflicts, globalsOk, saved]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   function toggle(i: number) {
     if (saved.done) return;

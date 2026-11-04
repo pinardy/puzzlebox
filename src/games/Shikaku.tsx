@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { makeRng } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -64,7 +64,7 @@ interface SavedState {
 }
 
 export default function Shikaku({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, undo, canUndo, newPuzzle } =
     useGame<SavedState>(() => ({ rects: [], done: false }));
   const n = SIZE[diff];
   const clues = useMemo(() => generateShikaku(`shikaku-${seed}`, n), [seed, n]);
@@ -77,18 +77,18 @@ export default function Shikaku({ onExit }: { onExit: () => void }) {
     return map;
   }, [saved.rects, n]);
 
+  const solved = useMemo(
+    () =>
+      rectAt.size === n * n &&
+      saved.rects.every((t) => {
+        const inside = cellsOf(t, n).filter((i) => clues.has(i));
+        return inside.length === 1 && clues.get(inside[0]) === area(t);
+      }),
+    [rectAt, saved.rects, clues, n]
+  );
   useEffect(() => {
-    if (saved.done || rectAt.size !== n * n) return;
-    const ok = saved.rects.every((t) => {
-      const inside = cellsOf(t, n).filter((i) => clues.has(i));
-      return inside.length === 1 && clues.get(inside[0]) === area(t);
-    });
-    if (ok) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("shikaku", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rectAt, saved, clues, n]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   function tap(idx: number) {
     if (saved.done) return;

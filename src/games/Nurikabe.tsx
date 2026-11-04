@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useMarkPaint } from "../lib/drag";
 import { generateNurikabe, nurikabeSolved } from "../lib/nurikabe";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -20,7 +21,7 @@ interface SavedState {
 }
 
 export default function Nurikabe({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, undo, canUndo, newPuzzle } =
     useGame<SavedState>((_s, d) => ({
       marks: Array(SIZE[d] * SIZE[d]).fill(0) as Mark[],
       done: false
@@ -28,29 +29,24 @@ export default function Nurikabe({ onExit }: { onExit: () => void }) {
   const n = SIZE[diff];
   const puzzle = useMemo(() => generateNurikabe(`nurikabe-${seed}`, n), [seed, n]);
   const [mode, setMode] = useState<1 | 2>(1); // fill | dot
-  const paint = useRef<Mark | null>(null);
 
+  const solved = useMemo(
+    () => nurikabeSolved(puzzle, saved.marks.map((m) => m === 1)),
+    [puzzle, saved.marks]
+  );
   useEffect(() => {
-    const filled = saved.marks.map((m) => m === 1);
-    if (!saved.done && nurikabeSolved(puzzle, filled)) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("nurikabe", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [saved, puzzle]);
+    if (solved) finish();
+  }, [solved, finish]);
 
-  function apply(i: number, v: Mark, undoable: boolean) {
-    if (puzzle.clues.has(i)) return;
-    const marks = saved.marks.slice() as Mark[];
-    marks[i] = v;
-    commit({ ...saved, marks }, { undoable });
-  }
-
-  function cellFromPoint(x: number, y: number): number | null {
-    const el = document.elementFromPoint(x, y)?.closest("[data-nuri-idx]");
-    const v = el instanceof HTMLElement ? el.dataset.nuriIdx : undefined;
-    return v === undefined ? null : Number(v);
-  }
+  // A press toggles the cell between the current tool's mark and blank;
+  // the drag paints that over the cells that differ (clues excepted), and
+  // the whole stroke is one undo step.
+  const drag = useMarkPaint<Mark>({
+    marks: saved.marks,
+    next: (i) => (saved.done ? null : saved.marks[i] === mode ? 0 : mode),
+    write: (marks, undoable) => commit({ ...saved, marks }, { undoable }),
+    locked: (i) => puzzle.clues.has(i)
+  });
 
   return (
     <div className="game game-nurikabe">
@@ -71,30 +67,14 @@ export default function Nurikabe({ onExit }: { onExit: () => void }) {
         style={{ "--n": n } as CSSProperties}
         role="grid"
         aria-label="Nurikabe board"
-        onPointerDown={(e) => {
-          if (saved.done) return;
-          (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-          const i = cellFromPoint(e.clientX, e.clientY);
-          if (i === null || puzzle.clues.has(i)) return;
-          const v = (saved.marks[i] === mode ? 0 : mode) as Mark;
-          paint.current = v;
-          apply(i, v, true);
-        }}
-        onPointerMove={(e) => {
-          if (paint.current === null) return;
-          const i = cellFromPoint(e.clientX, e.clientY);
-          if (i !== null && !puzzle.clues.has(i) && saved.marks[i] !== paint.current)
-            apply(i, paint.current, false); // whole stroke = one undo step
-        }}
-        onPointerUp={() => { paint.current = null; }}
-        onPointerCancel={() => { paint.current = null; }}
+        {...drag}
       >
         {saved.marks.map((m, i) => {
           const clue = puzzle.clues.get(i);
           return (
             <button
               key={i}
-              data-nuri-idx={i}
+              data-cell={i}
               role="gridcell"
               className={[
                 "nuri-cell",

@@ -1,6 +1,6 @@
 import { useMemo, type CSSProperties } from "react";
 import { makeRng } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -119,8 +119,7 @@ export default function Net({ onExit }: { onExit: () => void }) {
     rots[i] = (rots[i] + 1) % 4;
     const nextMasks = base.map((m, k) => rot(m, rots[k] % 4));
     const done = solved(nextMasks, n);
-    commit({ rots, taps: saved.taps + 1, done });
-    if (done && !saved.done) recordResult("net", true);
+    commit({ rots, taps: saved.taps + 1, done }, { outcome: done ? "won" : undefined });
   }
 
   return (

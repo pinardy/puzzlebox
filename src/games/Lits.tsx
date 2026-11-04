@@ -1,6 +1,6 @@
 import { useEffect, useMemo, type CSSProperties } from "react";
 import { analyseLits, generateLits } from "../lib/lits";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -21,7 +21,7 @@ interface SavedState {
 }
 
 export default function Lits({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, undo, canUndo, newPuzzle } =
     useGame<SavedState>((_s, d) => ({
       shaded: Array(SIZE[d] * SIZE[d]).fill(false),
       done: false
@@ -32,12 +32,8 @@ export default function Lits({ onExit }: { onExit: () => void }) {
   const view = useMemo(() => analyseLits(puzzle, saved.shaded), [puzzle, saved.shaded]);
 
   useEffect(() => {
-    if (!saved.done && view.solved) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("lits", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, saved]);
+    if (view.solved) finish();
+  }, [view.solved, finish]);
 
   function toggle(i: number) {
     if (saved.done) return;

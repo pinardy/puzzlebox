@@ -7,7 +7,7 @@ import {
   magnetsSolved,
   type Sign
 } from "../lib/magnets";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -33,7 +33,7 @@ interface SavedState {
 
 export default function Magnets({ onExit }: { onExit: () => void }) {
   const {
-    seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle
+    seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle
   }= useGame<SavedState>((_s, d) => ({
     board: Array<Sign>(SIZE[d] * SIZE[d]).fill(0),
     done: false
@@ -53,13 +53,13 @@ export default function Magnets({ onExit }: { onExit: () => void }) {
     [puzzle, saved.board]
   );
 
+  const solved = useMemo(
+    () => magnetsSolved(puzzle, saved.board),
+    [puzzle, saved.board]
+  );
   useEffect(() => {
-    if (!saved.done && magnetsSolved(puzzle, saved.board)) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("magnets", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [puzzle, saved]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   /** Each half is set independently, so a half-filled slab is allowed as a
    *  working state — it is only flagged, never auto-completed. */
