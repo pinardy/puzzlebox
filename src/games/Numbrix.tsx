@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
 import { hamiltonianPath } from "../lib/zip";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
+import { cellLabel, useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Numbrix.css";
 
 const SIZE: Record<Diff, number> = { easy: 5, medium: 6, hard: 7 };
 const REVEAL: Record<Diff, number> = { easy: 0.45, medium: 0.34, hard: 0.26 };
@@ -45,8 +47,8 @@ interface SavedState {
 }
 
 export default function Numbrix({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("numbrix", (_s, d) => ({
+  const { seed, diff, saved, commit, commitHint, finish, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
       entries: Array(SIZE[d] * SIZE[d]).fill(0),
       done: false
     }));
@@ -96,20 +98,18 @@ export default function Numbrix({ onExit }: { onExit: () => void }) {
     return bad;
   }, [board, cellOf, n]);
 
+  const solved = board.every((v) => v !== 0) && conflicts.size === 0;
   useEffect(() => {
-    if (!saved.done && board.every((v) => v !== 0) && conflicts.size === 0) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("numbrix", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [board, conflicts, saved]);
+    if (solved) finish();
+  }, [solved, finish]);
 
-  function place(value: number) {
-    if (saved.done || selected === null || givens[selected] !== 0) return;
+  function place(value: number, at = selected) {
+    if (saved.done || at === null || givens[at] !== 0) return;
+    if (saved.entries[at] === value) return;
     const entries = saved.entries.slice();
     // Each number appears once, so placing it lifts it from anywhere else.
     for (let i = 0; i < n * n; i++) if (entries[i] === value) entries[i] = 0;
-    entries[selected] = value;
+    entries[at] = value;
     commit({ ...saved, entries });
   }
 
@@ -120,6 +120,18 @@ export default function Numbrix({ onExit }: { onExit: () => void }) {
     commit({ ...saved, entries });
   }
 
+  // Typing: arrows walk the open squares, digits (two for numbers past 9)
+  // place a number, Backspace takes one back.
+  useGridKeys({
+    cols: n,
+    rows: n,
+    max: n * n,
+    selected,
+    setSelected,
+    setCell: (i, v) => (v === 0 ? clear(i) : place(v, i)),
+    isCell: (i) => givens[i] === 0
+  });
+
   function hint() {
     const open = (i: number) => givens[i] === 0 && board[i] !== solution[i];
     const cands = [...Array(n * n).keys()].filter(open);
@@ -129,8 +141,7 @@ export default function Numbrix({ onExit }: { onExit: () => void }) {
         ? selected
         : cands[Math.floor(Math.random() * cands.length)];
     const entries = saved.entries.slice();
-    for (let i = 0; i < n * n; i++)
-      if (entries[i] === solution[idx]) entries[i] = 0;
+    for (let i = 0; i < n * n; i++) if (entries[i] === solution[idx]) entries[i] = 0;
     entries[idx] = solution[idx];
     commitHint({ ...saved, entries });
     setSelected(idx);
@@ -141,9 +152,7 @@ export default function Numbrix({ onExit }: { onExit: () => void }) {
     setSelected(null);
   }
 
-  const tray = [...Array(n * n).keys()]
-    .map((k) => k + 1)
-    .filter((v) => !placed.has(v));
+  const tray = [...Array(n * n).keys()].map((k) => k + 1).filter((v) => !placed.has(v));
 
   return (
     <div className="game game-numbrix">
@@ -178,6 +187,14 @@ export default function Numbrix({ onExit }: { onExit: () => void }) {
                 selected === i ? "selected" : "",
                 conflicts.has(i) ? "conflict" : ""
               ].join(" ")}
+              aria-label={cellLabel(
+                i,
+                n,
+                v,
+                given && "given",
+                conflicts.has(i) && "broken chain"
+              )}
+              aria-selected={selected === i}
               onClick={() => {
                 if (!given && saved.entries[i] !== 0 && selected === i) clear(i);
                 else setSelected(i);
@@ -209,10 +226,8 @@ export default function Numbrix({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="numbrix"
           won
           message="One unbroken chain!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

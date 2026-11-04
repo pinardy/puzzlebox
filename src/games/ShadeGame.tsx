@@ -1,8 +1,16 @@
-import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
-import { recordResult, type Diff, type GameId } from "../lib/storage";
+import {
+  isValidElement,
+  useEffect,
+  useMemo,
+  type CSSProperties,
+  type ReactNode
+} from "react";
+import { useMarkPaint } from "../lib/drag";
+import type { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./ShadeGame.css";
 
 /** What a shading puzzle has to tell this board: how big it is, which
  *  cells carry clues and how to draw them, whether a shading wins, and
@@ -15,12 +23,21 @@ export interface ShadePuzzle {
   solution: boolean[];
 }
 
+/** The text inside a drawn clue, for its accessible name ("1 3"). */
+function shadeClueText(node: ReactNode): string {
+  if (node === null || node === undefined || typeof node === "boolean") return "";
+  if (typeof node === "string" || typeof node === "number") return String(node);
+  if (Array.isArray(node)) return node.map(shadeClueText).filter(Boolean).join(" ");
+  if (isValidElement<{ children?: ReactNode }>(node))
+    return shadeClueText(node.props.children);
+  return "";
+}
+
 /** Shared board for Tapa, Kurodoko and Cave: tap a cell to cycle it
  *  between untouched, filled, and pencil-dotted as definitely empty.
  *  Because each puzzle judges a win against its own RULES rather than
  *  against the grid it was generated from, any legal answer is accepted. */
 export function ShadeGame({
-  game,
   title,
   hint,
   help,
@@ -29,7 +46,6 @@ export function ShadeGame({
   build,
   onExit
 }: {
-  game: GameId;
   title: string;
   hint: string;
   help: string;
@@ -45,36 +61,35 @@ export function ShadeGame({
     done: boolean;
   }
 
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>(game, (s, d) => ({
+  const { seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((s, d) => ({
       marks: Array(build(s, d).n ** 2).fill(0),
       done: false
     }));
   const puzzle = useMemo(() => build(seed, diff), [seed, diff, build]);
-  const [drag, setDrag] = useState<number | null>(null);
 
   const filled = useMemo(() => saved.marks.map((m) => m === 1), [saved.marks]);
 
+  const solved = useMemo(() => puzzle.solved(filled), [puzzle, filled]);
   useEffect(() => {
-    if (saved.done) return;
-    if (puzzle.solved(filled)) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult(game, true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filled, puzzle, saved.done]);
+    if (solved) finish();
+  }, [solved, finish]);
 
-  function setMark(i: number, value: number) {
-    if (saved.done || puzzle.clue(i) !== null) return;
-    if (saved.marks[i] === value) return;
-    const marks = saved.marks.slice();
-    marks[i] = value;
-    commit({ ...saved, marks });
-  }
+  // A press cycles untouched → filled → dotted; the drag paints that mark
+  // over the cells that differ, and the whole stroke is one undo step.
+  const drag = useMarkPaint<number>({
+    marks: saved.marks,
+    next: (i) => (saved.done ? null : (saved.marks[i] + 1) % 3),
+    write: (marks, undoable) => commit({ ...saved, marks }, { undoable }),
+    locked: (i) => puzzle.clue(i) !== null
+  });
 
+  /** Keyboard activation: the same cycle a tap does. */
   function cycle(i: number) {
     if (saved.done || puzzle.clue(i) !== null) return;
-    setMark(i, (saved.marks[i] + 1) % 3);
+    const marks = saved.marks.slice();
+    marks[i] = (marks[i] + 1) % 3;
+    commit({ ...saved, marks });
   }
 
   /** Fill in one cell from the grid this puzzle was generated from. */
@@ -93,10 +108,7 @@ export function ShadeGame({
     commitHint({ ...saved, marks });
   }
 
-  function startNew(d?: Diff) {
-    newPuzzle(d);
-    setDrag(null);
-  }
+  const startNew = (d?: Diff) => newPuzzle(d);
 
   const n = puzzle.n;
   const fillCount = filled.filter(Boolean).length;
@@ -119,14 +131,20 @@ export function ShadeGame({
         role="grid"
         aria-label={`${title} board`}
         style={{ "--n": n } as CSSProperties}
-        onPointerUp={() => setDrag(null)}
-        onPointerLeave={() => setDrag(null)}
+        {...drag}
       >
         {saved.marks.map((m, i) => {
           const clue = puzzle.clue(i);
           if (clue !== null)
             return (
-              <div key={i} className="shade-cell shade-clue" role="gridcell">
+              <div
+                key={i}
+                className="shade-cell shade-clue"
+                role="gridcell"
+                aria-label={`Row ${Math.floor(i / n) + 1}, column ${(i % n) + 1}, clue ${shadeClueText(
+                  clue
+                )}`}
+              >
                 {clue}
               </div>
             );
@@ -134,24 +152,19 @@ export function ShadeGame({
             <button
               key={i}
               role="gridcell"
+              data-cell={i}
               className={[
                 "shade-cell",
                 m === 1 ? "shade-on" : "",
                 m === 2 ? "shade-off" : ""
               ].join(" ")}
-              onPointerDown={() => {
-                const next = (m + 1) % 3;
-                setDrag(next);
-                setMark(i, next);
-              }}
-              onPointerEnter={() => drag !== null && setMark(i, drag)}
               onClick={(e) => {
                 // Pointer events already handled it; keep keyboards working.
                 if (e.detail === 0) cycle(i);
               }}
-              aria-label={
+              aria-label={`Row ${Math.floor(i / n) + 1}, column ${(i % n) + 1}, ${
                 m === 1 ? fillWord : m === 2 ? "marked empty" : "untouched"
-              }
+              }`}
             >
               {m === 2 ? "·" : ""}
             </button>
@@ -168,10 +181,8 @@ export function ShadeGame({
       {saved.done && (
         <Result
           key={seed}
-          game={game}
           won
           message="Solved!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

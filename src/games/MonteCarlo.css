@@ -1,0 +1,14 @@
+/* MonteCarlo: styles only this board uses. Loaded with its chunk. */
+
+/* Monte Carlo and Poker Solitaire: a five-by-five square of cards. */
+.mc-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 5px;
+  align-self: center;
+  width: min(100%, 420px);
+}
+
+.mc-cell {
+  width: 100%;
+}

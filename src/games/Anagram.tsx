@@ -2,10 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { makeRng, shuffled } from "../lib/rng";
 import { ANSWERS } from "../lib/words";
 import { COMMON4 } from "../lib/words4";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Anagram.css";
 
 const HELP =
   "Rearrange the scrambled letters into a real word. Tap tiles to build " +
@@ -37,10 +38,12 @@ function generateAnagram(seed: string, diff: Diff): Puzzle {
 }
 
 export default function Anagram({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, newPuzzle, playMs } = useGame<SavedState>(
-    "anagram",
-    () => ({ tries: 0, hints: 0, done: false, won: false })
-  );
+  const { seed, diff, saved, commit, newPuzzle } = useGame<SavedState>(() => ({
+    tries: 0,
+    hints: 0,
+    done: false,
+    won: false
+  }));
   const { word, scrambled } = useMemo(() => generateAnagram(seed, diff), [seed, diff]);
   const L = word.length;
   const won = saved.won ?? saved.done; // pre-mode saves couldn't lose
@@ -71,11 +74,15 @@ export default function Anagram({ onExit }: { onExit: () => void }) {
     if (next.some((t) => t === null)) return;
     const attempt = next.map((t) => scrambled[t!]).join("");
     if (attempt === word) {
-      commit({ ...saved, tries: saved.tries + 1, done: true, won: true });
-      recordResult("anagram", true);
+      commit(
+        { ...saved, tries: saved.tries + 1, done: true, won: true },
+        { outcome: "won" }
+      );
     } else if (diff === "hard" && saved.tries + 1 >= MAX_TRIES_HARD) {
-      commit({ ...saved, tries: saved.tries + 1, done: true, won: false });
-      recordResult("anagram", false);
+      commit(
+        { ...saved, tries: saved.tries + 1, done: true, won: false },
+        { outcome: "lost" }
+      );
     } else {
       commit({ ...saved, tries: saved.tries + 1 });
       setShake(true);
@@ -119,14 +126,19 @@ export default function Anagram({ onExit }: { onExit: () => void }) {
       <GameHeader title="Anagram" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
         Unscramble the letters into a word.
-        {diff === "hard" && !saved.done &&
+        {diff === "hard" &&
+          !saved.done &&
           ` ${MAX_TRIES_HARD - saved.tries} attempt${
             MAX_TRIES_HARD - saved.tries === 1 ? "" : "s"
           } left.`}
       </p>
       <GameTools diff={diff} onDiff={startNew} help={HELP} />
 
-      <div className={`word-grid anagram-slots${shake ? " shake" : ""}`}>
+      <div
+        className={`word-grid anagram-slots${shake ? " shake" : ""}`}
+        role="group"
+        aria-label="Answer slots"
+      >
         <div className="word-row">
           {slots.map((t, i) => (
             <button
@@ -135,6 +147,9 @@ export default function Anagram({ onExit }: { onExit: () => void }) {
                 saved.done && won ? " is-correct" : ""
               }`}
               onClick={() => tapSlot(i)}
+              aria-label={`Slot ${i + 1}, ${t !== null ? scrambled[t] : "empty"}${
+                saved.done && won ? ", correct" : ""
+              }`}
             >
               {t !== null ? scrambled[t] : ""}
             </button>
@@ -142,13 +157,14 @@ export default function Anagram({ onExit }: { onExit: () => void }) {
         </div>
       </div>
 
-      <div className="anagram-rack">
+      <div className="anagram-rack" role="group" aria-label="Letter tiles">
         {scrambled.map((ch, t) => (
           <button
             key={t}
             className="key anagram-tile"
             disabled={slots.includes(t) || saved.done}
             onClick={() => tapTile(t)}
+            aria-label={`Tile ${ch}${slots.includes(t) ? ", placed" : ""}`}
           >
             {ch}
           </button>
@@ -168,7 +184,6 @@ export default function Anagram({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="anagram"
           won={won}
           message={
             !won
@@ -177,7 +192,6 @@ export default function Anagram({ onExit }: { onExit: () => void }) {
                 ? `${word} — with ${saved.hints} hint${saved.hints > 1 ? "s" : ""}`
                 : `${word} — in ${saved.tries} ${saved.tries === 1 ? "try" : "tries"}!`
           }
-          playMs={playMs}
           onNew={startNew}
           onExit={onExit}
         />

@@ -1,0 +1,38 @@
+/* Accordion: styles only this board uses. Loaded with its chunk. */
+
+.ac-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  justify-content: center;
+  align-self: center;
+  width: min(100%, 460px);
+  margin: 6px 0;
+}
+
+.ac-card {
+  position: relative;
+}
+
+.ac-card.ac-live {
+  outline: 2px solid var(--amber);
+  outline-offset: -2px;
+}
+
+.ac-card.ac-target {
+  outline: 3px solid var(--green);
+  outline-offset: 1px;
+}
+
+.ac-depth {
+  position: absolute;
+  bottom: 1px;
+  right: 3px;
+  font-size: 9px;
+  color: var(--ink-soft);
+}
+
+.ac-stuck {
+  color: var(--rose);
+  font-weight: 700;
+}

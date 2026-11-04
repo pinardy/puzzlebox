@@ -1,10 +1,13 @@
 import { useMemo } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { isRed, label, rank, suit } from "../lib/cards";
-import { recordResult, type Diff } from "../lib/storage";
+import { isRed, label, rank, spoken, suit } from "../lib/cards";
+import { useGridNav } from "../lib/gridnav";
+import type { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
+import "./PokerSolitaire.css";
 
 const SIZE = 5;
 const CELLS = SIZE * SIZE;
@@ -67,10 +70,12 @@ const rowOf = (i: number) => [0, 1, 2, 3, 4].map((c) => i * SIZE + c);
 const colOf = (i: number) => [0, 1, 2, 3, 4].map((r) => r * SIZE + i);
 
 export default function PokerSolitaire({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("poker", (s) => deal(s));
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>(
+    (s) => deal(s)
+  );
 
   const current = saved.queue.length ? saved.queue[saved.queue.length - 1] : null;
+  const nav = useGridNav();
 
   /** Per-line scores, shown live so the board teaches the hand values. */
   const lines = useMemo(() => {
@@ -102,9 +107,8 @@ export default function PokerSolitaire({ onExit }: { onExit: () => void }) {
         [0, 1, 2, 3, 4].reduce((a, c) => a + scoreHand(read(colOf(c))), 0);
       next.done = true;
       next.won = next.score >= TARGET[diff];
-      recordResult("poker", next.won);
     }
-    commit(next);
+    commit(next, { outcome: next.done ? (next.won ? "won" : "lost") : undefined });
   }
 
   function startNew(d?: Diff) {
@@ -126,43 +130,57 @@ export default function PokerSolitaire({ onExit }: { onExit: () => void }) {
       />
 
       <div className="pk-wrap">
-        <div className="pk-grid" role="grid" aria-label="Poker square">
+        <div className="pk-grid" role="grid" aria-label="Poker square" {...nav}>
           {saved.grid.map((card, i) => (
-            <button
+            <PlayingCard
               key={i}
+              data-cell={i}
+              card={card}
               role="gridcell"
-              className={[
-                "kl-card pk-cell",
-                card === null ? "kl-empty" : "",
-                card !== null && isRed(card) ? "red" : "",
-                card === null && current !== null ? "pk-open" : ""
-              ].join(" ")}
+              className={
+                card === null && current !== null ? "pk-cell pk-open" : "pk-cell"
+              }
               onClick={() => place(i)}
-              aria-label={card === null ? `Empty cell ${i + 1}` : label(card)}
-            >
-              {card === null ? "" : label(card)}
-            </button>
+              place={`Row ${Math.floor(i / SIZE) + 1}, column ${(i % SIZE) + 1}`}
+            />
           ))}
         </div>
-        <div className="pk-cols" aria-hidden="true">
+        <div className="pk-cols" role="group" aria-label="Column scores">
           {lines.cols.map((l, i) => (
-            <span key={i} className={`pk-score${l.full ? " pk-full" : ""}`}>
+            <span
+              key={i}
+              className={`pk-score${l.full ? " pk-full" : ""}`}
+              role="img"
+              aria-label={`Column ${i + 1}, ${l.score} points${l.full ? "" : " so far"}`}
+            >
               {l.score || "·"}
             </span>
           ))}
         </div>
-        <div className="pk-rows" aria-hidden="true">
+        <div className="pk-rows" role="group" aria-label="Row scores">
           {lines.rows.map((l, i) => (
-            <span key={i} className={`pk-score${l.full ? " pk-full" : ""}`}>
+            <span
+              key={i}
+              className={`pk-score${l.full ? " pk-full" : ""}`}
+              role="img"
+              aria-label={`Row ${i + 1}, ${l.score} points${l.full ? "" : " so far"}`}
+            >
               {l.score || "·"}
             </span>
           ))}
         </div>
       </div>
 
-      <div className="pk-deal">
-        <span className="ca-deck-label">Place</span>
+      <div className="pk-deal" aria-live="polite">
+        <span className="ca-deck-label" aria-hidden="true">
+          Place
+        </span>
         <span
+          key={current ?? "none"}
+          role="img"
+          aria-label={
+            current === null ? "No card to place" : `Card to place, ${spoken(current)}`
+          }
           className={`kl-card${current === null ? " kl-empty" : ""}${
             current !== null && isRed(current) ? " red" : ""
           }`}
@@ -181,14 +199,12 @@ export default function PokerSolitaire({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="poker"
           won={saved.won}
           message={
             saved.won
               ? `${saved.score} points — target beaten!`
               : `${saved.score} points — ${TARGET[diff]} needed.`
           }
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

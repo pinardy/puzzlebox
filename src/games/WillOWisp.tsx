@@ -18,7 +18,6 @@ const HELP =
 export default function WillOWisp({ onExit }: { onExit: () => void }) {
   return (
     <SpiderGame
-      game="wisp"
       title="Will o' the Wisp"
       hint="All face-up. Down by rank anywhere; same-suit runs travel together."
       help={HELP}

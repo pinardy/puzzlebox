@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { makeRng, shuffled } from "../lib/rng";
 import { QUOTES } from "../lib/quotes";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import { useGridNav } from "../lib/gridnav";
+import "./Cryptogram.css";
 
 const ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 const KEY_ROWS = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"];
@@ -48,8 +50,8 @@ interface SavedState {
 }
 
 export default function Cryptogram({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("crypto", () => ({ mapping: {}, done: false }));
+  const { seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>(() => ({ mapping: {}, done: false }));
   const { answer, cipherText, givens } = useMemo(
     () => generateCryptogram(`crypto-${seed}`, GIVENS[diff]),
     [seed, diff]
@@ -75,12 +77,8 @@ export default function Cryptogram({ onExit }: { onExit: () => void }) {
   }, [cipherText, saved.mapping, givens]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (!saved.done && decoded === answer) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("crypto", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [decoded, answer, saved]);
+    if (decoded === answer) finish();
+  }, [decoded, answer, finish]);
 
   const assign = (plain: string) => {
     if (saved.done || selected === null || givens[selected]) return;
@@ -123,13 +121,19 @@ export default function Cryptogram({ onExit }: { onExit: () => void }) {
   }
 
   const words = cipherText.split(" ");
+  // Where each word starts in the cipher text, so every letter button gets
+  // a stable `data-cell` for arrow-key navigation.
+  const starts = words.reduce<number[]>(
+    (acc, _w, k) => [...acc, k === 0 ? 0 : acc[k - 1] + words[k - 1].length + 1],
+    []
+  );
+  const nav = useGridNav();
 
   return (
     <div className="game game-crypto">
       <GameHeader title="Cryptogram" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
-        Crack the substitution cipher: tap a letter, then guess what it stands
-        for.
+        Crack the substitution cipher: tap a letter, then guess what it stands for.
       </p>
       <GameTools
         diff={diff}
@@ -140,7 +144,7 @@ export default function Cryptogram({ onExit }: { onExit: () => void }) {
         onHint={saved.done ? undefined : hint}
       />
 
-      <div className="cg-quote" role="group" aria-label="Cryptogram">
+      <div className="cg-quote" role="group" aria-label="Cryptogram" {...nav}>
         {words.map((word, w) => (
           <span key={w} className="cg-word">
             {word.split("").map((ch, i) => {
@@ -154,6 +158,11 @@ export default function Cryptogram({ onExit }: { onExit: () => void }) {
               return (
                 <button
                   key={i}
+                  data-cell={starts[w] + i}
+                  aria-pressed={selected === ch}
+                  aria-label={`Word ${w + 1}, cipher ${ch}, ${
+                    g ? `guessed ${g}${givens[ch] ? ", given" : ""}` : "unsolved"
+                  }${g && clashes.has(g) ? ", clash" : ""}`}
                   className={[
                     "cg-cell",
                     selected === ch ? "selected" : "",
@@ -171,7 +180,7 @@ export default function Cryptogram({ onExit }: { onExit: () => void }) {
         ))}
       </div>
 
-      <div className="keyboard">
+      <div className="keyboard" role="group" aria-label="Keyboard">
         {KEY_ROWS.map((row, i) => (
           <div className="key-row" key={row}>
             {row.split("").map((k) => (
@@ -189,6 +198,7 @@ export default function Cryptogram({ onExit }: { onExit: () => void }) {
                 className="key key-wide"
                 disabled={selected === null || saved.done}
                 onClick={() => assign("")}
+                aria-label="Clear letter"
               >
                 ⌫
               </button>
@@ -200,10 +210,8 @@ export default function Cryptogram({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="crypto"
           won
           message="Cipher cracked!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

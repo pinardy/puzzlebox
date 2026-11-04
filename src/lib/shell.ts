@@ -1,39 +1,36 @@
 import { createContext, useContext } from "react";
-import { GameId } from "./storage";
+import type { GameId } from "./storage";
 
 /** What the shared header and toolbar need to know about the running
- *  game. `useGame` publishes it, so no game component has to thread
- *  these through as props. */
+ *  game. `game` comes from the shell itself (App knows which game it
+ *  mounted); `useGame` publishes the rest, so no game component has to
+ *  thread any of it through as props. */
 export interface ShellInfo {
   game: GameId | null;
+  /** The date when this is the puzzle of the day, which plays one fixed
+   *  board at Medium in its own slot; null for a regular board. */
+  daily: string | null;
   /** The board holds progress worth a confirm before discarding it. */
   dirty: boolean;
   /** Active play time banked so far, for the optional on-board clock. */
   playMs: number;
 }
 
-export const EMPTY_SHELL: ShellInfo = { game: null, dirty: false, playMs: 0 };
+export type Progress = Omit<ShellInfo, "game" | "daily">;
 
 export const ShellContext = createContext<{
   info: ShellInfo;
-  publish: (info: ShellInfo) => void;
-}>({ info: EMPTY_SHELL, publish: () => {} });
+  publish: (progress: Progress) => void;
+}>({ info: { game: null, daily: null, dirty: false, playMs: 0 }, publish: () => {} });
 
 export function useGameShell() {
   return useContext(ShellContext);
 }
 
-/** Games whose own key handlers consume plain letters — a bare-letter
- *  shortcut would type into them instead. */
-export const TEXT_GAMES = new Set<GameId>([
-  "word",
-  "hangman",
-  "anagram",
-  "crypto",
-  "ladder",
-  "mini",
-  "equation",
-  "bee",
-  "boggle",
-  "boxed"
-]);
+/** The running game's id. Every game renders inside `GameShell`, which is
+ *  what makes this safe to rely on. */
+export function useGameId(): GameId {
+  const { game } = useContext(ShellContext).info;
+  if (!game) throw new Error("useGameId() called outside a GameShell");
+  return game;
+}

@@ -93,7 +93,9 @@ export function makeCave(seed: string, n: number, clueRatio: number): Cave {
       const c = i % n;
       const reachable =
         onBorder(n, i) ||
-        DIRS.some(([dr, dc]) => inside(n, r + dr, c + dc) && out[(r + dr) * n + (c + dc)]);
+        DIRS.some(
+          ([dr, dc]) => inside(n, r + dr, c + dc) && out[(r + dr) * n + (c + dc)]
+        );
       if (reachable) frontier.push(i);
     }
     if (!frontier.length) break;

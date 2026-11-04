@@ -1,4 +1,5 @@
 import { makeRng, shuffled } from "./rng";
+import { downAnySuit, rank, suit } from "./cards";
 
 /** Beleaguered Castle: eight tableau piles either side of four ace
  *  foundations. Only the exposed end card of a pile ever moves, so the
@@ -19,9 +20,6 @@ export interface CastleMove {
 
 export const PILES = 8;
 export const PILE_SIZE = 6;
-
-const rank = (id: number) => Math.floor(id / 4) + 1;
-const suit = (id: number) => id % 4;
 
 /** The aces are ids 0–3, so they lift out of the deck without a search. */
 export function dealCastle(seed: string): CastleState {
@@ -44,7 +42,7 @@ export const canHome = (st: CastleState, card: number) =>
 /** Tableau builds down by rank, suit ignored; an empty pile takes anything. */
 export const fitsPile = (card: number, dest: number[]) => {
   const top = exposed(dest);
-  return top === null || rank(card) === rank(top) - 1;
+  return top === null || downAnySuit(card, top);
 };
 
 export function legalMoves(st: CastleState): CastleMove[] {
@@ -61,8 +59,7 @@ export function legalMoves(st: CastleState): CastleMove[] {
 
 export const isWon = (st: CastleState) => st.foundations.every((f) => f === 13);
 
-export const cardsHome = (st: CastleState) =>
-  st.foundations.reduce((a, f) => a + f, 0);
+export const cardsHome = (st: CastleState) => st.foundations.reduce((a, f) => a + f, 0);
 
 export const cloneCastle = (st: CastleState): CastleState => ({
   ...st,

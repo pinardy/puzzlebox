@@ -11,17 +11,13 @@ import {
   sendHome,
   type CastleState
 } from "../lib/castle";
-import { recordResult } from "../lib/storage";
+import { RANKS, isRed, rank, spoken, stackPlace, suit } from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { Foundation, PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
+import "./BeleagueredCastle.css";
 
-const SUITS = ["♠", "♥", "♦", "♣"];
-const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
-const rank = (id: number) => Math.floor(id / 4) + 1;
-const suit = (id: number) => id % 4;
-const isRed = (id: number) => suit(id) === 1 || suit(id) === 2;
-const label = (id: number) => `${RANKS[rank(id) - 1]}${SUITS[suit(id)]}`;
 // Beyond this depth the fan would run off a narrow phone, so deeper cards
 // pile up at the same offset — only the exposed end has to stay readable.
 const FAN_MAX = 15;
@@ -36,8 +32,9 @@ const HELP =
 type SavedState = CastleState;
 
 export default function BeleagueredCastle({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("castle", (s) => dealCastle(s));
+  const { seed, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>((s) =>
+    dealCastle(s)
+  );
   const [sel, setSel] = useState<number | null>(null);
 
   const moves = useMemo(() => legalMoves(saved), [saved]);
@@ -53,19 +50,17 @@ export default function BeleagueredCastle({ onExit }: { onExit: () => void }) {
     return out;
   }, [sel, selCard, saved.piles]);
 
-  const homeSuit =
-    selCard !== null && canHome(saved, selCard) ? suit(selCard) : null;
+  const homeSuit = selCard !== null && canHome(saved, selCard) ? suit(selCard) : null;
 
   /** Fans whose end card has somewhere to go, hinted while nothing is held. */
   const live = useMemo(() => new Set(moves.map((m) => m.from)), [moves]);
 
-  function finish(next: SavedState) {
+  function play(next: SavedState) {
     if (!next.done && isWon(next)) {
       next.done = true;
       next.won = true;
-      recordResult("castle", true);
-    }
-    commit(next);
+      commit(next, { outcome: "won" });
+    } else commit(next);
     setSel(null);
   }
 
@@ -77,7 +72,7 @@ export default function BeleagueredCastle({ onExit }: { onExit: () => void }) {
     }
     if (sel !== null && targets.has(p)) {
       const next = applyMove(saved, { from: sel, to: p });
-      if (next) finish(next);
+      if (next) play(next);
       else setSel(null);
       return;
     }
@@ -87,14 +82,14 @@ export default function BeleagueredCastle({ onExit }: { onExit: () => void }) {
   function tapFoundation(s: number) {
     if (saved.done || sel === null || homeSuit !== s) return;
     const next = applyMove(saved, { from: sel, to: "home" });
-    if (next) finish(next);
+    if (next) play(next);
     else setSel(null);
   }
 
   /** One tap for the long tail of forced moves at the end of a game. */
   function sendUp() {
     const next = sendHome(saved);
-    if (next) finish(next);
+    if (next) play(next);
   }
 
   function startNew() {
@@ -121,18 +116,13 @@ export default function BeleagueredCastle({ onExit }: { onExit: () => void }) {
 
       <div className="bc-founds" role="group" aria-label="Foundations">
         {saved.foundations.map((f, s) => (
-          <button
+          <Foundation
             key={s}
-            className={[
-              "kl-card kl-found",
-              s === 1 || s === 2 ? "red" : "",
-              homeSuit === s ? "bc-target" : ""
-            ].join(" ")}
+            suit={s}
+            top={f}
+            className={homeSuit === s ? "bc-target" : undefined}
             onClick={() => tapFoundation(s)}
-            aria-label={`${SUITS[s]} foundation, up to ${RANKS[f - 1]}`}
-          >
-            {`${RANKS[f - 1]}${SUITS[s]}`}
-          </button>
+          />
         ))}
       </div>
 
@@ -146,44 +136,43 @@ export default function BeleagueredCastle({ onExit }: { onExit: () => void }) {
             }}
           >
             {pile.length === 0 ? (
-              <button
-                className={`kl-card bc-card kl-empty${
-                  targets.has(p) ? " bc-target" : ""
-                }`}
+              <PlayingCard
+                card={null}
+                className={targets.has(p) ? "bc-card bc-target" : "bc-card"}
                 style={{ "--stack": 0 } as CSSProperties}
                 onClick={() => tapPile(p)}
                 aria-label={`Fan ${p + 1}, empty`}
               >
                 ·
-              </button>
+              </PlayingCard>
             ) : (
               pile.map((card, i) => {
-                const open = i === pile.length - 1;
-                const cls = [
-                  "kl-card bc-card",
-                  isRed(card) ? "red" : "",
-                  open ? "bc-open" : "bc-buried",
-                  open && sel === p ? "selected" : "",
-                  open && targets.has(p) ? "bc-target" : "",
-                  open && sel === null && live.has(p) ? "bc-live" : ""
-                ].join(" ");
+                const stack = { "--stack": Math.min(i, FAN_MAX) } as CSSProperties;
+                if (i === pile.length - 1)
+                  return (
+                    <PlayingCard
+                      key={card}
+                      card={card}
+                      selected={sel === p}
+                      className={[
+                        "bc-card bc-open",
+                        targets.has(p) ? "bc-target" : "",
+                        sel === null && live.has(p) ? "bc-live" : ""
+                      ].join(" ")}
+                      style={stack}
+                      onClick={() => tapPile(p)}
+                      place={stackPlace(`Fan ${p + 1}`, i, pile.length)}
+                    />
+                  );
                 // Buried cards show rank only: tableau building ignores suit,
                 // so the rank is all the sliver of a covered card must carry.
-                return open ? (
-                  <button
-                    key={card}
-                    className={cls}
-                    style={{ "--stack": Math.min(i, FAN_MAX) } as CSSProperties}
-                    onClick={() => tapPile(p)}
-                    aria-label={`${label(card)}, end of fan ${p + 1}`}
-                  >
-                    {label(card)}
-                  </button>
-                ) : (
+                return (
                   <span
                     key={card}
-                    className={cls}
-                    style={{ "--stack": Math.min(i, FAN_MAX) } as CSSProperties}
+                    className={`kl-card bc-card bc-buried${isRed(card) ? " red" : ""}`}
+                    style={stack}
+                    role="img"
+                    aria-label={`${stackPlace(`Fan ${p + 1}`, i, pile.length)}, ${spoken(card)}`}
                   >
                     {RANKS[rank(card) - 1]}
                   </span>
@@ -198,9 +187,7 @@ export default function BeleagueredCastle({ onExit }: { onExit: () => void }) {
         <span>
           {home}/52 home · moves {saved.moves}
         </span>
-        {!saved.done && !moves.length && (
-          <span className="bc-stuck">No moves left</span>
-        )}
+        {!saved.done && !moves.length && <span className="bc-stuck">No moves left</span>}
         {!saved.done && canSend && (
           <button className="mini-btn" onClick={sendUp}>
             Send home ↑
@@ -211,10 +198,8 @@ export default function BeleagueredCastle({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="castle"
           won={saved.won}
           message={`Castle taken in ${saved.moves} moves!`}
-          playMs={playMs}
           onNew={startNew}
           onExit={onExit}
         />

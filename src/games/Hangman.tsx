@@ -2,10 +2,11 @@ import { useEffect } from "react";
 import { makeRng } from "../lib/rng";
 import { ANSWERS } from "../lib/words";
 import { COMMON4 } from "../lib/words4";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Hangman.css";
 
 // Short words are brutal in hangman — fewer letters means fewer freebies —
 // so Hard pairs 4-letter answers with a shorter rope.
@@ -28,8 +29,7 @@ function answerFor(seed: string, diff: Diff): string {
 }
 
 export default function Hangman({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, newPuzzle, playMs } = useGame<SavedState>(
-    "hangman",
+  const { seed, diff, saved, commit, commitHint, newPuzzle } = useGame<SavedState>(
     () => ({ guessed: [], done: false, won: false })
   );
   const LIVES = LIVES_BY[diff];
@@ -43,8 +43,21 @@ export default function Hangman({ onExit }: { onExit: () => void }) {
     const guessed = [...saved.guessed, letter];
     const won = [...answer].every((c) => guessed.includes(c));
     const lost = guessed.filter((g) => !answer.includes(g)).length >= LIVES;
-    commit({ guessed, done: won || lost, won });
-    if (won || lost) recordResult("hangman", won);
+    commit(
+      { guessed, done: won || lost, won },
+      { outcome: won ? "won" : lost ? "lost" : undefined }
+    );
+  }
+
+  // Hint: guess one letter of the word for free (it can't cost a life).
+  function hint() {
+    if (saved.done) return;
+    const left = [...new Set(answer)].filter((c) => !saved.guessed.includes(c));
+    if (!left.length) return;
+    const letter = left[Math.floor(Math.random() * left.length)];
+    const guessed = [...saved.guessed, letter];
+    const won = [...answer].every((c) => guessed.includes(c));
+    commitHint({ guessed, done: won, won }, { outcome: won ? "won" : undefined });
   }
 
   useEffect(() => {
@@ -59,10 +72,15 @@ export default function Hangman({ onExit }: { onExit: () => void }) {
     <div className="game game-hangman">
       <GameHeader title="Hangman" onExit={onExit} onNew={() => newPuzzle()} />
       <p className="game-hint">
-        Guess the {answer.length}-letter word one letter at a time — {LIVES}{" "}
-        misses and it's gone.
+        Guess the {answer.length}-letter word one letter at a time — {LIVES} misses and
+        it's gone.
       </p>
-      <GameTools diff={diff} onDiff={newPuzzle} help={HELP} />
+      <GameTools
+        diff={diff}
+        onDiff={newPuzzle}
+        help={HELP}
+        onHint={saved.done ? undefined : hint}
+      />
 
       <div className="hangman-lives" aria-label={`${livesLeft} lives left`}>
         {Array.from({ length: LIVES }).map((_, i) => (
@@ -79,6 +97,12 @@ export default function Hangman({ onExit }: { onExit: () => void }) {
             return (
               <div
                 key={i}
+                role="img"
+                aria-label={`Letter ${i + 1}, ${
+                  show
+                    ? `${c}${saved.done && !saved.guessed.includes(c) ? ", missed" : ""}`
+                    : "hidden"
+                }`}
                 className={`word-cell${show ? " filled" : ""}${
                   saved.done && !saved.guessed.includes(c) ? " is-absent" : ""
                 }`}
@@ -90,19 +114,30 @@ export default function Hangman({ onExit }: { onExit: () => void }) {
         </div>
       </div>
 
-      <div className="keyboard">
+      <div className="keyboard" role="group" aria-label="Keyboard">
         {KEY_ROWS.map((row) => (
           <div className="key-row" key={row}>
             {row.split("").map((k) => {
               const K = k.toUpperCase();
               const used = saved.guessed.includes(K);
-              const state = used ? (answer.includes(K) ? " is-correct" : " is-absent") : "";
+              const state = used
+                ? answer.includes(K)
+                  ? " is-correct"
+                  : " is-absent"
+                : "";
               return (
                 <button
                   key={k}
                   className={`key${state}`}
                   onClick={() => guess(K)}
                   disabled={used}
+                  aria-label={`${K}${
+                    used
+                      ? answer.includes(K)
+                        ? ", in the word"
+                        : ", not in the word"
+                      : ""
+                  }`}
                 >
                   {K}
                 </button>
@@ -115,14 +150,10 @@ export default function Hangman({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="hangman"
           won={saved.won}
           message={
-            saved.won
-              ? `Saved with ${livesLeft} ♥ to spare!`
-              : `The word was ${answer}`
+            saved.won ? `Saved with ${livesLeft} ♥ to spare!` : `The word was ${answer}`
           }
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

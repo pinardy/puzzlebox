@@ -21,7 +21,6 @@ const HELP =
 export default function LaBelleLucie({ onExit }: { onExit: () => void }) {
   return (
     <PileGame
-      game="lucie"
       title="La Belle Lucie"
       hint="Same suit, one rank down. Stuck? Shuffle — twice only."
       help={HELP}

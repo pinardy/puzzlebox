@@ -31,7 +31,8 @@ export function lineSums(
  *  are thrown away and redrawn. */
 const usable = (solution: readonly boolean[], n: number): boolean => {
   for (let k = 0; k < n; k++) {
-    let rowKept = 0, colKept = 0;
+    let rowKept = 0,
+      colKept = 0;
     for (let j = 0; j < n; j++) {
       if (solution[k * n + j]) rowKept++;
       if (solution[j * n + k]) colKept++;

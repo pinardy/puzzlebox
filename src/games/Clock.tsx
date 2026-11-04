@@ -1,9 +1,9 @@
 import { makeRng, shuffled } from "../lib/rng";
-import { RANKS, isRed, label, rank } from "../lib/cards";
-import { recordResult } from "../lib/storage";
+import { RANKS, isRed, label, rank, spoken, spokenRank } from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Clock.css";
 
 const HELP =
   "The old fortune-telling patience, also called Travellers. Fifty-two " +
@@ -17,6 +17,16 @@ const HELP =
 /** Clock positions: ace at one o'clock round to queen at twelve, kings in
  *  the middle. Index 0–11 are the hours, 12 is the centre. */
 const POS = (r: number) => (r === 13 ? 12 : r - 1);
+
+/** A clock pile as a screen reader hears it: "queen pile, 2 of 4 turned
+ *  up, top queen of hearts, 2 face down". */
+function pileName(at: number, up: number[], down: number) {
+  const top = up.length ? up[up.length - 1] : null;
+  const name = spokenRank(at === 12 ? 13 : at + 1);
+  return `${name[0].toUpperCase()}${name.slice(1)} pile, ${up.length} of 4 turned up${
+    top === null ? "" : `, top ${spoken(top)}`
+  }${down ? `, ${down} face down` : ""}`;
+}
 
 interface SavedState {
   down: number[][];
@@ -45,9 +55,8 @@ function deal(seed: string): SavedState {
 }
 
 export default function Clock({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle, playMs } = useGame<SavedState>(
-    "clock",
-    (s) => deal(s)
+  const { seed, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>((s) =>
+    deal(s)
   );
 
   /** Lay the held card on its hour, then pick up that pile's next card. */
@@ -66,9 +75,8 @@ export default function Clock({ onExit }: { onExit: () => void }) {
     if (next.hand === null) {
       next.done = true;
       next.won = next.placed === 52;
-      recordResult("clock", next.won);
     }
-    commit(next);
+    commit(next, { outcome: next.done ? (next.won ? "won" : "lost") : undefined });
   }
 
   function startNew() {
@@ -96,7 +104,8 @@ export default function Clock({ onExit }: { onExit: () => void }) {
             <div
               key={h}
               className={`cl-slot cl-h${h}`}
-              aria-label={`${RANKS[h]} pile, ${pile.length} of 4`}
+              role="img"
+              aria-label={pileName(h, pile, saved.down[h].length)}
             >
               <span className="cl-hour">{RANKS[h]}</span>
               <span
@@ -112,7 +121,11 @@ export default function Clock({ onExit }: { onExit: () => void }) {
             </div>
           );
         })}
-        <div className="cl-slot cl-centre" aria-label="Kings pile">
+        <div
+          className="cl-slot cl-centre"
+          role="img"
+          aria-label={pileName(12, saved.up[12], saved.down[12].length)}
+        >
           <span className="cl-hour">K</span>
           <span
             className={[
@@ -128,9 +141,14 @@ export default function Clock({ onExit }: { onExit: () => void }) {
         </div>
       </div>
 
-      <div className="cl-hand">
-        <span className="cl-hand-label">In hand</span>
+      <div className="cl-hand" aria-live="polite">
+        <span className="cl-hand-label" aria-hidden="true">
+          In hand
+        </span>
         <span
+          key={hand ?? "none"}
+          role="img"
+          aria-label={hand === null ? "Nothing in hand" : `In hand, ${spoken(hand)}`}
           className={`kl-card${hand === null ? " kl-empty" : ""}${
             hand !== null && isRed(hand) ? " red" : ""
           }`}
@@ -138,7 +156,11 @@ export default function Clock({ onExit }: { onExit: () => void }) {
           {hand === null ? "·" : label(hand)}
         </span>
         {!saved.done && (
-          <button className="mini-btn" onClick={turn}>
+          <button
+            className="mini-btn"
+            onClick={turn}
+            aria-label="Turn: lay the card in hand on its hour"
+          >
             Turn →
           </button>
         )}
@@ -151,14 +173,12 @@ export default function Clock({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="clock"
           won={saved.won}
           message={
             saved.won
               ? "All thirteen hours complete!"
               : `Stuck at ${saved.placed} of 52 — the deal decided.`
           }
-          playMs={playMs}
           onNew={startNew}
           onExit={onExit}
         />

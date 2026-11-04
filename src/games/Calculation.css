@@ -1,0 +1,54 @@
+/* Calculation: styles only this board uses. Loaded with its chunk. */
+
+.ca-founds,
+.ca-wastes,
+.ca-deck {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  align-self: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* Calculation: the four foundations show their step and what they want. */
+.ca-found {
+  display: grid;
+  gap: 0;
+  place-items: center;
+  height: auto;
+  padding: 4px 2px;
+}
+
+.ca-step {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.ca-need {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.ca-count {
+  font-size: 8px;
+  color: var(--ink-soft);
+}
+
+.ca-heap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.ca-heap-n {
+  font-size: 10px;
+  color: var(--ink-soft);
+  min-height: 12px;
+}
+
+.ca-wastes {
+  margin-top: 4px;
+}

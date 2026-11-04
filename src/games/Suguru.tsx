@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
-import { useGridKeys } from "../lib/keys";
+import { cellLabel, useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import { Numpad } from "./Numpad";
 
 const SIZE: Record<Diff, number> = { easy: 5, medium: 6, hard: 7 };
 const REVEAL: Record<Diff, number> = { easy: 0.5, medium: 0.4, hard: 0.32 };
@@ -35,7 +36,8 @@ function generateSuguru(seed: string, n: number, reveal: number): Puzzle {
       const want = 2 + Math.floor(rng() * 4); // 2–5
       while (cells.length < want) {
         const frontier = cells.flatMap((i) => {
-          const r = Math.floor(i / n), c = i % n;
+          const r = Math.floor(i / n),
+            c = i % n;
           const out: number[] = [];
           if (r > 0 && regionOf[i - n] === -1) out.push(i - n);
           if (r < n - 1 && regionOf[i + n] === -1) out.push(i + n);
@@ -50,36 +52,77 @@ function generateSuguru(seed: string, n: number, reveal: number): Puzzle {
       }
       regions.push(cells);
     }
+    // A boxed-in straggler is a 1-cell region, and two of those touching
+    // would both have to be 1 — unsolvable. Fold each into a neighbouring
+    // region with room to spare.
+    for (let id = 0; id < regions.length; id++) {
+      if (regions[id].length !== 1) continue;
+      const i = regions[id][0];
+      const r = Math.floor(i / n),
+        c = i % n;
+      const nbrs = [
+        r > 0 ? i - n : -1,
+        r < n - 1 ? i + n : -1,
+        c > 0 ? i - 1 : -1,
+        c < n - 1 ? i + 1 : -1
+      ].filter((j) => j !== -1 && regions[regionOf[j]].length < 5);
+      if (!nbrs.length) continue;
+      const into = regionOf[nbrs[Math.floor(rng() * nbrs.length)]];
+      regions[into].push(i);
+      regionOf[i] = into;
+      regions[id] = [];
+    }
     const regionSize = regionOf.map((id) => regions[id].length);
 
-    // Fill: 1..size per region, no equal numbers touching (8-way).
+    // Fill: 1..size per region, no equal numbers touching (8-way). Always
+    // branch on the cell with the fewest options left — a random cell order
+    // could backtrack for tens of seconds on a 6×6 board.
     const values = Array(n * n).fill(0);
-    let steps = 0;
-    const fill = (k: number, order: number[]): boolean => {
-      if (++steps > 40000) return false;
-      if (k === order.length) return true;
-      const i = order[k];
-      const r = Math.floor(i / n), c = i % n;
+    const options = (i: number): number[] => {
+      const r = Math.floor(i / n),
+        c = i % n;
       const used = new Set(regions[regionOf[i]].map((j) => values[j]));
+      const out: number[] = [];
       for (let v = 1; v <= regionSize[i]; v++) {
         if (used.has(v)) continue;
         let ok = true;
         for (let dr = -1; dr <= 1 && ok; dr++)
           for (let dc = -1; dc <= 1; dc++) {
-            const rr = r + dr, cc = c + dc;
+            const rr = r + dr,
+              cc = c + dc;
             if (rr >= 0 && rr < n && cc >= 0 && cc < n && values[rr * n + cc] === v) {
               ok = false;
               break;
             }
           }
-        if (!ok) continue;
-        values[i] = v;
-        if (fill(k + 1, order)) return true;
-        values[i] = 0;
+        if (ok) out.push(v);
       }
+      return out;
+    };
+    let steps = 0;
+    const fill = (): boolean => {
+      if (++steps > 20000) return false;
+      let best = -1;
+      let bestOpts: number[] = [];
+      for (let i = 0; i < n * n; i++) {
+        if (values[i]) continue;
+        const o = options(i);
+        if (!o.length) return false;
+        if (best === -1 || o.length < bestOpts.length) {
+          best = i;
+          bestOpts = o;
+          if (o.length === 1) break;
+        }
+      }
+      if (best === -1) return true;
+      for (const v of shuffled(bestOpts, rng)) {
+        values[best] = v;
+        if (fill()) return true;
+      }
+      values[best] = 0;
       return false;
     };
-    if (!fill(0, shuffled([...Array(n * n).keys()], rng))) continue;
+    if (!fill()) continue;
 
     const givens = Array(n * n).fill(0);
     for (const i of shuffled([...Array(n * n).keys()], rng).slice(
@@ -97,11 +140,15 @@ interface SavedState {
 }
 
 export default function Suguru({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("suguru", (_s, d) => ({
-      entries: Array(SIZE[d] * SIZE[d]).fill(0),
-      done: false
-    }));
+  const { seed, diff, saved, commit, commitHint, finish, undo, canUndo, newPuzzle } =
+    useGame<SavedState>(
+      (_s, d) => ({
+        entries: Array(SIZE[d] * SIZE[d]).fill(0),
+        done: false
+      }),
+      // v1: the generator changed, so a seed now deals a different board.
+      1
+    );
   const n = SIZE[diff];
   const puzzle = useMemo(
     () => generateSuguru(`suguru-${seed}`, n, REVEAL[diff]),
@@ -120,11 +167,13 @@ export default function Suguru({ onExit }: { onExit: () => void }) {
       const v = board[i];
       if (v === 0) continue;
       if (v > puzzle.regionSize[i]) bad.add(i);
-      const r = Math.floor(i / n), c = i % n;
+      const r = Math.floor(i / n),
+        c = i % n;
       for (let dr = -1; dr <= 1; dr++)
         for (let dc = -1; dc <= 1; dc++) {
           if (!dr && !dc) continue;
-          const rr = r + dr, cc = c + dc;
+          const rr = r + dr,
+            cc = c + dc;
           const j = rr * n + cc;
           if (rr >= 0 && rr < n && cc >= 0 && cc < n && board[j] === v) {
             bad.add(i);
@@ -139,13 +188,10 @@ export default function Suguru({ onExit }: { onExit: () => void }) {
     return bad;
   }, [board, puzzle, n]);
 
+  const solved = board.every((v) => v !== 0) && conflicts.size === 0;
   useEffect(() => {
-    if (!saved.done && board.every((v) => v !== 0) && conflicts.size === 0) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("suguru", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [board, conflicts, saved]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   function setCell(idx: number, val: number) {
     if (saved.done || puzzle.givens[idx] !== 0) return;
@@ -155,8 +201,7 @@ export default function Suguru({ onExit }: { onExit: () => void }) {
   }
 
   function hint() {
-    const open = (i: number) =>
-      puzzle.givens[i] === 0 && board[i] !== puzzle.solution[i];
+    const open = (i: number) => puzzle.givens[i] === 0 && board[i] !== puzzle.solution[i];
     const cands = [...Array(n * n).keys()].filter(open);
     if (!cands.length) return;
     const idx =
@@ -180,8 +225,7 @@ export default function Suguru({ onExit }: { onExit: () => void }) {
     <div className="game game-suguru">
       <GameHeader title="Suguru" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
-        1 to N in each N-cell region; equal numbers never touch, even
-        diagonally.
+        1 to N in each N-cell region; equal numbers never touch, even diagonally.
       </p>
       <GameTools
         diff={diff}
@@ -199,7 +243,8 @@ export default function Suguru({ onExit }: { onExit: () => void }) {
         aria-label="Suguru board"
       >
         {board.map((v, i) => {
-          const r = Math.floor(i / n), c = i % n;
+          const r = Math.floor(i / n),
+            c = i % n;
           const given = puzzle.givens[i] !== 0;
           return (
             <button
@@ -213,6 +258,15 @@ export default function Suguru({ onExit }: { onExit: () => void }) {
                 r > 0 && puzzle.regionOf[i - n] !== puzzle.regionOf[i] ? "cage-t" : "",
                 c > 0 && puzzle.regionOf[i - 1] !== puzzle.regionOf[i] ? "cage-l" : ""
               ].join(" ")}
+              aria-label={cellLabel(
+                i,
+                n,
+                v,
+                `region of ${puzzle.regionSize[i]}`,
+                given && "given",
+                conflicts.has(i) && "conflict"
+              )}
+              aria-selected={selected === i}
               onClick={() => setSelected(i)}
             >
               <span className="kenken-val">{v || ""}</span>
@@ -221,31 +275,13 @@ export default function Suguru({ onExit }: { onExit: () => void }) {
         })}
       </div>
 
-      <div className="numpad numpad-5">
-        {[1, 2, 3, 4, 5].map((d) => (
-          <button
-            key={d}
-            className="num-key"
-            onClick={() => selected !== null && setCell(selected, d)}
-          >
-            {d}
-          </button>
-        ))}
-        <button
-          className="num-key tool"
-          onClick={() => selected !== null && setCell(selected, 0)}
-        >
-          ⌫
-        </button>
-      </div>
+      <Numpad max={5} onDigit={(d) => selected !== null && setCell(selected, d)} />
 
       {saved.done && (
         <Result
           key={seed}
-          game="suguru"
           won
           message="Regions all in order!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

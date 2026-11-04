@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { shuffled } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { generateBee, geniusScore, isPangram, rankFor, scoreWord } from "../lib/bee";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result, Toast } from "./ui";
+import "./SpellingBee.css";
 
 /** Words a set yields. A fat set forgives a miss — no single word carries
  *  much of the total — while a lean one leans on its longest words, and on
@@ -51,8 +52,8 @@ const praise = (word: string): string =>
           : "Good!";
 
 export default function SpellingBee({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, newPuzzle, playMs } =
-    useGame<SavedState>("bee", () => ({ found: [], done: false }));
+  const { seed, diff, saved, commit, finish, commitHint, newPuzzle } =
+    useGame<SavedState>(() => ({ found: [], done: false }));
   const [min, max] = BAND[diff];
   const puzzle = useMemo(() => generateBee(`bee-${seed}`, min, max), [seed, min, max]);
 
@@ -109,8 +110,7 @@ export default function SpellingBee({ onExit }: { onExit: () => void }) {
     (k: string) => {
       if (k === "enter") submit();
       else if (k === "back") setCurrent((c) => c.slice(0, -1));
-      else if (puzzle.letters.includes(k))
-        setCurrent((c) => (c.length < 24 ? c + k : c));
+      else if (puzzle.letters.includes(k)) setCurrent((c) => (c.length < 24 ? c + k : c));
     },
     [submit, puzzle.letters]
   );
@@ -130,12 +130,8 @@ export default function SpellingBee({ onExit }: { onExit: () => void }) {
 
   // Genius ends the game, but nothing stops a player carrying on to Queen Bee.
   useEffect(() => {
-    if (!saved.done && score >= genius) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("bee", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [score, genius, saved]);
+    if (score >= genius) finish();
+  }, [score, genius, finish]);
 
   /** Name the shape of one word still missing — enough to hunt for it. */
   function hint() {
@@ -264,10 +260,8 @@ export default function SpellingBee({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="bee"
           won
           message={queen ? "Queen Bee!" : "Genius!"}
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

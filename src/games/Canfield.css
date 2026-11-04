@@ -1,0 +1,7 @@
+/* Canfield: styles only this board uses. Loaded with its chunk. */
+
+.cf-reserve {
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}

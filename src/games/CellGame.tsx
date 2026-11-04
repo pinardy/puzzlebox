@@ -1,18 +1,9 @@
 import { useMemo, useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import {
-  RANKS,
-  SUITS,
-  isRed,
-  label,
-  rank,
-  rankName,
-  stepsAbove,
-  suit
-} from "../lib/cards";
-import { recordResult, type GameId } from "../lib/storage";
+import { RANKS, downInSuit, rank, stackPlace, stepsAbove, suit } from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { Foundation, Pile, PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
 
 /** The FreeCell relatives: everything face-up, a few reserve cells, and a
@@ -69,12 +60,9 @@ function deal(seed: string, rules: CellRules): SavedState {
 }
 
 type Sel =
-  | { from: "col"; pile: number; index: number }
-  | { from: "cell"; slot: number }
-  | null;
+  { from: "col"; pile: number; index: number } | { from: "cell"; slot: number } | null;
 
 export function CellGame({
-  game,
   title,
   hint,
   help,
@@ -82,7 +70,6 @@ export function CellGame({
   wonMessage,
   onExit
 }: {
-  game: GameId;
   title: string;
   hint: string;
   help: string;
@@ -90,9 +77,8 @@ export function CellGame({
   wonMessage: (moves: number) => string;
   onExit: () => void;
 }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle, playMs } = useGame<SavedState>(
-    game,
-    (s) => deal(s, rules)
+  const { seed, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>((s) =>
+    deal(s, rules)
   );
   const [sel, setSel] = useState<Sel>(null);
 
@@ -112,8 +98,7 @@ export function CellGame({
   /** A grabbable run descends in suit. */
   function validRun(cards: number[]): boolean {
     for (let i = 0; i + 1 < cards.length; i++)
-      if (rank(cards[i]) !== rank(cards[i + 1]) + 1 || suit(cards[i]) !== suit(cards[i + 1]))
-        return false;
+      if (!downInSuit(cards[i + 1], cards[i])) return false;
     return true;
   }
 
@@ -139,13 +124,12 @@ export function CellGame({
     };
   }
 
-  function finish(next: SavedState) {
+  function play(next: SavedState) {
     next.moves++;
     if (!next.done && next.foundations.every((f) => f === 13)) {
       next.done = true;
-      recordResult(game, true);
-    }
-    commit(next);
+      commit(next, { outcome: "won" });
+    } else commit(next);
     setSel(null);
   }
 
@@ -167,7 +151,7 @@ export function CellGame({
     const next = clone();
     const [card] = takeSelection(next);
     next.foundations[suit(card)]++;
-    finish(next);
+    play(next);
   }
 
   function tapCol(pile: number, index: number | null) {
@@ -186,10 +170,7 @@ export function CellGame({
         return;
       }
       const top = cards.length ? cards[cards.length - 1] : null;
-      const fits =
-        top === null
-          ? acceptsEmpty(run[0])
-          : rank(run[0]) === rank(top) - 1 && suit(run[0]) === suit(top);
+      const fits = top === null ? acceptsEmpty(run[0]) : downInSuit(run[0], top);
       if (!fits || run.length > moveCapacity(top === null)) {
         setSel(null);
         return;
@@ -197,7 +178,7 @@ export function CellGame({
       const next = clone();
       const moved = takeSelection(next);
       next.cols[pile].push(...moved);
-      finish(next);
+      play(next);
       return;
     }
 
@@ -219,7 +200,7 @@ export function CellGame({
         const next = clone();
         const [card] = takeSelection(next);
         next.cells[slot] = card;
-        finish(next);
+        play(next);
         return;
       }
       setSel(null);
@@ -257,7 +238,7 @@ export function CellGame({
         }
       }
     }
-    if (count > 0) finish(next);
+    if (count > 0) play(next);
   }
 
   function startNew() {
@@ -268,9 +249,10 @@ export function CellGame({
   const isSelected = (pile: number, index: number) =>
     sel?.from === "col" && sel.pile === pile && index >= sel.index;
 
-  /** The top card of a suit's foundation, for its label. */
-  const foundationLabel = (s: number, count: number) =>
-    count === 0 ? SUITS[s] : `${rankName(((saved.base - 1 + count - 1) % 13) + 1)}${SUITS[s]}`;
+  /** The top rank on a foundation holding `count` cards counted up from
+   *  `base`, or 0 while it is empty. */
+  const foundationTop = (count: number) =>
+    count === 0 ? 0 : ((saved.base - 1 + count - 1) % 13) + 1;
 
   return (
     <div
@@ -290,55 +272,41 @@ export function CellGame({
 
       <div className="kl-top">
         {saved.cells.map((c, s) => (
-          <button
+          <PlayingCard
             key={s}
-            className={`kl-card${c === null ? " kl-empty" : ""}${
-              sel?.from === "cell" && sel.slot === s ? " selected" : ""
-            }${c !== null && isRed(c) ? " red" : ""}`}
+            card={c}
+            selected={sel?.from === "cell" && sel.slot === s}
             onClick={() => tapCell(s)}
-            aria-label={c === null ? `Cell ${s + 1}, empty` : `Cell ${s + 1}, ${label(c)}`}
+            place={`Cell ${s + 1}`}
           >
-            {c === null ? "·" : label(c)}
-          </button>
+            {c === null ? "·" : undefined}
+          </PlayingCard>
         ))}
         {saved.foundations.map((f, s) => (
-          <button
-            key={s}
-            className={`kl-card kl-found${f === 0 ? " kl-empty" : ""}${
-              f > 0 && (s === 1 || s === 2) ? " red" : ""
-            }`}
-            onClick={tryFoundation}
-            aria-label={`${SUITS[s]} foundation`}
-          >
-            {foundationLabel(s, f)}
-          </button>
+          <Foundation key={s} suit={s} top={foundationTop(f)} onClick={tryFoundation} />
         ))}
       </div>
 
       <div className="kl-tableau">
         {saved.cols.map((pile, p) => (
-          <div
+          <Pile
             key={p}
-            className="kl-pile"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) tapCol(p, null);
-            }}
+            name={`Column ${p + 1}`}
+            empty={!pile.length}
+            onTap={() => tapCol(p, null)}
           >
             {pile.map((card, i) => (
-              <button
+              <PlayingCard
                 key={card}
-                className={[
-                  "kl-card kl-stacked",
-                  isRed(card) ? "red" : "",
-                  isSelected(p, i) ? "selected" : ""
-                ].join(" ")}
+                card={card}
+                selected={isSelected(p, i)}
+                className="kl-stacked"
                 style={{ "--stack": i } as CSSProperties}
+                place={stackPlace(`Column ${p + 1}`, i, pile.length)}
                 onClick={() => tapCol(p, i)}
-              >
-                {label(card)}
-              </button>
+              />
             ))}
-          </div>
+          </Pile>
         ))}
       </div>
 
@@ -355,10 +323,8 @@ export function CellGame({
       {saved.done && (
         <Result
           key={seed}
-          game={game}
           won
           message={wonMessage(saved.moves)}
-          playMs={playMs}
           onNew={startNew}
           onExit={onExit}
         />

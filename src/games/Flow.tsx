@@ -1,20 +1,32 @@
-import { useMemo, useRef, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, type CSSProperties } from "react";
+import { useCellDrag } from "../lib/drag";
 import { makeRng } from "../lib/rng";
 import { hamiltonianPath, areAdjacent } from "../lib/zip";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Flow.css";
 
 const SIZE: Record<Diff, number> = { easy: 5, medium: 6, hard: 7 };
 const HELP =
   "Join each pair of matching dots with a pipe by dragging between them. " +
   "Pipes can't cross or share squares, and when everything is connected " +
   "every square must be covered.";
-const COLORS = ["#e05252", "#3b6fe0", "#2e9e6b", "#e0a23b", "#7857c9", "#e06fb2", "#8a5a2b"];
+const COLORS = [
+  "#e05252",
+  "#3b6fe0",
+  "#2e9e6b",
+  "#e0a23b",
+  "#7857c9",
+  "#e06fb2",
+  "#8a5a2b"
+];
 
 interface Puzzle {
   ends: [number, number][];
+  /** Each colour's pipe in the generated full-grid answer. */
+  pipes: number[][];
 }
 
 /** Cut one Hamiltonian path into segments — the segment ends become the
@@ -32,12 +44,14 @@ function generateFlow(seed: string, n: number, pipes: number): Puzzle {
   }
   lens.push(left);
   const ends: [number, number][] = [];
+  const segs: number[][] = [];
   let at = 0;
   for (const len of lens) {
     ends.push([path[at], path[at + len - 1]]);
+    segs.push(path.slice(at, at + len));
     at += len;
   }
-  return { ends };
+  return { ends, pipes: segs };
 }
 
 type Paths = Record<number, number[]>; // colour → path of cells
@@ -48,22 +62,22 @@ interface SavedState {
 }
 
 export default function Flow({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, newPuzzle, playMs } = useGame<SavedState>(
-    "flow",
-    () => ({ paths: {}, done: false })
-  );
+  const { seed, diff, saved, commit, commitHint, finish, newPuzzle } =
+    useGame<SavedState>(() => ({ paths: {}, done: false }));
   const n = SIZE[diff];
   const pipes = SIZE[diff];
-  const { ends } = useMemo(
+  const { ends, pipes: answer } = useMemo(
     () => generateFlow(`flow-${seed}`, n, pipes),
     [seed, n, pipes]
   );
   const active = useRef<number | null>(null);
-  const dragging = useRef(false);
 
   const endColor = useMemo(() => {
     const map = new Map<number, number>();
-    ends.forEach(([a, b], c) => { map.set(a, c); map.set(b, c); });
+    ends.forEach(([a, b], c) => {
+      map.set(a, c);
+      map.set(b, c);
+    });
     return map;
   }, [ends]);
 
@@ -74,17 +88,27 @@ export default function Flow({ onExit }: { onExit: () => void }) {
     return map;
   }, [saved.paths]);
 
-  function apply(paths: Paths) {
+  function isDone(paths: Paths) {
     const covered = new Set<number>();
     for (const cells of Object.values(paths)) cells.forEach((i) => covered.add(i));
     const complete = ends.every(([a, b], c) => {
       const p = paths[c];
-      return p && p.length > 1 &&
-        ((p[0] === a && p[p.length - 1] === b) || (p[0] === b && p[p.length - 1] === a));
+      return (
+        p &&
+        p.length > 1 &&
+        ((p[0] === a && p[p.length - 1] === b) || (p[0] === b && p[p.length - 1] === a))
+      );
     });
-    const done = complete && covered.size === n * n;
-    commit({ paths, done }, { undoable: false }); // drawing has its own rewind
-    if (done && !saved.done) recordResult("flow", true);
+    return complete && covered.size === n * n;
+  }
+
+  function apply(paths: Paths) {
+    const done = isDone(paths);
+    // Drawing has its own rewind, so moves aren't undoable.
+    commit(
+      { paths, done },
+      { undoable: false, outcome: done && !saved.done ? "won" : undefined }
+    );
   }
 
   function startAt(idx: number) {
@@ -104,36 +128,86 @@ export default function Flow({ onExit }: { onExit: () => void }) {
   }
 
   function extend(idx: number) {
+    const next = extended(idx);
+    if (next) apply(next);
+  }
+
+  /** The paths after the active pipe steps onto (or back to) `idx`, or
+   *  null when that move isn't allowed. */
+  function extended(idx: number): Paths | null {
     const c = active.current;
-    if (c === null) return;
+    if (c === null) return null;
     const p = saved.paths[c] ?? [];
-    if (!p.length) return;
+    if (!p.length) return null;
     const head = p[p.length - 1];
-    if (idx === head) return;
+    if (idx === head) return null;
     const [a, b] = ends[c];
     const connectsBoth =
-      p.length > 1 &&
-      ((p[0] === a && head === b) || (p[0] === b && head === a));
-    if (connectsBoth) return;
+      p.length > 1 && ((p[0] === a && head === b) || (p[0] === b && head === a));
+    if (connectsBoth) return null;
 
     const at = p.indexOf(idx);
-    if (at !== -1) {
-      apply({ ...saved.paths, [c]: p.slice(0, at + 1) });
-      return;
-    }
-    if (!areAdjacent(head, idx, n)) return;
+    if (at !== -1) return { ...saved.paths, [c]: p.slice(0, at + 1) };
+    if (!areAdjacent(head, idx, n)) return null;
     const owner = pipeAt.get(idx);
-    if (owner !== undefined && owner !== c) return;
+    if (owner !== undefined && owner !== c) return null;
     const endOwner = endColor.get(idx);
-    if (endOwner !== undefined && endOwner !== c) return;
-    apply({ ...saved.paths, [c]: [...p, idx] });
+    if (endOwner !== undefined && endOwner !== c) return null;
+    return { ...saved.paths, [c]: [...p, idx] };
   }
 
-  function cellFromPoint(x: number, y: number): number | null {
-    const el = document.elementFromPoint(x, y)?.closest("[data-flow-idx]");
-    const v = el instanceof HTMLElement ? el.dataset.flowIdx : undefined;
-    return v === undefined ? null : Number(v);
+  /** Lay one unfinished pipe exactly as in the generated answer, cutting
+   *  back any other pipe that was in its way. */
+  function hint() {
+    if (saved.done) return;
+    const same = (p: number[] | undefined, q: number[]) =>
+      !!p &&
+      p.length === q.length &&
+      (p.every((v, k) => v === q[k]) || p.every((v, k) => v === q[q.length - 1 - k]));
+    const todo = answer.flatMap((q, c) => (same(saved.paths[c], q) ? [] : [c]));
+    if (!todo.length) return;
+    const c = todo[Math.floor(Math.random() * todo.length)];
+    const cells = new Set(answer[c]);
+    const paths: Paths = {};
+    for (const [k, p] of Object.entries(saved.paths)) {
+      const cut = p.findIndex((i) => cells.has(i));
+      const kept = cut === -1 ? p : p.slice(0, cut);
+      if (kept.length) paths[Number(k)] = kept;
+    }
+    paths[c] = answer[c].slice();
+    active.current = null;
+    commitHint({ paths, done: false });
   }
+
+  // A hint can complete the board; finish it the way a drawn move would.
+  const doneNow = useMemo(() => isDone(saved.paths), [saved.paths]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (doneNow) finish();
+  }, [doneNow, finish]);
+
+  const drag = useCellDrag({
+    onStart(i) {
+      if (saved.done) return false;
+      startAt(i);
+    },
+    onEnter(i) {
+      if (!saved.done) extend(i);
+    },
+    onEnd() {
+      active.current = null;
+    },
+    // Enter extends the pipe in hand onto the focused cell when it can;
+    // otherwise it picks up the pipe there (a dot starts it afresh).
+    onKey(i) {
+      if (saved.done) return;
+      const next = extended(i);
+      if (next) apply(next);
+      else {
+        active.current = null;
+        startAt(i);
+      }
+    }
+  });
 
   function startNew(d?: Diff) {
     newPuzzle(d);
@@ -148,27 +222,19 @@ export default function Flow({ onExit }: { onExit: () => void }) {
       <p className="game-hint">
         Drag to join each pair of dots with a pipe. Fill every square.
       </p>
-      <GameTools diff={diff} onDiff={startNew} help={HELP} />
+      <GameTools
+        diff={diff}
+        onDiff={startNew}
+        help={HELP}
+        onHint={saved.done ? undefined : hint}
+      />
 
       <div
         className="flow-grid"
         style={{ "--n": n } as CSSProperties}
         role="grid"
         aria-label="Flow board"
-        onPointerDown={(e) => {
-          if (saved.done) return;
-          dragging.current = true;
-          (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-          const idx = cellFromPoint(e.clientX, e.clientY);
-          if (idx !== null) startAt(idx);
-        }}
-        onPointerMove={(e) => {
-          if (!dragging.current || saved.done) return;
-          const idx = cellFromPoint(e.clientX, e.clientY);
-          if (idx !== null) extend(idx);
-        }}
-        onPointerUp={() => { dragging.current = false; active.current = null; }}
-        onPointerCancel={() => { dragging.current = false; active.current = null; }}
+        {...drag}
       >
         {Array.from({ length: n * n }).map((_, i) => {
           const dot = endColor.get(i);
@@ -177,7 +243,14 @@ export default function Flow({ onExit }: { onExit: () => void }) {
             <div
               key={i}
               role="gridcell"
-              data-flow-idx={i}
+              data-cell={i}
+              aria-label={`Row ${Math.floor(i / n) + 1}, column ${(i % n) + 1}, ${
+                dot !== undefined
+                  ? `colour ${dot + 1} dot${pipe !== undefined ? ", piped" : ""}`
+                  : pipe !== undefined
+                    ? `colour ${pipe + 1} pipe`
+                    : "empty"
+              }`}
               className="flow-cell"
               style={
                 pipe !== undefined
@@ -195,10 +268,15 @@ export default function Flow({ onExit }: { onExit: () => void }) {
       </div>
 
       <div className="lights-meta">
-        <span>{covered} / {n * n} filled</span>
+        <span>
+          {covered} / {n * n} filled
+        </span>
         <button
           className="mini-btn"
-          onClick={() => { apply({}); active.current = null; }}
+          onClick={() => {
+            apply({});
+            active.current = null;
+          }}
         >
           Clear
         </button>
@@ -207,10 +285,8 @@ export default function Flow({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="flow"
           won
           message="Everything flows!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import { useGridNav } from "../lib/gridnav";
+import "./Memory.css";
 
 const SYMBOLS = ["🍎", "🌙", "⭐", "🐟", "🎈", "🍀", "🔔", "🦋", "🍄", "⚡"];
 const PAIRS: Record<Diff, number> = { easy: 6, medium: 8, hard: 10 };
@@ -16,10 +18,11 @@ interface SavedState {
 }
 
 export default function Memory({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, newPuzzle, playMs } = useGame<SavedState>(
-    "memory",
-    (_s, d) => ({ matched: Array(PAIRS[d] * 2).fill(false), flips: 0, done: false })
-  );
+  const { seed, diff, saved, commit, newPuzzle } = useGame<SavedState>((_s, d) => ({
+    matched: Array(PAIRS[d] * 2).fill(false),
+    flips: 0,
+    done: false
+  }));
   const pairs = PAIRS[diff];
   const cards = useMemo(() => {
     const set = SYMBOLS.slice(0, pairs);
@@ -57,12 +60,12 @@ export default function Memory({ onExit }: { onExit: () => void }) {
       next.matched[first] = next.matched[i] = true;
       next.done = next.matched.every(Boolean);
       setOpen([]);
-      if (next.done) recordResult("memory", true);
     } else {
       setOpen([first, i]);
       closeTimer.current = window.setTimeout(() => setOpen([]), 800);
     }
-    commit(next, { undoable: false }); // undo would reveal card positions
+    // Undo would reveal card positions.
+    commit(next, { undoable: false, outcome: next.done ? "won" : undefined });
   }
 
   function startNew(d?: Diff) {
@@ -71,6 +74,8 @@ export default function Memory({ onExit }: { onExit: () => void }) {
   }
 
   const rows = (pairs * 2) / COLS;
+  // Arrows walk the cards; Enter / Space flips (the button's own click).
+  const nav = useGridNav();
 
   return (
     <div className="game game-memory">
@@ -87,6 +92,7 @@ export default function Memory({ onExit }: { onExit: () => void }) {
         style={{ "--n": COLS, aspectRatio: `${COLS} / ${rows}` } as CSSProperties}
         role="grid"
         aria-label="Card grid"
+        {...nav}
       >
         {cards.map((sym, i) => {
           const up = saved.matched[i] || open.includes(i);
@@ -94,9 +100,12 @@ export default function Memory({ onExit }: { onExit: () => void }) {
             <button
               key={i}
               role="gridcell"
+              data-cell={i}
               className={`memory-card${up ? " up" : ""}${saved.matched[i] ? " matched" : ""}`}
               onClick={() => tap(i)}
-              aria-label={up ? sym : "Face-down card"}
+              aria-label={`Row ${Math.floor(i / COLS) + 1}, column ${(i % COLS) + 1}, ${
+                up ? `${sym}${saved.matched[i] ? ", matched" : ", face up"}` : "face down"
+              }`}
             >
               {up ? sym : ""}
             </button>
@@ -107,10 +116,8 @@ export default function Memory({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="memory"
           won
           message={`Matched everything in ${saved.flips} flips!`}
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

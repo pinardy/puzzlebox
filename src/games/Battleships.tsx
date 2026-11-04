@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useRef, type CSSProperties } from "react";
+import { useEffect, useMemo, type CSSProperties } from "react";
+import { useMarkPaint } from "../lib/drag";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Battleships.css";
 
 const SIZE: Record<Diff, number> = { easy: 7, medium: 8, hard: 10 };
 const FLEETS: Record<Diff, number[]> = {
@@ -22,6 +24,8 @@ interface Puzzle {
   cols: number[];
   givenShip: number[];
   givenWater: number[];
+  /** The hidden fleet the counts were read from. */
+  ship: boolean[];
 }
 
 /** Hide the fleet (ships never touch, even diagonally), read off the
@@ -44,30 +48,41 @@ function generateShips(seed: string, n: number, fleet: number[]): Puzzle {
         if (cells.some((i) => blocked[i])) continue;
         for (const i of cells) {
           ship[i] = true;
-          const rr = Math.floor(i / n), cc = i % n;
+          const rr = Math.floor(i / n),
+            cc = i % n;
           for (let dr = -1; dr <= 1; dr++)
             for (let dc = -1; dc <= 1; dc++) {
-              const r2 = rr + dr, c2 = cc + dc;
+              const r2 = rr + dr,
+                c2 = cc + dc;
               if (r2 >= 0 && r2 < n && c2 >= 0 && c2 < n) blocked[r2 * n + c2] = true;
             }
         }
         placed = true;
       }
-      if (!placed) { ok = false; break; }
+      if (!placed) {
+        ok = false;
+        break;
+      }
     }
     if (!ok) continue;
 
-    const rows = Array(n).fill(0), cols = Array(n).fill(0);
-    const shipCells: number[] = [], waterCells: number[] = [];
+    const rows = Array(n).fill(0),
+      cols = Array(n).fill(0);
+    const shipCells: number[] = [],
+      waterCells: number[] = [];
     ship.forEach((s, i) => {
-      if (s) { rows[Math.floor(i / n)]++; cols[i % n]++; shipCells.push(i); }
-      else waterCells.push(i);
+      if (s) {
+        rows[Math.floor(i / n)]++;
+        cols[i % n]++;
+        shipCells.push(i);
+      } else waterCells.push(i);
     });
     return {
       rows,
       cols,
       givenShip: shuffled(shipCells, rng).slice(0, 2),
-      givenWater: shuffled(waterCells, rng).slice(0, 2)
+      givenWater: shuffled(waterCells, rng).slice(0, 2),
+      ship
     };
   }
 }
@@ -76,9 +91,16 @@ function generateShips(seed: string, n: number, fleet: number[]): Puzzle {
  *  lines of the right sizes and never touch diagonally. */
 function fleetOk(shipSet: Set<number>, n: number, fleet: number[]): boolean {
   for (const i of shipSet) {
-    const r = Math.floor(i / n), c = i % n;
-    for (const [dr, dc] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) {
-      const rr = r + dr, cc = c + dc;
+    const r = Math.floor(i / n),
+      c = i % n;
+    for (const [dr, dc] of [
+      [1, 1],
+      [1, -1],
+      [-1, 1],
+      [-1, -1]
+    ]) {
+      const rr = r + dr,
+        cc = c + dc;
       if (rr >= 0 && rr < n && cc >= 0 && cc < n && shipSet.has(rr * n + cc))
         return false;
     }
@@ -93,9 +115,16 @@ function fleetOk(shipSet: Set<number>, n: number, fleet: number[]): boolean {
     while (stack.length) {
       const i = stack.pop()!;
       comp.push(i);
-      const r = Math.floor(i / n), c = i % n;
-      for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-        const rr = r + dr, cc = c + dc;
+      const r = Math.floor(i / n),
+        c = i % n;
+      for (const [dr, dc] of [
+        [1, 0],
+        [-1, 0],
+        [0, 1],
+        [0, -1]
+      ]) {
+        const rr = r + dr,
+          cc = c + dc;
         const j = rr * n + cc;
         if (rr >= 0 && rr < n && cc >= 0 && cc < n && shipSet.has(j) && !seen.has(j)) {
           seen.add(j);
@@ -103,7 +132,8 @@ function fleetOk(shipSet: Set<number>, n: number, fleet: number[]): boolean {
         }
       }
     }
-    const rs = comp.map((i) => Math.floor(i / n)), cs = comp.map((i) => i % n);
+    const rs = comp.map((i) => Math.floor(i / n)),
+      cs = comp.map((i) => i % n);
     if (new Set(rs).size !== 1 && new Set(cs).size !== 1) return false;
     sizes.push(comp.length);
   }
@@ -118,8 +148,8 @@ interface SavedState {
 }
 
 export default function Battleships({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("ships", (_s, d) => ({
+  const { seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
       marks: Array(SIZE[d] * SIZE[d]).fill(0) as Mark[],
       done: false
     }));
@@ -129,42 +159,56 @@ export default function Battleships({ onExit }: { onExit: () => void }) {
     () => generateShips(`ships-${seed}`, n, fleet),
     [seed, n, fleet]
   );
-  const paint = useRef<Mark | null>(null);
 
   const givenShip = useMemo(() => new Set(puzzle.givenShip), [puzzle]);
   const givenWater = useMemo(() => new Set(puzzle.givenWater), [puzzle]);
 
   const ships = useMemo(() => {
     const s = new Set<number>(puzzle.givenShip);
-    saved.marks.forEach((m, i) => { if (m === 1) s.add(i); });
+    saved.marks.forEach((m, i) => {
+      if (m === 1) s.add(i);
+    });
     return s;
   }, [saved.marks, puzzle]);
 
-  useEffect(() => {
-    if (saved.done) return;
-    const rows = Array(n).fill(0), cols = Array(n).fill(0);
-    for (const i of ships) { rows[Math.floor(i / n)]++; cols[i % n]++; }
+  const solved = useMemo(() => {
+    const rows = Array(n).fill(0),
+      cols = Array(n).fill(0);
+    for (const i of ships) {
+      rows[Math.floor(i / n)]++;
+      cols[i % n]++;
+    }
     const countsOk =
       rows.every((v, r) => v === puzzle.rows[r]) &&
       cols.every((v, c) => v === puzzle.cols[c]);
-    if (countsOk && fleetOk(ships, n, fleet)) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("ships", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ships, puzzle, saved, n, fleet]);
+    return countsOk && fleetOk(ships, n, fleet);
+  }, [ships, puzzle, n, fleet]);
 
-  function apply(i: number, v: Mark, undoable: boolean) {
-    if (givenShip.has(i) || givenWater.has(i)) return;
-    const marks = saved.marks.slice() as Mark[];
-    marks[i] = v;
-    commit({ ...saved, marks }, { undoable });
-  }
+  useEffect(() => {
+    if (solved) finish();
+  }, [solved, finish]);
 
-  function cellFromPoint(x: number, y: number): number | null {
-    const el = document.elementFromPoint(x, y)?.closest("[data-ship-idx]");
-    const v = el instanceof HTMLElement ? el.dataset.shipIdx : undefined;
-    return v === undefined ? null : Number(v);
+  // A press cycles the cell; the drag paints that mark over the cells it
+  // crosses that differ (givens excepted), as one undo step.
+  const drag = useMarkPaint<Mark>({
+    marks: saved.marks,
+    next: (i) => (saved.done ? null : (((saved.marks[i] + 1) % 3) as Mark)),
+    write: (marks, undoable) => commit({ ...saved, marks }, { undoable }),
+    locked: (i) => givenShip.has(i) || givenWater.has(i)
+  });
+
+  /** Reveal one wrong or unmarked cell from the hidden fleet. */
+  function hint() {
+    if (saved.done) return;
+    const want = (i: number): Mark => (puzzle.ship[i] ? 1 : 2);
+    const wrong = saved.marks.flatMap((m, i) =>
+      givenShip.has(i) || givenWater.has(i) || m === want(i) ? [] : [i]
+    );
+    if (!wrong.length) return;
+    const i = wrong[Math.floor(Math.random() * wrong.length)];
+    const marks = saved.marks.slice();
+    marks[i] = want(i);
+    commitHint({ ...saved, marks });
   }
 
   const G = n + 1;
@@ -181,6 +225,7 @@ export default function Battleships({ onExit }: { onExit: () => void }) {
         help={HELP}
         onUndo={undo}
         canUndo={canUndo && !saved.done}
+        onHint={saved.done ? undefined : hint}
       />
 
       <div
@@ -188,36 +233,32 @@ export default function Battleships({ onExit }: { onExit: () => void }) {
         style={{ "--gn": G } as CSSProperties}
         role="grid"
         aria-label="Battleships board"
-        onPointerDown={(e) => {
-          if (saved.done) return;
-          (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-          const i = cellFromPoint(e.clientX, e.clientY);
-          if (i === null || givenShip.has(i) || givenWater.has(i)) return;
-          const v = ((saved.marks[i] + 1) % 3) as Mark;
-          paint.current = v;
-          apply(i, v, true);
-        }}
-        onPointerMove={(e) => {
-          if (paint.current === null) return;
-          const i = cellFromPoint(e.clientX, e.clientY);
-          if (
-            i !== null &&
-            !givenShip.has(i) &&
-            !givenWater.has(i) &&
-            saved.marks[i] !== paint.current
-          )
-            apply(i, paint.current, false);
-        }}
-        onPointerUp={() => { paint.current = null; }}
-        onPointerCancel={() => { paint.current = null; }}
+        {...drag}
       >
         {Array.from({ length: G * G }).map((_, k) => {
-          const gr = Math.floor(k / G), gc = k % G;
+          const gr = Math.floor(k / G),
+            gc = k % G;
           if (gr === 0 && gc === 0) return <span key={k} />;
           if (gr === 0)
-            return <span key={k} className="edge-count">{puzzle.cols[gc - 1]}</span>;
+            return (
+              <span
+                key={k}
+                className="edge-count"
+                aria-label={`Column ${gc}: ${puzzle.cols[gc - 1]} ship cells`}
+              >
+                {puzzle.cols[gc - 1]}
+              </span>
+            );
           if (gc === 0)
-            return <span key={k} className="edge-count">{puzzle.rows[gr - 1]}</span>;
+            return (
+              <span
+                key={k}
+                className="edge-count"
+                aria-label={`Row ${gr}: ${puzzle.rows[gr - 1]} ship cells`}
+              >
+                {puzzle.rows[gr - 1]}
+              </span>
+            );
           const i = (gr - 1) * n + (gc - 1);
           const isShip = givenShip.has(i) || saved.marks[i] === 1;
           const isWater = givenWater.has(i) || saved.marks[i] === 2;
@@ -225,8 +266,11 @@ export default function Battleships({ onExit }: { onExit: () => void }) {
           return (
             <button
               key={k}
-              data-ship-idx={i}
+              data-cell={i}
               role="gridcell"
+              aria-label={`Row ${gr}, column ${gc}, ${
+                isShip ? "ship" : isWater ? "water" : "unknown"
+              }${given ? ", given" : ""}`}
               className={[
                 "ships-cell",
                 isShip ? "ship" : "",
@@ -241,16 +285,16 @@ export default function Battleships({ onExit }: { onExit: () => void }) {
       </div>
 
       <div className="lights-meta">
-        <span>■ {ships.size} / {fleet.reduce((a, b) => a + b, 0)}</span>
+        <span>
+          ■ {ships.size} / {fleet.reduce((a, b) => a + b, 0)}
+        </span>
       </div>
 
       {saved.done && (
         <Result
           key={seed}
-          game="ships"
           won
           message="Fleet found!"
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

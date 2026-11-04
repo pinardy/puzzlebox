@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
 import { generateLatin } from "../lib/latin";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
-import { useGridKeys } from "../lib/keys";
+import { cellLabel, useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import { Numpad } from "./Numpad";
+import "./KenKen.css";
 
 const SIZE: Record<Diff, number> = { easy: 4, medium: 5, hard: 6 };
 const HELP =
@@ -38,7 +40,8 @@ function generateKenKen(seed: string, n: number): Puzzle {
     const want = 2 + Math.floor(rng() * 2); // 2–3 cells; singles only when boxed in
     while (cells.length < want) {
       const frontier = cells.flatMap((i) => {
-        const r = Math.floor(i / n), c = i % n;
+        const r = Math.floor(i / n),
+          c = i % n;
         const out: number[] = [];
         if (r > 0 && cageOf[i - n] === -1) out.push(i - n);
         if (r < n - 1 && cageOf[i + n] === -1) out.push(i + n);
@@ -61,10 +64,19 @@ function generateKenKen(seed: string, n: number): Puzzle {
       const [a, b] = vals;
       const div = a % b === 0 ? a / b : b % a === 0 ? b / a : 0;
       const roll = rng();
-      if (div > 1 && roll < 0.35) { op = "÷"; target = div; }
-      else if (roll < 0.65) { op = "−"; target = Math.abs(a - b); }
-      else if (roll < 0.85) { op = "+"; target = a + b; }
-      else { op = "×"; target = a * b; }
+      if (div > 1 && roll < 0.35) {
+        op = "÷";
+        target = div;
+      } else if (roll < 0.65) {
+        op = "−";
+        target = Math.abs(a - b);
+      } else if (roll < 0.85) {
+        op = "+";
+        target = a + b;
+      } else {
+        op = "×";
+        target = a * b;
+      }
     } else if (rng() < 0.5) {
       op = "+";
       target = vals.reduce((x, y) => x + y, 0);
@@ -81,10 +93,14 @@ function cageSatisfied(cage: Cage, board: number[]): boolean | null {
   const vals = cage.cells.map((i) => board[i]);
   if (vals.some((v) => v === 0)) return null; // incomplete
   switch (cage.op) {
-    case "=": return vals[0] === cage.target;
-    case "+": return vals.reduce((a, b) => a + b, 0) === cage.target;
-    case "×": return vals.reduce((a, b) => a * b, 1) === cage.target;
-    case "−": return Math.abs(vals[0] - vals[1]) === cage.target;
+    case "=":
+      return vals[0] === cage.target;
+    case "+":
+      return vals.reduce((a, b) => a + b, 0) === cage.target;
+    case "×":
+      return vals.reduce((a, b) => a * b, 1) === cage.target;
+    case "−":
+      return Math.abs(vals[0] - vals[1]) === cage.target;
     case "÷": {
       const [a, b] = vals;
       return a === b * cage.target || b === a * cage.target;
@@ -97,9 +113,23 @@ interface SavedState {
   done: boolean;
 }
 
+const OP_NAME: Record<Cage["op"], string> = {
+  "+": "sum",
+  "×": "product",
+  "−": "difference",
+  "÷": "quotient",
+  "=": "value"
+};
+
+/** A cage's clue in words, e.g. "cage of 3, sum 12". */
+const cageText = (cage: Cage) =>
+  cage.op === "="
+    ? `single cell cage, value ${cage.target}`
+    : `cage of ${cage.cells.length}, ${OP_NAME[cage.op]} ${cage.target}`;
+
 export default function KenKen({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("kenken", (_s, d) => ({
+  const { seed, diff, saved, commit, commitHint, finish, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
       entries: Array(SIZE[d] * SIZE[d]).fill(0),
       done: false
     }));
@@ -117,31 +147,27 @@ export default function KenKen({ onExit }: { onExit: () => void }) {
     for (let i = 0; i < n * n; i++) {
       const v = board[i];
       if (v === 0) continue;
-      const r = Math.floor(i / n), c = i % n;
+      const r = Math.floor(i / n),
+        c = i % n;
       for (let k = 0; k < n; k++) {
-        const row = r * n + k, col = k * n + c;
+        const row = r * n + k,
+          col = k * n + c;
         if (row !== i && board[row] === v) bad.add(i);
         if (col !== i && board[col] === v) bad.add(i);
       }
     }
     for (const cage of cages)
-      if (cageSatisfied(cage, board) === false)
-        cage.cells.forEach((i) => bad.add(i));
+      if (cageSatisfied(cage, board) === false) cage.cells.forEach((i) => bad.add(i));
     return bad;
   }, [board, cages, n]);
 
+  const solved =
+    board.every((v) => v !== 0) &&
+    conflicts.size === 0 &&
+    cages.every((c) => cageSatisfied(c, board) === true);
   useEffect(() => {
-    if (
-      !saved.done &&
-      board.every((v) => v !== 0) &&
-      conflicts.size === 0 &&
-      cages.every((c) => cageSatisfied(c, board) === true)
-    ) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("kenken", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [board, conflicts, cages, saved]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   function setCell(idx: number, val: number) {
     if (saved.done) return;
@@ -180,8 +206,8 @@ export default function KenKen({ onExit }: { onExit: () => void }) {
     <div className="game game-kenken">
       <GameHeader title="KenKen" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
-        1–{n} once per row and column; each outlined cage must make its
-        number with its operation.
+        1–{n} once per row and column; each outlined cage must make its number with its
+        operation.
       </p>
       <GameTools
         diff={diff}
@@ -199,7 +225,8 @@ export default function KenKen({ onExit }: { onExit: () => void }) {
         aria-label="KenKen board"
       >
         {board.map((v, i) => {
-          const r = Math.floor(i / n), c = i % n;
+          const r = Math.floor(i / n),
+            c = i % n;
           const clue = clueCell.get(i);
           return (
             <button
@@ -212,6 +239,14 @@ export default function KenKen({ onExit }: { onExit: () => void }) {
                 r > 0 && cageOf[i - n] !== cageOf[i] ? "cage-t" : "",
                 c > 0 && cageOf[i - 1] !== cageOf[i] ? "cage-l" : ""
               ].join(" ")}
+              aria-label={cellLabel(
+                i,
+                n,
+                v,
+                cageText(cages[cageOf[i]]),
+                conflicts.has(i) && "conflict"
+              )}
+              aria-selected={selected === i}
               onClick={() => setSelected(i)}
             >
               {clue && (
@@ -226,31 +261,13 @@ export default function KenKen({ onExit }: { onExit: () => void }) {
         })}
       </div>
 
-      <div className="numpad numpad-5">
-        {Array.from({ length: n }, (_, d) => d + 1).map((d) => (
-          <button
-            key={d}
-            className="num-key"
-            onClick={() => selected !== null && setCell(selected, d)}
-          >
-            {d}
-          </button>
-        ))}
-        <button
-          className="num-key tool"
-          onClick={() => selected !== null && setCell(selected, 0)}
-        >
-          ⌫
-        </button>
-      </div>
+      <Numpad max={n} onDigit={(d) => selected !== null && setCell(selected, d)} />
 
       {saved.done && (
         <Result
           key={seed}
-          game="kenken"
           won
           message="All cages check out!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

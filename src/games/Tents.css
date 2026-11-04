@@ -1,0 +1,41 @@
+/* Tents: styles only this board uses. Loaded with its chunk. */
+
+.tents-cell {
+  border: 1.5px solid var(--ink);
+  border-radius: 6px;
+  background: var(--card);
+  font-size: clamp(13px, 3.6vw, 20px);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  cursor: pointer;
+}
+
+.tents-cell.tree {
+  background: #e6f2e2;
+  cursor: default;
+}
+
+.tents-cell.tent {
+  background: #fdf3d9;
+}
+
+.tents-cell.grass {
+  color: var(--ink-soft);
+}
+
+.tents-cell.conflict {
+  background: #fbe6ef;
+}
+
+:root[data-theme="dark"] .tents-cell.conflict {
+  background: #45222f;
+}
+
+:root[data-theme="dark"] .tents-cell.tree {
+  background: #223226;
+}
+
+:root[data-theme="dark"] .tents-cell.tent {
+  background: #3a3420;
+}

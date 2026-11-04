@@ -1,0 +1,62 @@
+/* Math24: styles only this board uses. Loaded with its chunk. */
+
+.m24-tiles {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: auto 0 14px;
+  min-height: 90px;
+}
+
+.m24-tile {
+  min-width: 76px;
+  height: 76px;
+  padding: 0 14px;
+  border: 2px solid var(--ink);
+  border-radius: 14px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  font-family: var(--mono);
+  font-size: 28px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.m24-tile.picked {
+  outline: 3px solid var(--green);
+  outline-offset: 2px;
+  transform: translateY(-4px);
+}
+
+.m24-tile.win {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+
+.m24-ops {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: auto;
+}
+
+.m24-op {
+  flex: 0 0 auto;
+  width: 60px;
+  height: 54px;
+  font-size: 24px;
+}
+
+.m24-op.active {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+
+.m24-op:disabled {
+  opacity: 0.35;
+  box-shadow: none;
+}

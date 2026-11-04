@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { makeRng, shuffled } from "../lib/rng";
 import { generateSudoku, peersConflict, Grid } from "../lib/sudoku";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
-import { useGridKeys } from "../lib/keys";
+import { cellLabel, notesLabel, useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import { Numpad } from "./Numpad";
+import "./Killer.css";
 
 const GIVENS: Record<Diff, number> = { easy: 12, medium: 5, hard: 0 };
 const HELP =
@@ -43,12 +45,17 @@ function generateKiller(seed: string, givenCount: number): Puzzle {
     const want = 2 + Math.floor(rng() * 3); // 2–4; singles only when boxed in
     while (cells.length < want) {
       const frontier = cells.flatMap((i) => {
-        const r = Math.floor(i / 9), c = i % 9;
+        const r = Math.floor(i / 9),
+          c = i % 9;
         const out: number[] = [];
-        if (r > 0 && cageOf[i - 9] === -1 && !digits.has(solution[i - 9])) out.push(i - 9);
-        if (r < 8 && cageOf[i + 9] === -1 && !digits.has(solution[i + 9])) out.push(i + 9);
-        if (c > 0 && cageOf[i - 1] === -1 && !digits.has(solution[i - 1])) out.push(i - 1);
-        if (c < 8 && cageOf[i + 1] === -1 && !digits.has(solution[i + 1])) out.push(i + 1);
+        if (r > 0 && cageOf[i - 9] === -1 && !digits.has(solution[i - 9]))
+          out.push(i - 9);
+        if (r < 8 && cageOf[i + 9] === -1 && !digits.has(solution[i + 9]))
+          out.push(i + 9);
+        if (c > 0 && cageOf[i - 1] === -1 && !digits.has(solution[i - 1]))
+          out.push(i - 1);
+        if (c < 8 && cageOf[i + 1] === -1 && !digits.has(solution[i + 1]))
+          out.push(i + 1);
         return out;
       });
       if (!frontier.length) break;
@@ -81,13 +88,15 @@ function fresh(): SavedState {
 }
 
 function peers(idx: number): number[] {
-  const r = Math.floor(idx / 9), c = idx % 9;
+  const r = Math.floor(idx / 9),
+    c = idx % 9;
   const out = new Set<number>();
   for (let k = 0; k < 9; k++) {
     out.add(r * 9 + k);
     out.add(k * 9 + c);
   }
-  const br = Math.floor(r / 3) * 3, bc = Math.floor(c / 3) * 3;
+  const br = Math.floor(r / 3) * 3,
+    bc = Math.floor(c / 3) * 3;
   for (let dr = 0; dr < 3; dr++)
     for (let dc = 0; dc < 3; dc++) out.add((br + dr) * 9 + (bc + dc));
   out.delete(idx);
@@ -95,8 +104,8 @@ function peers(idx: number): number[] {
 }
 
 export default function Killer({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("killer", fresh);
+  const { seed, diff, saved, commit, commitHint, finish, undo, canUndo, newPuzzle } =
+    useGame<SavedState>(fresh);
   const { cages, cageOf, givens, solution } = useMemo(
     () => generateKiller(seed, GIVENS[diff]),
     [seed, diff]
@@ -119,27 +128,19 @@ export default function Killer({ onExit }: { onExit: () => void }) {
             bad.add(cage.cells[a]);
             bad.add(cage.cells[b]);
           }
-      if (
-        vals.every((v) => v !== 0) &&
-        vals.reduce((x, y) => x + y, 0) !== cage.sum
-      )
+      if (vals.every((v) => v !== 0) && vals.reduce((x, y) => x + y, 0) !== cage.sum)
         cage.cells.forEach((i) => bad.add(i));
     }
     return bad;
   }, [board, cages]);
 
+  const solved =
+    board.every((v) => v !== 0) &&
+    cageBad.size === 0 &&
+    board.every((v, i) => !peersConflict(board, i, v));
   useEffect(() => {
-    if (
-      !saved.done &&
-      board.every((v) => v !== 0) &&
-      cageBad.size === 0 &&
-      board.every((v, i) => !peersConflict(board, i, v))
-    ) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("killer", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [board, cageBad, saved]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   function setCell(idx: number, val: number) {
     if (saved.done || givens[idx] !== 0) return;
@@ -199,8 +200,8 @@ export default function Killer({ onExit }: { onExit: () => void }) {
     <div className="game game-killer">
       <GameHeader title="Killer Sudoku" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
-        Rows, columns, and boxes hold 1–9 once; each dotted cage adds to its
-        number, no repeats inside.
+        Rows, columns, and boxes hold 1–9 once; each dotted cage adds to its number, no
+        repeats inside.
       </p>
       <GameTools
         diff={diff}
@@ -221,8 +222,7 @@ export default function Killer({ onExit }: { onExit: () => void }) {
           const clue = clueCell.get(i);
           const sameVal = selVal !== 0 && v === selVal;
           const inLine =
-            selected !== null &&
-            (Math.floor(selected / 9) === r || selected % 9 === c);
+            selected !== null && (Math.floor(selected / 9) === r || selected % 9 === c);
           return (
             <button
               key={i}
@@ -239,6 +239,16 @@ export default function Killer({ onExit }: { onExit: () => void }) {
                 r > 0 && cageOf[i - 9] !== cageOf[i] ? "kc-t" : "",
                 c > 0 && cageOf[i - 1] !== cageOf[i] ? "kc-l" : ""
               ].join(" ")}
+              aria-label={cellLabel(
+                i,
+                9,
+                v,
+                `cage of ${cages[cageOf[i]].cells.length} summing to ${cages[cageOf[i]].sum}`,
+                given && "given",
+                v === 0 && notesLabel(saved.notes[i]),
+                conflict && "conflict"
+              )}
+              aria-selected={selected === i}
               onClick={() => setSelected(i)}
             >
               {clue && <span className="killer-sum">{clue.sum}</span>}
@@ -258,43 +268,18 @@ export default function Killer({ onExit }: { onExit: () => void }) {
         })}
       </div>
 
-      <div className="numpad">
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => {
-          const remaining = 9 - board.filter((v) => v === d).length;
-          return (
-            <button
-              key={d}
-              className="num-key"
-              disabled={remaining <= 0 && !pencil}
-              onClick={() => selected !== null && setCell(selected, d)}
-            >
-              {d}
-              <small>{remaining > 0 ? remaining : ""}</small>
-            </button>
-          );
-        })}
-        <button
-          className={`num-key tool${pencil ? " active" : ""}`}
-          onClick={() => setPencil((p) => !p)}
-          aria-pressed={pencil}
-        >
-          ✏️<small>notes</small>
-        </button>
-        <button
-          className="num-key tool"
-          onClick={() => selected !== null && setCell(selected, 0)}
-        >
-          ⌫<small>erase</small>
-        </button>
-      </div>
+      <Numpad
+        max={9}
+        onDigit={(d) => selected !== null && setCell(selected, d)}
+        remaining={(d) => 9 - board.filter((v) => v === d).length}
+        notes={{ on: pencil, toggle: () => setPencil((p) => !p) }}
+      />
 
       {saved.done && (
         <Result
           key={seed}
-          game="killer"
           won
           message="Every cage adds up!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

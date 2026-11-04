@@ -1,9 +1,9 @@
 import { useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { RANKS, SUITS, isRed, label, rank, suit } from "../lib/cards";
-import { recordResult } from "../lib/storage";
+import { downInSuit, downSameColour, nCards, rank, stackPlace, suit } from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { Foundation, Pile, PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
 
 const HELP =
@@ -44,9 +44,8 @@ function deal(seed: string): SavedState {
 type Sel = { from: "col"; pile: number; index: number } | { from: "waste" } | null;
 
 export default function Whitehead({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle, playMs } = useGame<SavedState>(
-    "whitehead",
-    (s) => deal(s)
+  const { seed, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>((s) =>
+    deal(s)
   );
   const [sel, setSel] = useState<Sel>(null);
 
@@ -61,8 +60,7 @@ export default function Whitehead({ onExit }: { onExit: () => void }) {
   /** Groups travel only as a same-suit descending run. */
   function validRun(cards: number[]): boolean {
     for (let i = 0; i + 1 < cards.length; i++)
-      if (rank(cards[i]) !== rank(cards[i + 1]) + 1 || suit(cards[i]) !== suit(cards[i + 1]))
-        return false;
+      if (!downInSuit(cards[i + 1], cards[i])) return false;
     return true;
   }
 
@@ -76,13 +74,12 @@ export default function Whitehead({ onExit }: { onExit: () => void }) {
     };
   }
 
-  function finish(next: SavedState) {
+  function play(next: SavedState) {
     next.moves++;
     if (!next.done && next.foundations.every((f) => f === 13)) {
       next.done = true;
-      recordResult("whitehead", true);
-    }
-    commit(next);
+      commit(next, { outcome: "won" });
+    } else commit(next);
     setSel(null);
   }
 
@@ -106,7 +103,7 @@ export default function Whitehead({ onExit }: { onExit: () => void }) {
     const next = clone();
     takeSelection(next);
     next.foundations[suit(card)]++;
-    finish(next);
+    play(next);
   }
 
   function tapCol(pile: number, index: number | null) {
@@ -129,7 +126,7 @@ export default function Whitehead({ onExit }: { onExit: () => void }) {
       const fits =
         top === null
           ? true // any card opens an empty column
-          : rank(run[0]) === rank(top) - 1 && isRed(run[0]) === isRed(top);
+          : downSameColour(run[0], top);
       if (!fits) {
         setSel(null);
         return;
@@ -137,7 +134,7 @@ export default function Whitehead({ onExit }: { onExit: () => void }) {
       const next = clone();
       const moved = takeSelection(next);
       next.tableau[pile].push(...moved);
-      finish(next);
+      play(next);
       return;
     }
 
@@ -161,7 +158,7 @@ export default function Whitehead({ onExit }: { onExit: () => void }) {
     if (saved.done || !saved.stock.length) return;
     const next = clone();
     next.waste.push(next.stock.pop()!);
-    finish(next);
+    play(next);
   }
 
   function startNew() {
@@ -181,71 +178,56 @@ export default function Whitehead({ onExit }: { onExit: () => void }) {
       <GameTools help={HELP} onUndo={undo} canUndo={canUndo && !saved.done} />
 
       <div className="kl-top">
-        <button
-          className={`kl-card${saved.stock.length ? " kl-back" : " kl-empty"}`}
+        <PlayingCard
+          card={null}
+          faceDown={saved.stock.length > 0}
           onClick={tapStock}
-          aria-label={`Stock, ${saved.stock.length} left`}
+          aria-label={
+            saved.stock.length ? `Stock, ${nCards(saved.stock.length)}` : "Stock, empty"
+          }
         >
           {saved.stock.length ? "" : "·"}
-        </button>
-        <button
-          className={`kl-card${wasteTop === null ? " kl-empty" : ""}${
-            wasteTop !== null && isRed(wasteTop) ? " red" : ""
-          }${sel?.from === "waste" ? " selected" : ""}`}
+        </PlayingCard>
+        <PlayingCard
+          card={wasteTop}
+          selected={sel?.from === "waste"}
           onClick={tapWaste}
-          aria-label={wasteTop === null ? "Waste, empty" : `Waste, ${label(wasteTop)}`}
+          place="Waste"
         >
-          {wasteTop === null ? "·" : label(wasteTop)}
-        </button>
+          {wasteTop === null ? "·" : undefined}
+        </PlayingCard>
         <span className="kl-gap" />
         {saved.foundations.map((f, s) => (
-          <button
-            key={s}
-            className={`kl-card kl-found${f === 0 ? " kl-empty" : ""}${
-              f > 0 && (s === 1 || s === 2) ? " red" : ""
-            }`}
-            onClick={tryFoundation}
-            aria-label={`${SUITS[s]} foundation`}
-          >
-            {f === 0 ? SUITS[s] : `${RANKS[f - 1]}${SUITS[s]}`}
-          </button>
+          <Foundation key={s} suit={s} top={f} onClick={tryFoundation} />
         ))}
       </div>
 
       <div className="kl-tableau">
         {saved.tableau.map((pile, p) => (
-          <div
-            key={p}
-            className="kl-pile"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) tapCol(p, null);
-            }}
-          >
+          <Pile key={p} name={`Column ${p + 1}`} onTap={() => tapCol(p, null)}>
             {pile.length === 0 && (
-              <button
-                className="kl-card kl-empty kl-stacked"
+              <PlayingCard
+                card={null}
+                className="kl-stacked"
                 style={{ "--stack": 0 } as CSSProperties}
                 onClick={() => tapCol(p, null)}
                 aria-label={`Column ${p + 1}, empty`}
               >
                 ·
-              </button>
+              </PlayingCard>
             )}
             {pile.map((card, i) => (
-              <button
+              <PlayingCard
                 key={card}
-                className={[
-                  "kl-card kl-stacked",
-                  isRed(card) ? "red" : "",
-                  isSelected(p, i) ? "selected" : ""
-                ].join(" ")}
+                card={card}
+                selected={isSelected(p, i)}
+                className="kl-stacked"
                 style={{ "--stack": i } as CSSProperties}
+                place={stackPlace(`Column ${p + 1}`, i, pile.length)}
                 onClick={() => tapCol(p, i)}
-              >
-                {label(card)}
-              </button>
+              />
             ))}
-          </div>
+          </Pile>
         ))}
       </div>
 
@@ -258,10 +240,8 @@ export default function Whitehead({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="whitehead"
           won
           message={`Cleared in ${saved.moves} moves!`}
-          playMs={playMs}
           onNew={startNew}
           onExit={onExit}
         />

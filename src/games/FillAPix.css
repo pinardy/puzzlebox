@@ -1,0 +1,49 @@
+/* FillAPix: styles only this board uses. Loaded with its chunk. */
+
+.fap-grid {
+  align-self: center;
+  width: min(100%, 420px);
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  border: 2px solid var(--ink);
+  background: var(--card);
+  aspect-ratio: 1;
+}
+
+.fap-cell {
+  border: 0.5px solid var(--grid-line);
+  background: var(--card);
+  padding: 0;
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: clamp(11px, 2.6vw, 15px);
+  font-weight: 700;
+  color: var(--ink);
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+}
+
+.fap-cell.fill {
+  background: var(--blue);
+  color: #fff;
+}
+
+.fap-cell.cross {
+  color: var(--ink-soft);
+  background: var(--paper);
+}
+
+.fap-cell.satisfied:not(.fill) {
+  color: var(--ink-soft);
+  opacity: 0.75;
+}
+
+.fap-cell.broken {
+  color: var(--rose);
+}
+
+.fap-cell.fill.broken {
+  background: var(--rose);
+  color: #fff;
+}

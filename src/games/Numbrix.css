@@ -1,0 +1,93 @@
+/* Numbrix: styles only this board uses. Loaded with its chunk. */
+
+.nx-grid {
+  align-self: center;
+  width: min(100%, 400px);
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  border: 2px solid var(--ink);
+  background: var(--card);
+  aspect-ratio: 1;
+}
+
+.nx-cell {
+  border: 0.5px solid var(--grid-line);
+  background: var(--card);
+  padding: 0;
+  font-family: var(--mono);
+  font-size: clamp(13px, 3.6vw, 20px);
+  font-weight: 700;
+  color: var(--blue);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  aspect-ratio: 1;
+}
+
+.nx-cell.given {
+  color: var(--ink);
+  font-weight: 800;
+  background: var(--paper);
+}
+
+.nx-cell.selected {
+  background: #c3d7f8;
+  outline: 2px solid var(--blue);
+  outline-offset: -2px;
+}
+
+.nx-cell.conflict {
+  color: var(--rose);
+  background: #fbe6ef;
+}
+
+.nx-tray {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.nx-chip {
+  min-width: 34px;
+  height: 34px;
+  border: 1.5px solid var(--ink);
+  border-radius: 8px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink);
+  cursor: pointer;
+  padding: 0 6px;
+}
+
+.nx-chip:active {
+  transform: translateY(2px);
+  box-shadow: none;
+}
+
+.nx-chip:disabled {
+  opacity: 0.4;
+  box-shadow: none;
+  cursor: default;
+}
+
+.nx-empty {
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+:root[data-theme="dark"] .nx-cell.selected {
+  background: #2e4a6d;
+}
+
+:root[data-theme="dark"] .nx-cell.conflict {
+  background: #45222f;
+}
+
+:root[data-theme="dark"] .nx-cell.given {
+  background: #202b39;
+}

@@ -1,0 +1,4 @@
+# Bulk reformatting commits, skipped by `git blame`
+# (git config blame.ignoreRevsFile .git-blame-ignore-revs; GitHub reads it automatically).
+# Prettier over src/
+b1ab702644f1e0d863c32c6b6ea76c1038292485

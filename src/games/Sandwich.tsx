@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { makeRng, shuffled } from "../lib/rng";
 import { generateSudoku, peersConflict, Grid } from "../lib/sudoku";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
-import { useGridKeys } from "../lib/keys";
+import { cellLabel, useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import { Numpad } from "./Numpad";
+import "./Sandwich.css";
 
 const GIVENS: Record<Diff, number> = { easy: 26, medium: 20, hard: 14 };
 const HELP =
@@ -23,7 +25,8 @@ interface Puzzle {
 
 /** Sum of the digits strictly between the 1 and the 9 of a line. */
 function sandwich(line: number[]): number {
-  const a = line.indexOf(1), b = line.indexOf(9);
+  const a = line.indexOf(1),
+    b = line.indexOf(9);
   const [lo, hi] = a < b ? [a, b] : [b, a];
   let s = 0;
   for (let k = lo + 1; k < hi; k++) s += line[k];
@@ -51,9 +54,11 @@ interface SavedState {
   done: boolean;
 }
 
+const STATE_SAY = { ok: ", correct", bad: ", wrong", open: "" } as const;
+
 export default function Sandwich({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("sandwich", () => ({
+  const { seed, diff, saved, commit, commitHint, finish, undo, canUndo, newPuzzle } =
+    useGame<SavedState>(() => ({
       entries: Array(81).fill(0),
       done: false
     }));
@@ -71,7 +76,8 @@ export default function Sandwich({ onExit }: { onExit: () => void }) {
   /** A line's clue can only be judged once its 1 and 9 are both down. */
   const lineState = useMemo(() => {
     const judge = (line: number[], want: number): "ok" | "bad" | "open" => {
-      const a = line.indexOf(1), b = line.indexOf(9);
+      const a = line.indexOf(1),
+        b = line.indexOf(9);
       if (a === -1 || b === -1) return "open";
       const [lo, hi] = a < b ? [a, b] : [b, a];
       let sum = 0;
@@ -83,27 +89,28 @@ export default function Sandwich({ onExit }: { onExit: () => void }) {
     };
     return {
       rows: rowSums.map((want, r) =>
-        judge(Array.from({ length: 9 }, (_, c) => board[r * 9 + c]), want)
+        judge(
+          Array.from({ length: 9 }, (_, c) => board[r * 9 + c]),
+          want
+        )
       ),
       cols: colSums.map((want, c) =>
-        judge(Array.from({ length: 9 }, (_, r) => board[r * 9 + c]), want)
+        judge(
+          Array.from({ length: 9 }, (_, r) => board[r * 9 + c]),
+          want
+        )
       )
     };
   }, [board, rowSums, colSums]);
 
+  const solved =
+    board.every((v) => v !== 0) &&
+    board.every((v, i) => !peersConflict(board, i, v)) &&
+    lineState.rows.every((s) => s === "ok") &&
+    lineState.cols.every((s) => s === "ok");
   useEffect(() => {
-    if (
-      !saved.done &&
-      board.every((v) => v !== 0) &&
-      board.every((v, i) => !peersConflict(board, i, v)) &&
-      lineState.rows.every((s) => s === "ok") &&
-      lineState.cols.every((s) => s === "ok")
-    ) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("sandwich", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [board, lineState, saved]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   function setCell(idx: number, val: number) {
     if (saved.done || givens[idx] !== 0) return;
@@ -152,14 +159,24 @@ export default function Sandwich({ onExit }: { onExit: () => void }) {
         <span className="sw-corner" />
         <div className="sw-top">
           {colSums.map((s, c) => (
-            <span key={c} className={`sw-clue ${lineState.cols[c]}`}>
+            <span
+              key={c}
+              className={`sw-clue ${lineState.cols[c]}`}
+              role="img"
+              aria-label={`Column ${c + 1} sandwich sum ${s}${STATE_SAY[lineState.cols[c]]}`}
+            >
               {s}
             </span>
           ))}
         </div>
         <div className="sw-left">
           {rowSums.map((s, r) => (
-            <span key={r} className={`sw-clue ${lineState.rows[r]}`}>
+            <span
+              key={r}
+              className={`sw-clue ${lineState.rows[r]}`}
+              role="img"
+              aria-label={`Row ${r + 1} sandwich sum ${s}${STATE_SAY[lineState.rows[r]]}`}
+            >
               {s}
             </span>
           ))}
@@ -167,7 +184,8 @@ export default function Sandwich({ onExit }: { onExit: () => void }) {
         <div className="sudoku-grid" role="grid" aria-label="Sandwich sudoku board">
           {board.map((v, i) => {
             const given = givens[i] !== 0;
-            const r = Math.floor(i / 9), c = i % 9;
+            const r = Math.floor(i / 9),
+              c = i % 9;
             return (
               <button
                 key={i}
@@ -180,6 +198,14 @@ export default function Sandwich({ onExit }: { onExit: () => void }) {
                   c % 3 === 2 && c !== 8 ? "br" : "",
                   r % 3 === 2 && r !== 8 ? "bb" : ""
                 ].join(" ")}
+                aria-label={cellLabel(
+                  i,
+                  9,
+                  v,
+                  given && "given",
+                  v !== 0 && !given && peersConflict(board, i, v) && "conflict"
+                )}
+                aria-selected={selected === i}
                 onClick={() => setSelected(i)}
               >
                 {v || ""}
@@ -189,31 +215,17 @@ export default function Sandwich({ onExit }: { onExit: () => void }) {
         </div>
       </div>
 
-      <div className="numpad">
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => (
-          <button
-            key={d}
-            className="num-key"
-            onClick={() => selected !== null && setCell(selected, d)}
-          >
-            {d}
-          </button>
-        ))}
-        <button
-          className="num-key tool"
-          onClick={() => selected !== null && setCell(selected, 0)}
-        >
-          ⌫<small>erase</small>
-        </button>
-      </div>
+      <Numpad
+        max={9}
+        onDigit={(d) => selected !== null && setCell(selected, d)}
+        remaining={(d) => 9 - board.filter((v) => v === d).length}
+      />
 
       {saved.done && (
         <Result
           key={seed}
-          game="sandwich"
           won
           message="Every sandwich adds up!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

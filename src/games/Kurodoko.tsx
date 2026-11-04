@@ -29,7 +29,6 @@ export default function Kurodoko({ onExit }: { onExit: () => void }) {
 
   return (
     <ShadeGame
-      game="kurodoko"
       title="Kurodoko"
       hint="Numbers count the white cells they can see, themselves included."
       help={HELP}

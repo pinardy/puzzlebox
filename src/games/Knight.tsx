@@ -1,9 +1,11 @@
 import { useMemo, useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import { useGridNav } from "../lib/gridnav";
+import "./Knight.css";
 
 const SIZE: Record<Diff, number> = { easy: 5, medium: 6, hard: 8 };
 const HELP =
@@ -13,15 +15,23 @@ const HELP =
   "yourself in a corner.";
 
 const JUMPS = [
-  [1, 2], [2, 1], [2, -1], [1, -2],
-  [-1, -2], [-2, -1], [-2, 1], [-1, 2]
+  [1, 2],
+  [2, 1],
+  [2, -1],
+  [1, -2],
+  [-1, -2],
+  [-2, -1],
+  [-2, 1],
+  [-1, 2]
 ];
 
 function movesFrom(i: number, n: number): number[] {
-  const r = Math.floor(i / n), c = i % n;
+  const r = Math.floor(i / n),
+    c = i % n;
   const out: number[] = [];
   for (const [dr, dc] of JUMPS) {
-    const rr = r + dr, cc = c + dc;
+    const rr = r + dr,
+      cc = c + dc;
     if (rr >= 0 && rr < n && cc >= 0 && cc < n) out.push(rr * n + cc);
   }
   return out;
@@ -30,7 +40,12 @@ function movesFrom(i: number, n: number): number[] {
 /** Finish the tour from here, trying the most constrained square first
  *  (Warnsdorff). Used both to pick a fair starting square and to power
  *  the hint. */
-function completeTour(visited: boolean[], cur: number, left: number, n: number): number[] | null {
+function completeTour(
+  visited: boolean[],
+  cur: number,
+  left: number,
+  n: number
+): number[] | null {
   let nodes = 0;
   const path: number[] = [];
   const walk = (at: number, remaining: number): boolean => {
@@ -71,8 +86,8 @@ interface SavedState {
 }
 
 export default function Knight({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("knight", (s, d) => ({
+  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((s, d) => ({
       path: [startSquare(s, SIZE[d])],
       done: false
     }));
@@ -96,8 +111,7 @@ export default function Knight({ onExit }: { onExit: () => void }) {
     const path = [...saved.path, i];
     const done = path.length === n * n;
     setSuggested(null);
-    commit({ path, done });
-    if (done) recordResult("knight", true);
+    commit({ path, done }, { outcome: done ? "won" : undefined });
   }
 
   /** Point at a square that still leaves the tour finishable — searched
@@ -108,6 +122,9 @@ export default function Knight({ onExit }: { onExit: () => void }) {
     setSuggested(rest[0]);
     commitHint({ ...saved });
   }
+
+  // Arrows walk the board; Enter / Space hops (the button's own click).
+  const nav = useGridNav();
 
   function startNew(d?: Diff) {
     newPuzzle(d);
@@ -135,6 +152,7 @@ export default function Knight({ onExit }: { onExit: () => void }) {
         style={{ "--n": n } as CSSProperties}
         role="grid"
         aria-label="Knight's tour board"
+        {...nav}
       >
         {Array.from({ length: n * n }, (_, i) => {
           const order = saved.path.indexOf(i);
@@ -143,6 +161,7 @@ export default function Knight({ onExit }: { onExit: () => void }) {
             <button
               key={i}
               role="gridcell"
+              data-cell={i}
               className={[
                 "kt-cell",
                 dark ? "dark" : "",
@@ -152,7 +171,15 @@ export default function Knight({ onExit }: { onExit: () => void }) {
                 suggested === i ? "suggested" : ""
               ].join(" ")}
               onClick={() => hop(i)}
-              aria-label={`Square ${Math.floor(i / n) + 1},${(i % n) + 1}`}
+              aria-label={`Row ${Math.floor(i / n) + 1}, column ${(i % n) + 1}, ${
+                i === cur
+                  ? "knight here"
+                  : order !== -1
+                    ? `visited, step ${order + 1}`
+                    : legal.has(i)
+                      ? "legal move"
+                      : "unvisited"
+              }${suggested === i ? ", suggested" : ""}`}
             >
               {i === cur ? "♞" : order !== -1 ? order + 1 : ""}
             </button>
@@ -163,10 +190,8 @@ export default function Knight({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="knight"
           won
           message={`Every square in ${n * n} hops!`}
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

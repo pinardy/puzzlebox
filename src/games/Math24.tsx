@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { makeRng } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Math24.css";
 
 const HELP =
   "Combine all four numbers with +, −, ×, ÷ to make exactly 24, using each " +
@@ -15,7 +16,10 @@ type Frac = { n: number; d: number };
 
 const gcd = (a: number, b: number): number => (b ? gcd(b, a % b) : a);
 const frac = (n: number, d: number): Frac => {
-  if (d < 0) { n = -n; d = -d; }
+  if (d < 0) {
+    n = -n;
+    d = -d;
+  }
   const g = gcd(Math.abs(n), d) || 1;
   return { n: n / g, d: d / g };
 };
@@ -26,10 +30,14 @@ const OPS: Op[] = ["+", "−", "×", "÷"];
 
 function apply(a: Frac, b: Frac, op: Op): Frac | null {
   switch (op) {
-    case "+": return frac(a.n * b.d + b.n * a.d, a.d * b.d);
-    case "−": return frac(a.n * b.d - b.n * a.d, a.d * b.d);
-    case "×": return frac(a.n * b.n, a.d * b.d);
-    case "÷": return b.n === 0 ? null : frac(a.n * b.d, a.d * b.n);
+    case "+":
+      return frac(a.n * b.d + b.n * a.d, a.d * b.d);
+    case "−":
+      return frac(a.n * b.d - b.n * a.d, a.d * b.d);
+    case "×":
+      return frac(a.n * b.n, a.d * b.d);
+    case "÷":
+      return b.n === 0 ? null : frac(a.n * b.d, a.d * b.n);
   }
 }
 
@@ -50,6 +58,36 @@ function solutions(nums: Frac[]): number {
   return count;
 }
 
+/** One merge that keeps 24 reachable from these tiles, or null when the
+ *  position is already a dead end. */
+function nextStep(nums: Frac[]): { i: number; j: number; op: Op } | null {
+  for (let i = 0; i < nums.length; i++)
+    for (let j = 0; j < nums.length; j++) {
+      if (i === j) continue;
+      const rest = nums.filter((_, k) => k !== i && k !== j);
+      for (const op of OPS) {
+        const r = apply(nums[i], nums[j], op);
+        if (r && solutions([...rest, r]) > 0) return { i, j, op };
+      }
+    }
+  return null;
+}
+
+const OP_NAME: Record<Op, string> = {
+  "+": "plus",
+  "−": "minus",
+  "×": "times",
+  "÷": "divided by"
+};
+const OP_KEYS: Record<string, Op> = {
+  "+": "+",
+  "-": "−",
+  "*": "×",
+  x: "×",
+  X: "×",
+  "/": "÷"
+};
+
 function generate24(seed: string, diff: Diff): number[] {
   const rng = makeRng(`math24-${seed}`);
   const max = diff === "easy" ? 9 : diff === "medium" ? 10 : 13;
@@ -57,9 +95,11 @@ function generate24(seed: string, diff: Diff): number[] {
     const nums = Array.from({ length: 4 }, () => 1 + Math.floor(rng() * max));
     const paths = solutions(nums.map((v) => frac(v, 1)));
     const fits =
-      diff === "easy" ? paths >= 10 :
-      diff === "medium" ? paths >= 1 :
-      paths >= 1 && paths <= 6;
+      diff === "easy"
+        ? paths >= 10
+        : diff === "medium"
+          ? paths >= 1
+          : paths >= 1 && paths <= 6;
     if (fits) return nums;
   }
 }
@@ -71,8 +111,8 @@ interface SavedState {
 }
 
 export default function Math24({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("math24", (s, d) => ({
+  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((s, d) => ({
       tiles: generate24(s, d).map((v) => frac(v, 1)),
       merges: 0,
       done: false
@@ -102,9 +142,51 @@ export default function Math24({ onExit }: { onExit: () => void }) {
     const tiles = saved.tiles.filter((_, k) => k !== pick && k !== i);
     tiles.push(result);
     const done = tiles.length === 1 && result.n === 24 && result.d === 1;
-    commit({ tiles, merges: saved.merges + 1, done });
-    if (done) recordResult("math24", true);
+    commit(
+      { tiles, merges: saved.merges + 1, done },
+      done ? { outcome: "won" } : undefined
+    );
   }
+
+  /** Make one merge that still leads to 24. From a dead end, start over
+   *  from the deal and make its first good merge instead. Counts as a
+   *  hint, so a win after it is marked assisted. */
+  function hint() {
+    if (saved.done) return;
+    let tiles = saved.tiles;
+    let merges = saved.merges;
+    let step = nextStep(tiles);
+    if (!step) {
+      tiles = generate24(seed, diff).map((v) => frac(v, 1));
+      merges = 0;
+      step = nextStep(tiles);
+      if (!step) return;
+    }
+    const { i, j, op: o } = step;
+    const result = apply(tiles[i], tiles[j], o)!;
+    const next = tiles.filter((_, k) => k !== i && k !== j);
+    next.push(result);
+    const done = next.length === 1 && result.n === 24 && result.d === 1;
+    commitHint(
+      { tiles: next, merges: merges + 1, done },
+      { outcome: done ? "won" : undefined }
+    );
+    setPick(null);
+    setOp(null);
+  }
+
+  // Typing an operator (+ - * x /) picks it once a number is chosen; the
+  // numbers themselves are buttons, reached with Tab.
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      const o = OP_KEYS[e.key];
+      if (!o || pick === null || saved.done) return;
+      e.preventDefault();
+      setOp((cur) => (cur === o ? null : o));
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [pick, saved.done]);
 
   function reset() {
     commit({
@@ -134,9 +216,10 @@ export default function Math24({ onExit }: { onExit: () => void }) {
         help={HELP}
         onUndo={undo}
         canUndo={canUndo && !saved.done}
+        onHint={saved.done ? undefined : hint}
       />
 
-      <div className="m24-tiles">
+      <div className="m24-tiles" role="group" aria-label="Numbers">
         {saved.tiles.map((f, i) => (
           <button
             key={i}
@@ -144,13 +227,15 @@ export default function Math24({ onExit }: { onExit: () => void }) {
               saved.done && saved.tiles.length === 1 ? " win" : ""
             }`}
             onClick={() => tapTile(i)}
+            aria-pressed={pick === i}
+            aria-label={`${show(f)}${pick === i ? ", picked" : ""}`}
           >
             {show(f)}
           </button>
         ))}
       </div>
 
-      <div className="m24-ops">
+      <div className="m24-ops" role="group" aria-label="Operators">
         {OPS.map((o) => (
           <button
             key={o}
@@ -158,6 +243,7 @@ export default function Math24({ onExit }: { onExit: () => void }) {
             disabled={pick === null || saved.done}
             onClick={() => setOp(op === o ? null : o)}
             aria-pressed={op === o}
+            aria-label={OP_NAME[o]}
           >
             {o}
           </button>
@@ -180,10 +266,8 @@ export default function Math24({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="math24"
           won
           message={`24 — in ${saved.merges} merges!`}
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

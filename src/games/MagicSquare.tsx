@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { generateMagic } from "../lib/magic";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
-import { useGridKeys } from "../lib/keys";
+import { cellLabel, useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./MagicSquare.css";
 
 const SIZE: Record<Diff, number> = { easy: 3, medium: 4, hard: 4 };
 const GIVENS: Record<Diff, number> = { easy: 3, medium: 8, hard: 6 };
@@ -55,8 +56,8 @@ interface SavedState {
 }
 
 export default function MagicSquare({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("magic", (_s, d) => ({
+  const { seed, diff, saved, commit, commitHint, finish, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
       entries: Array(SIZE[d] * SIZE[d]).fill(0),
       done: false
     }));
@@ -78,10 +79,30 @@ export default function MagicSquare({ onExit }: { onExit: () => void }) {
     const at = (r: number, c: number) => board[r * n + c];
     const idx = [...Array(n).keys()];
     return {
-      rows: idx.map((r) => lineOf(idx.map((c) => at(r, c)), total, `Row ${r + 1}`)),
-      cols: idx.map((c) => lineOf(idx.map((r) => at(r, c)), total, `Column ${c + 1}`)),
-      down: lineOf(idx.map((k) => at(k, k)), total, "Diagonal down"),
-      up: lineOf(idx.map((k) => at(k, n - 1 - k)), total, "Diagonal up")
+      rows: idx.map((r) =>
+        lineOf(
+          idx.map((c) => at(r, c)),
+          total,
+          `Row ${r + 1}`
+        )
+      ),
+      cols: idx.map((c) =>
+        lineOf(
+          idx.map((r) => at(r, c)),
+          total,
+          `Column ${c + 1}`
+        )
+      ),
+      down: lineOf(
+        idx.map((k) => at(k, k)),
+        total,
+        "Diagonal down"
+      ),
+      up: lineOf(
+        idx.map((k) => at(k, n - 1 - k)),
+        total,
+        "Diagonal up"
+      )
     };
   }, [board, n, total]);
 
@@ -91,12 +112,8 @@ export default function MagicSquare({ onExit }: { onExit: () => void }) {
     [...lines.rows, ...lines.cols, lines.down, lines.up].every((l) => l.state === "ok");
 
   useEffect(() => {
-    if (!saved.done && solved) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("magic", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [solved, saved]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   /** Every number appears once, so writing one lifts it from anywhere else. */
   function setCell(i: number, v: number) {
@@ -143,9 +160,7 @@ export default function MagicSquare({ onExit }: { onExit: () => void }) {
   return (
     <div className="game game-magic">
       <GameHeader title="Magic Square" onExit={onExit} onNew={() => startNew()} />
-      <p className="game-hint">
-        Every row, column and diagonal must add up to {total}.
-      </p>
+      <p className="game-hint">Every row, column and diagonal must add up to {total}.</p>
       <GameTools
         diff={diff}
         onDiff={startNew}
@@ -165,7 +180,8 @@ export default function MagicSquare({ onExit }: { onExit: () => void }) {
         </div>
         <div className="ms-grid" role="grid" aria-label="Magic square board">
           {board.map((v, i) => {
-            const r = Math.floor(i / n), c = i % n;
+            const r = Math.floor(i / n),
+              c = i % n;
             const given = givens[i] !== 0;
             return (
               <button
@@ -177,7 +193,8 @@ export default function MagicSquare({ onExit }: { onExit: () => void }) {
                   selected === i ? "selected" : "",
                   r === c || r + c === n - 1 ? "diag" : ""
                 ].join(" ")}
-                aria-label={`Row ${r + 1} column ${c + 1}${v ? `, ${v}` : ", empty"}`}
+                aria-label={cellLabel(i, n, v, given && "given")}
+                aria-selected={selected === i}
                 onClick={() => {
                   if (!given && saved.entries[i] !== 0 && selected === i) setCell(i, 0);
                   else setSelected(i);
@@ -204,29 +221,29 @@ export default function MagicSquare({ onExit }: { onExit: () => void }) {
       </div>
 
       <div className="ms-tray" role="group" aria-label="Numbers to place">
-        {[...Array(n * n).keys()].map((k) => k + 1).map((v) => {
-          const used = placed.has(v);
-          return (
-            <button
-              key={v}
-              className={`ms-chip ${used ? "used" : ""}`}
-              disabled={used || selected === null || givens[selected] !== 0}
-              onClick={() => selected !== null && setCell(selected, v)}
-              aria-label={`Place ${v}${used ? ", already on the board" : ""}`}
-            >
-              {v}
-            </button>
-          );
-        })}
+        {[...Array(n * n).keys()]
+          .map((k) => k + 1)
+          .map((v) => {
+            const used = placed.has(v);
+            return (
+              <button
+                key={v}
+                className={`ms-chip ${used ? "used" : ""}`}
+                disabled={used || selected === null || givens[selected] !== 0}
+                onClick={() => selected !== null && setCell(selected, v)}
+                aria-label={`Place ${v}${used ? ", already on the board" : ""}`}
+              >
+                {v}
+              </button>
+            );
+          })}
       </div>
 
       {saved.done && (
         <Result
           key={seed}
-          game="magic"
           won
           message={`Every line adds to ${total}!`}
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

@@ -7,10 +7,12 @@ import {
   magnetsSolved,
   type Sign
 } from "../lib/magnets";
-import { recordResult, Diff } from "../lib/storage";
+import { useGridNav } from "../lib/gridnav";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Magnets.css";
 
 const SIZE: Record<Diff, number> = { easy: 6, medium: 8, hard: 10 };
 /** How many of the 4n clues are withheld — the usual way Magnets scales. */
@@ -32,12 +34,11 @@ interface SavedState {
 }
 
 export default function Magnets({ onExit }: { onExit: () => void }) {
-  const {
-    seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs
-  } = useGame<SavedState>("magnets", (_s, d) => ({
-    board: Array<Sign>(SIZE[d] * SIZE[d]).fill(0),
-    done: false
-  }));
+  const { seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
+      board: Array<Sign>(SIZE[d] * SIZE[d]).fill(0),
+      done: false
+    }));
   const n = SIZE[diff];
   const puzzle = useMemo(
     () => generateMagnets(`magnets-${seed}`, n, HIDDEN[diff]),
@@ -53,13 +54,10 @@ export default function Magnets({ onExit }: { onExit: () => void }) {
     [puzzle, saved.board]
   );
 
+  const solved = useMemo(() => magnetsSolved(puzzle, saved.board), [puzzle, saved.board]);
   useEffect(() => {
-    if (!saved.done && magnetsSolved(puzzle, saved.board)) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("magnets", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [puzzle, saved]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   /** Each half is set independently, so a half-filled slab is allowed as a
    *  working state — it is only flagged, never auto-completed. */
@@ -69,6 +67,9 @@ export default function Magnets({ onExit }: { onExit: () => void }) {
     board[i] = ((board[i] + (back ? 2 : 1)) % 3) as Sign;
     commit({ ...saved, board });
   }
+
+  // Enter cycles a square forward, Shift+Enter back (the long-press).
+  const nav = useGridNav(cycle);
 
   function hint() {
     const cands = [...Array(n * n).keys()].filter(
@@ -107,8 +108,7 @@ export default function Magnets({ onExit }: { onExit: () => void }) {
     <div className="game game-magnets">
       <GameHeader title="Magnets" onExit={onExit} onNew={() => newPuzzle()} />
       <p className="game-hint">
-        Fill each slab with a + / − pair or leave it blank — like poles never
-        touch.
+        Fill each slab with a + / − pair or leave it blank — like poles never touch.
       </p>
       <GameTools
         diff={diff}
@@ -131,9 +131,11 @@ export default function Magnets({ onExit }: { onExit: () => void }) {
         style={{ "--gn": G } as CSSProperties}
         role="grid"
         aria-label="Magnets board"
+        {...nav}
       >
         {Array.from({ length: G * G }, (_, k) => {
-          const gr = Math.floor(k / G), gc = k % G;
+          const gr = Math.floor(k / G),
+            gc = k % G;
           const edgeR = gr === 0 || gr === G - 1;
           const edgeC = gc === 0 || gc === G - 1;
           if (edgeR && edgeC) {
@@ -159,13 +161,16 @@ export default function Magnets({ onExit }: { onExit: () => void }) {
               : clue(k, puzzle.rowMinus[r], got.rowMinus[r], `Row ${r + 1} minus`);
           }
 
-          const r = gr - 1, c = gc - 1, i = r * n + c;
+          const r = gr - 1,
+            c = gc - 1,
+            i = r * n + c;
           const id = puzzle.dominoOf[i];
           const s = saved.board[i];
           return (
             <button
               key={k}
               role="gridcell"
+              data-cell={i}
               className={[
                 "mg-cell",
                 s === 1 ? "plus" : s === 2 ? "minus" : "",
@@ -176,7 +181,9 @@ export default function Magnets({ onExit }: { onExit: () => void }) {
                 r === n - 1 ? "reg-b" : "",
                 c === n - 1 ? "reg-r" : ""
               ].join(" ")}
-              aria-label={`Row ${r + 1} column ${c + 1}, ${NAME[s]}`}
+              aria-label={`Row ${r + 1}, column ${c + 1}, ${NAME[s]}${
+                clashes.has(i) ? ", clashes" : ""
+              }${broken.has(id) ? ", slab incomplete" : ""}`}
               onClick={() => {
                 // A long-press or right-click already acted; swallow the
                 // click it leaves behind, then re-arm for the next tap.
@@ -215,10 +222,8 @@ export default function Magnets({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="magnets"
           won
           message="Every pole in place!"
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

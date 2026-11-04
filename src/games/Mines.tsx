@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import { useGridNav } from "../lib/gridnav";
+import "./Mines.css";
 
 const LEVELS: Record<Diff, [number, number]> = {
   easy: [8, 9],
@@ -13,15 +15,18 @@ const LEVELS: Record<Diff, [number, number]> = {
 const HELP =
   "Numbers count mines in the eight touching squares; the first tap is " +
   "always safe. Long-press to plant a flag, and tap a satisfied number to " +
-  "reveal its remaining neighbours at once.";
+  "reveal its remaining neighbours at once. On a keyboard, arrows move, " +
+  "Enter digs and Shift+Enter flags.";
 
 function neighbours(idx: number, n: number): number[] {
-  const r = Math.floor(idx / n), c = idx % n;
+  const r = Math.floor(idx / n),
+    c = idx % n;
   const out: number[] = [];
   for (let dr = -1; dr <= 1; dr++)
     for (let dc = -1; dc <= 1; dc++) {
       if (dr === 0 && dc === 0) continue;
-      const rr = r + dr, cc = c + dc;
+      const rr = r + dr,
+        cc = c + dc;
       if (rr >= 0 && rr < n && cc >= 0 && cc < n) out.push(rr * n + cc);
     }
   return out;
@@ -60,45 +65,42 @@ function fresh(n: number): SavedState {
 }
 
 export default function Mines({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("mines", (_s, d) => fresh(LEVELS[d][0]));
+  const { seed, diff, saved, commit, commitHint, finish, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => fresh(LEVELS[d][0]));
   const [n, mineCount] = LEVELS[diff];
   const [flagMode, setFlagMode] = useState(false);
   const pressTimer = useRef<number | null>(null);
   const longPressed = useRef(false);
 
   const isMine = useMemo(
-    () =>
-      saved.firstTap === null
-        ? null
-        : layMines(seed, n, mineCount, saved.firstTap),
+    () => (saved.firstTap === null ? null : layMines(seed, n, mineCount, saved.firstTap)),
     [saved.firstTap, seed, n, mineCount]
   );
 
   const counts = useMemo(() => {
     if (!isMine) return null;
-    return isMine.map((_, i) =>
-      neighbours(i, n).filter((j) => isMine[j]).length
-    );
+    return isMine.map((_, i) => neighbours(i, n).filter((j) => isMine[j]).length);
   }, [isMine, n]);
 
   useEffect(() => {
-    if (!isMine || saved.done) return;
+    if (!isMine) return;
     const allClear = saved.revealed.every((r, i) => r || isMine[i]);
-    if (allClear) {
-      commit({ ...saved, done: true, won: true }, { undoable: false });
-      recordResult("mines", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [saved, isMine]);
+    if (allClear) finish(true, { won: true });
+  }, [saved.revealed, isMine, finish]);
 
-  function floodReveal(start: number, mines: boolean[], cnts: number[], revealed: boolean[]) {
+  function floodReveal(
+    start: number,
+    mines: boolean[],
+    cnts: number[],
+    revealed: boolean[]
+  ) {
     const stack = [start];
     while (stack.length) {
       const i = stack.pop()!;
       if (revealed[i] || mines[i]) continue;
       revealed[i] = true;
-      if (cnts[i] === 0) for (const j of neighbours(i, n)) if (!revealed[j]) stack.push(j);
+      if (cnts[i] === 0)
+        for (const j of neighbours(i, n)) if (!revealed[j]) stack.push(j);
     }
   }
 
@@ -114,8 +116,7 @@ export default function Mines({ onExit }: { onExit: () => void }) {
     if (!isMine || !counts) return;
     if (targets.some((i) => isMine[i])) {
       const revealed = saved.revealed.map((r, i) => r || isMine[i]);
-      commit({ ...saved, revealed, done: true, won: false });
-      recordResult("mines", false);
+      commit({ ...saved, revealed, done: true, won: false }, { outcome: "lost" });
       return;
     }
     const revealed = saved.revealed.slice();
@@ -147,9 +148,7 @@ export default function Mines({ onExit }: { onExit: () => void }) {
     // First tap: fix the mine layout with a safe zone, then flood.
     if (saved.firstTap === null) {
       const mines = layMines(seed, n, mineCount, idx);
-      const cnts = mines.map((_, i) =>
-        neighbours(i, n).filter((j) => mines[j]).length
-      );
+      const cnts = mines.map((_, i) => neighbours(i, n).filter((j) => mines[j]).length);
       const revealed = saved.revealed.slice();
       floodReveal(idx, mines, cnts, revealed);
       commit({ ...saved, firstTap: idx, revealed });
@@ -158,6 +157,31 @@ export default function Mines({ onExit }: { onExit: () => void }) {
 
     revealCells([idx]);
   }
+
+  /** Hint: open one safe square, preferring one beside the open area so it
+   *  is a usable lead. The layout is fixed after the first dig, so this is
+   *  exact; before then there is nothing to hint. */
+  function hint() {
+    if (saved.done || !isMine || !counts) return;
+    const safe = (i: number) => !saved.revealed[i] && !isMine[i];
+    const all = [...Array(n * n).keys()].filter(safe);
+    if (!all.length) return;
+    const edge = all.filter((i) => neighbours(i, n).some((j) => saved.revealed[j]));
+    const pool = edge.length ? edge : all;
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+    const revealed = saved.revealed.slice();
+    const flagged = saved.flagged.slice();
+    flagged[pick] = false;
+    floodReveal(pick, isMine, counts, revealed);
+    commitHint({ ...saved, revealed, flagged });
+  }
+
+  // Keyboard: Enter / Space digs (or chords) like a tap, Shift+Enter flags.
+  const nav = useGridNav((i, alt) => {
+    longPressed.current = false;
+    if (alt) toggleFlag(i);
+    else tap(i);
+  });
 
   const flagsUsed = saved.flagged.filter(Boolean).length;
 
@@ -173,10 +197,13 @@ export default function Mines({ onExit }: { onExit: () => void }) {
         help={HELP}
         onUndo={undo}
         canUndo={canUndo && !saved.done}
+        onHint={saved.done || saved.firstTap === null ? undefined : hint}
       />
 
       <div className="lights-meta">
-        <span>🚩 {flagsUsed} / {mineCount}</span>
+        <span>
+          🚩 {flagsUsed} / {mineCount}
+        </span>
       </div>
 
       <div
@@ -184,6 +211,7 @@ export default function Mines({ onExit }: { onExit: () => void }) {
         style={{ "--n": n } as CSSProperties}
         role="grid"
         aria-label="Minefield"
+        {...nav}
       >
         {saved.revealed.map((rev, i) => {
           const mine = isMine?.[i] ?? false;
@@ -192,6 +220,18 @@ export default function Mines({ onExit }: { onExit: () => void }) {
             <button
               key={i}
               role="gridcell"
+              data-cell={i}
+              aria-label={`Row ${Math.floor(i / n) + 1}, column ${(i % n) + 1}, ${
+                rev
+                  ? mine
+                    ? "mine"
+                    : cnt > 0
+                      ? `${cnt} mine${cnt === 1 ? "" : "s"} around`
+                      : "clear"
+                  : saved.flagged[i]
+                    ? "flagged"
+                    : "hidden"
+              }`}
               className={[
                 "mine-cell",
                 rev ? "open" : "",
@@ -243,10 +283,8 @@ export default function Mines({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="mines"
           won={saved.won}
           message={saved.won ? "Field cleared!" : "Boom — that was a mine"}
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

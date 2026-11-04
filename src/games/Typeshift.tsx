@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
 import { LEN, isShiftWord, makeShift } from "../lib/typeshift";
-import { recordResult, type Diff } from "../lib/storage";
+import { type Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result, Toast } from "./ui";
+import "./Typeshift.css";
 
 const COUNT: Record<Diff, number> = { easy: 3, medium: 4, hard: 5 };
 const HELP =
@@ -23,9 +24,9 @@ interface SavedState {
 }
 
 export default function Typeshift({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("typeshift", (s, d) => fresh(s, d));
-  const { cols } = useMemo(() => makeShift(seed, COUNT[diff]), [seed, diff]);
+  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((s, d) => fresh(s, d));
+  const { cols, source } = useMemo(() => makeShift(seed, COUNT[diff]), [seed, diff]);
   const [toast, setToast] = useState<string | null>(null);
 
   function fresh(s: string, d: Diff): SavedState {
@@ -39,10 +40,7 @@ export default function Typeshift({ onExit }: { onExit: () => void }) {
   }
 
   const word = saved.at.map((i, c) => cols[c][i] ?? "").join("");
-  const remaining = cols.reduce(
-    (n, col, c) => n + col.length - saved.used[c].length,
-    0
-  );
+  const remaining = cols.reduce((n, col, c) => n + col.length - saved.used[c].length, 0);
 
   function say(msg: string) {
     setToast(msg);
@@ -77,16 +75,33 @@ export default function Typeshift({ onExit }: { onExit: () => void }) {
     const next: SavedState = {
       ...saved,
       found: [...saved.found, word],
-      used: saved.used.map((u, c) =>
-        u.includes(saved.at[c]) ? u : [...u, saved.at[c]]
-      )
+      used: saved.used.map((u, c) => (u.includes(saved.at[c]) ? u : [...u, saved.at[c]]))
     };
     const left = cols.reduce((n, col, c) => n + col.length - next.used[c].length, 0);
-    if (left === 0) {
-      next.done = true;
-      recordResult("typeshift", true);
-    }
-    commit(next);
+    if (left === 0) next.done = true;
+    commit(next, { outcome: left === 0 ? "won" : undefined });
+  }
+
+  // Hint: bank one of the hidden source words that still covers an unused
+  // letter (the source words between them use every letter).
+  function hint() {
+    if (saved.done) return;
+    const fresh = (w: string) =>
+      [...w].filter((ch, c) => !saved.used[c].includes(cols[c].indexOf(ch))).length;
+    const pick = source
+      .filter((w) => !saved.found.includes(w) && fresh(w) > 0)
+      .sort((a, b) => fresh(b) - fresh(a))[0];
+    if (!pick) return;
+    const at = [...pick].map((ch, c) => cols[c].indexOf(ch));
+    const next: SavedState = {
+      ...saved,
+      at,
+      found: [...saved.found, pick],
+      used: saved.used.map((u, c) => (u.includes(at[c]) ? u : [...u, at[c]]))
+    };
+    const left = cols.reduce((n, col, c) => n + col.length - next.used[c].length, 0);
+    if (left === 0) next.done = true;
+    commitHint(next, { outcome: left === 0 ? "won" : undefined });
   }
 
   function startNew(d?: Diff) {
@@ -106,11 +121,12 @@ export default function Typeshift({ onExit }: { onExit: () => void }) {
         help={HELP}
         onUndo={undo}
         canUndo={canUndo && !saved.done}
+        onHint={saved.done ? undefined : hint}
       />
 
       <div className="ts-strips" role="group" aria-label="Letter strips">
         {cols.map((col, c) => (
-          <div key={c} className="ts-strip">
+          <div key={c} className="ts-strip" role="group" aria-label={`Strip ${c + 1}`}>
             <button
               className="ts-arrow"
               onClick={() => slide(c, -1)}
@@ -128,7 +144,9 @@ export default function Typeshift({ onExit }: { onExit: () => void }) {
                     saved.used[c].includes(i) ? "ts-used" : ""
                   ].join(" ")}
                   onClick={() => pick(c, i)}
-                  aria-label={`${ch}${saved.used[c].includes(i) ? ", used" : ""}`}
+                  aria-label={`Strip ${c + 1}, letter ${ch}${
+                    i === saved.at[c] ? ", chosen" : ""
+                  }${saved.used[c].includes(i) ? ", used" : ""}`}
                   aria-pressed={i === saved.at[c]}
                 >
                   {ch}
@@ -147,7 +165,9 @@ export default function Typeshift({ onExit }: { onExit: () => void }) {
       </div>
 
       <div className="ts-current">
-        <span className="ts-word">{word}</span>
+        <span className="ts-word" aria-live="polite">
+          {word}
+        </span>
         <button className="mini-btn" onClick={bank} disabled={word.length < LEN}>
           Bank ↵
         </button>
@@ -170,10 +190,8 @@ export default function Typeshift({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="typeshift"
           won
           message={`Every letter used — ${saved.found.length} words!`}
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

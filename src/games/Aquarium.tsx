@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useRef, type CSSProperties } from "react";
+import { useEffect, useMemo, type CSSProperties } from "react";
+import { useMarkPaint } from "../lib/drag";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Aquarium.css";
 
 const SIZE: Record<Diff, number> = { easy: 6, medium: 7, hard: 8 };
 const HELP =
@@ -16,6 +18,8 @@ interface Puzzle {
   regionOf: number[];
   rows: number[];
   cols: number[];
+  /** The flooding the clues were read from (one valid answer). */
+  wet: boolean[];
 }
 
 /** Grow tanks, pick a water level for each, read off the counts. */
@@ -32,7 +36,8 @@ function generateAquarium(seed: string, n: number): Puzzle {
     const want = 3 + Math.floor(rng() * 5); // 3–7 cells
     while (cells.length < want) {
       const frontier = cells.flatMap((i) => {
-        const r = Math.floor(i / n), c = i % n;
+        const r = Math.floor(i / n),
+          c = i % n;
         const out: number[] = [];
         if (r > 0 && regionOf[i - n] === -1) out.push(i - n);
         if (r < n - 1 && regionOf[i + n] === -1) out.push(i + n);
@@ -48,7 +53,9 @@ function generateAquarium(seed: string, n: number): Puzzle {
     regions.push(cells);
   }
 
-  const rows = Array(n).fill(0), cols = Array(n).fill(0);
+  const rows = Array(n).fill(0),
+    cols = Array(n).fill(0);
+  const wetCells: boolean[] = Array(n * n).fill(false);
   for (const cells of regions) {
     const regionRows = [...new Set(cells.map((i) => Math.floor(i / n)))].sort(
       (a, b) => a - b
@@ -57,11 +64,12 @@ function generateAquarium(seed: string, n: number): Puzzle {
     const wet = new Set(regionRows.slice(regionRows.length - level));
     for (const i of cells)
       if (wet.has(Math.floor(i / n))) {
+        wetCells[i] = true;
         rows[Math.floor(i / n)]++;
         cols[i % n]++;
       }
   }
-  return { regionOf, rows, cols };
+  return { regionOf, rows, cols, wet: wetCells };
 }
 
 type Mark = 0 | 1 | 2; // empty | water | ✕
@@ -72,17 +80,17 @@ interface SavedState {
 }
 
 export default function Aquarium({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("aquarium", (_s, d) => ({
+  const { seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
       marks: Array(SIZE[d] * SIZE[d]).fill(0) as Mark[],
       done: false
     }));
   const n = SIZE[diff];
   const puzzle = useMemo(() => generateAquarium(`aquarium-${seed}`, n), [seed, n]);
-  const paint = useRef<Mark | null>(null);
 
   const counts = useMemo(() => {
-    const rows = Array(n).fill(0), cols = Array(n).fill(0);
+    const rows = Array(n).fill(0),
+      cols = Array(n).fill(0);
     saved.marks.forEach((m, i) => {
       if (m === 1) {
         rows[Math.floor(i / n)]++;
@@ -97,9 +105,7 @@ export default function Aquarium({ onExit }: { onExit: () => void }) {
   const conflicts = useMemo(() => {
     const bad = new Set<number>();
     const byRegion = new Map<number, number[]>();
-    puzzle.regionOf.forEach((g, i) =>
-      byRegion.set(g, [...(byRegion.get(g) ?? []), i])
-    );
+    puzzle.regionOf.forEach((g, i) => byRegion.set(g, [...(byRegion.get(g) ?? []), i]));
     for (const cells of byRegion.values()) {
       const byRow = new Map<number, number[]>();
       for (const i of cells) {
@@ -124,28 +130,32 @@ export default function Aquarium({ onExit }: { onExit: () => void }) {
     return bad;
   }, [saved.marks, puzzle, n]);
 
+  const solved =
+    conflicts.size === 0 &&
+    counts.rows.every((v, r) => v === puzzle.rows[r]) &&
+    counts.cols.every((v, c) => v === puzzle.cols[c]);
   useEffect(() => {
-    if (saved.done || conflicts.size > 0) return;
-    const ok =
-      counts.rows.every((v, r) => v === puzzle.rows[r]) &&
-      counts.cols.every((v, c) => v === puzzle.cols[c]);
-    if (ok) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("aquarium", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [counts, conflicts, puzzle, saved]);
+    if (solved) finish();
+  }, [solved, finish]);
 
-  function apply(i: number, v: Mark, undoable: boolean) {
-    const marks = saved.marks.slice() as Mark[];
-    marks[i] = v;
-    commit({ ...saved, marks }, { undoable });
-  }
+  // A press cycles the cell; the drag paints that mark over the cells it
+  // crosses that differ, and the whole stroke is one undo step.
+  const drag = useMarkPaint<Mark>({
+    marks: saved.marks,
+    next: (i) => (saved.done ? null : (((saved.marks[i] + 1) % 3) as Mark)),
+    write: (marks, undoable) => commit({ ...saved, marks }, { undoable })
+  });
 
-  function cellFromPoint(x: number, y: number): number | null {
-    const el = document.elementFromPoint(x, y)?.closest("[data-aq-idx]");
-    const v = el instanceof HTMLElement ? el.dataset.aqIdx : undefined;
-    return v === undefined ? null : Number(v);
+  /** Set one wrong or unmarked cell from the generated flooding. */
+  function hint() {
+    if (saved.done) return;
+    const want = (i: number): Mark => (puzzle.wet[i] ? 1 : 2);
+    const wrong = saved.marks.flatMap((m, i) => (m === want(i) ? [] : [i]));
+    if (!wrong.length) return;
+    const i = wrong[Math.floor(Math.random() * wrong.length)];
+    const marks = saved.marks.slice();
+    marks[i] = want(i);
+    commitHint({ ...saved, marks });
   }
 
   const G = n + 1;
@@ -164,6 +174,7 @@ export default function Aquarium({ onExit }: { onExit: () => void }) {
         help={HELP}
         onUndo={undo}
         canUndo={canUndo && !saved.done}
+        onHint={saved.done ? undefined : hint}
       />
 
       <div
@@ -171,47 +182,44 @@ export default function Aquarium({ onExit }: { onExit: () => void }) {
         style={{ "--gn": G } as CSSProperties}
         role="grid"
         aria-label="Aquarium board"
-        onPointerDown={(e) => {
-          if (saved.done) return;
-          (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-          const i = cellFromPoint(e.clientX, e.clientY);
-          if (i === null) return;
-          const v = ((saved.marks[i] + 1) % 3) as Mark;
-          paint.current = v;
-          apply(i, v, true);
-        }}
-        onPointerMove={(e) => {
-          if (paint.current === null) return;
-          const i = cellFromPoint(e.clientX, e.clientY);
-          if (i !== null && saved.marks[i] !== paint.current)
-            apply(i, paint.current, false);
-        }}
-        onPointerUp={() => { paint.current = null; }}
-        onPointerCancel={() => { paint.current = null; }}
+        {...drag}
       >
         {Array.from({ length: G * G }).map((_, k) => {
-          const gr = Math.floor(k / G), gc = k % G;
+          const gr = Math.floor(k / G),
+            gc = k % G;
           if (gr === 0 && gc === 0) return <span key={k} />;
           if (gr === 0)
             return (
-              <span key={k} className={countClass(counts.cols[gc - 1], puzzle.cols[gc - 1])}>
+              <span
+                key={k}
+                className={countClass(counts.cols[gc - 1], puzzle.cols[gc - 1])}
+                aria-label={`Column ${gc}: ${puzzle.cols[gc - 1]} water`}
+              >
                 {puzzle.cols[gc - 1]}
               </span>
             );
           if (gc === 0)
             return (
-              <span key={k} className={countClass(counts.rows[gr - 1], puzzle.rows[gr - 1])}>
+              <span
+                key={k}
+                className={countClass(counts.rows[gr - 1], puzzle.rows[gr - 1])}
+                aria-label={`Row ${gr}: ${puzzle.rows[gr - 1]} water`}
+              >
                 {puzzle.rows[gr - 1]}
               </span>
             );
           const i = (gr - 1) * n + (gc - 1);
-          const r = gr - 1, c = gc - 1;
+          const r = gr - 1,
+            c = gc - 1;
           const m = saved.marks[i];
           return (
             <button
               key={k}
-              data-aq-idx={i}
+              data-cell={i}
               role="gridcell"
+              aria-label={`Row ${r + 1}, column ${c + 1}, ${
+                m === 1 ? "water" : m === 2 ? "dry" : "empty"
+              }${conflicts.has(i) ? ", conflict" : ""}`}
               className={[
                 "aq-cell",
                 m === 1 ? "water" : m === 2 ? "dry" : "",
@@ -229,10 +237,8 @@ export default function Aquarium({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="aquarium"
           won
           message="Every tank at its level!"
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

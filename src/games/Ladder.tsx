@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { makeRng, shuffled } from "../lib/rng";
 import { WORDS4 } from "../lib/words4";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result, Toast } from "./ui";
+import "./Ladder.css";
 
 const PAR: Record<Diff, number> = { easy: 4, medium: 5, hard: 6 };
 const KEY_ROWS = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"];
@@ -65,8 +66,8 @@ interface SavedState {
 }
 
 export default function Ladder({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("ladder", (s, d) => ({
+  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((s, d) => ({
       chain: [generateLadder(`ladder-${s}`, PAR[d]).start],
       done: false,
       won: false
@@ -103,9 +104,8 @@ export default function Ladder({ onExit }: { onExit: () => void }) {
     const chain = [...saved.chain, next];
     const won = next === target;
     const done = won || chain.length - 1 >= budget;
-    commit({ chain, done, won });
+    commit({ chain, done, won }, { outcome: done ? (won ? "won" : "lost") : undefined });
     setSlot(null);
-    if (done) recordResult("ladder", won);
   };
 
   useEffect(() => {
@@ -119,6 +119,32 @@ export default function Ladder({ onExit }: { onExit: () => void }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slot, saved]);
 
+  // Hint: take the next rung of a shortest ladder from the current word.
+  function hint() {
+    if (saved.done) return;
+    const prev = new Map<string, string>([[current, current]]);
+    const queue = [current];
+    while (queue.length && !prev.has(target)) {
+      const w = queue.shift()!;
+      for (const v of neighbours(w))
+        if (!prev.has(v)) {
+          prev.set(v, w);
+          queue.push(v);
+        }
+    }
+    if (!prev.has(target)) return;
+    let next = target;
+    while (prev.get(next) !== current) next = prev.get(next)!;
+    const chain = [...saved.chain, next];
+    const won = next === target;
+    const done = won || chain.length - 1 >= budget;
+    setSlot(null);
+    commitHint(
+      { chain, done, won },
+      { outcome: done ? (won ? "won" : "lost") : undefined }
+    );
+  }
+
   function startNew(d?: Diff) {
     newPuzzle(d);
     setSlot(null);
@@ -128,15 +154,14 @@ export default function Ladder({ onExit }: { onExit: () => void }) {
   return (
     <div className="game game-ladder">
       <GameHeader title="Word Ladder" onExit={onExit} onNew={() => startNew()} />
-      <p className="game-hint">
-        Change one letter per step, always making a real word.
-      </p>
+      <p className="game-hint">Change one letter per step, always making a real word.</p>
       <GameTools
         diff={diff}
         onDiff={startNew}
         help={HELP}
         onUndo={undo}
         canUndo={canUndo && !saved.done}
+        onHint={saved.done ? undefined : hint}
       />
 
       <div className="ld-status">
@@ -152,13 +177,21 @@ export default function Ladder({ onExit }: { onExit: () => void }) {
         {saved.chain.map((word, r) => {
           const isCurrent = r === saved.chain.length - 1 && !saved.done;
           return (
-            <div key={r} className={`word-row${isCurrent && shake ? " shake" : ""}`} role="row">
+            <div
+              key={r}
+              className={`word-row${isCurrent && shake ? " shake" : ""}`}
+              role="row"
+            >
               {word.split("").map((ch, c) => {
                 const good = target[c] === ch;
                 return (
                   <button
                     key={c}
                     role="gridcell"
+                    aria-label={`Step ${r}, letter ${c + 1}, ${ch.toUpperCase()}${
+                      good ? ", matches target" : ""
+                    }${isCurrent && slot === c ? ", selected" : ""}`}
+                    aria-selected={isCurrent && slot === c}
                     className={[
                       "word-cell filled ld-cell",
                       good ? "is-correct" : "",
@@ -181,7 +214,7 @@ export default function Ladder({ onExit }: { onExit: () => void }) {
         <p className="game-hint">Tap the letter you want to change.</p>
       )}
 
-      <div className="keyboard">
+      <div className="keyboard" role="group" aria-label="Keyboard">
         {KEY_ROWS.map((row) => (
           <div className="key-row" key={row}>
             {row.split("").map((k) => (
@@ -201,7 +234,6 @@ export default function Ladder({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="ladder"
           won={saved.won}
           message={
             saved.won
@@ -210,7 +242,6 @@ export default function Ladder({ onExit }: { onExit: () => void }) {
                 : `Climbed in ${saved.chain.length - 1} steps`
               : `Out of moves — it was ${saved.chain[0].toUpperCase()} → ${target.toUpperCase()}`
           }
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

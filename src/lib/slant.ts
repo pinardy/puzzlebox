@@ -16,7 +16,8 @@ const MAX_TRIES = 40;
 
 /** The two lattice corners a diagonal joins, indexed r * (n + 1) + c. */
 export function endsOf(i: number, n: number, v: number): [number, number] {
-  const r = Math.floor(i / n), c = i % n;
+  const r = Math.floor(i / n),
+    c = i % n;
   const p = (rr: number, cc: number) => rr * (n + 1) + cc;
   return v === FWD ? [p(r, c + 1), p(r + 1, c)] : [p(r, c), p(r + 1, c + 1)];
 }
@@ -33,7 +34,8 @@ function makeDsu(size: number) {
     return x;
   };
   return (a: number, b: number): boolean => {
-    const ra = find(a), rb = find(b);
+    const ra = find(a),
+      rb = find(b);
     if (ra === rb) return false;
     parent[ra] = rb;
     return true;

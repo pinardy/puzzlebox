@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { generateKakuro } from "../lib/kakuro";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
-import { useGridKeys } from "../lib/keys";
+import { cellLabel, useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import { Numpad } from "./Numpad";
+import "./Kakuro.css";
 
 const SIZE: Record<Diff, number> = { easy: 6, medium: 7, hard: 8 };
 const HELP =
@@ -18,13 +20,27 @@ interface SavedState {
 }
 
 export default function Kakuro({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("kakuro", (_s, d) => ({
+  const { seed, diff, saved, commit, commitHint, finish, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
       entries: Array(SIZE[d] * SIZE[d]).fill(0),
       done: false
     }));
   const G = SIZE[diff];
   const puzzle = useMemo(() => generateKakuro(`kakuro-${seed}`, G), [seed, G]);
+  /** Each white cell's run totals in words, for its accessible name. */
+  const runText = useMemo(() => {
+    const out = new Map<number, string[]>();
+    for (const run of puzzle.runs) {
+      const dir =
+        run.cells.length > 1 && run.cells[1] - run.cells[0] === 1 ? "across" : "down";
+      for (const i of run.cells)
+        out.set(i, [
+          ...(out.get(i) ?? []),
+          `${dir} run of ${run.cells.length} sums to ${run.sum}`
+        ]);
+    }
+    return out;
+  }, [puzzle]);
   const [selected, setSelected] = useState<number | null>(null);
 
   const board = saved.entries;
@@ -45,16 +61,12 @@ export default function Kakuro({ onExit }: { onExit: () => void }) {
     return bad;
   }, [board, puzzle]);
 
+  const solved =
+    puzzle.runs.every((run) => run.cells.every((i) => board[i] !== 0)) &&
+    conflicts.size === 0;
   useEffect(() => {
-    const complete = puzzle.runs.every((run) =>
-      run.cells.every((i) => board[i] !== 0)
-    );
-    if (!saved.done && complete && conflicts.size === 0) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("kakuro", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [board, conflicts, puzzle, saved]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   function setCell(idx: number, val: number) {
     if (saved.done || puzzle.black[idx]) return;
@@ -64,8 +76,7 @@ export default function Kakuro({ onExit }: { onExit: () => void }) {
   }
 
   function hint() {
-    const open = (i: number) =>
-      !puzzle.black[i] && board[i] !== puzzle.solution[i];
+    const open = (i: number) => !puzzle.black[i] && board[i] !== puzzle.solution[i];
     const cands = [...Array(G * G).keys()].filter(open);
     if (!cands.length) return;
     const idx =
@@ -97,8 +108,8 @@ export default function Kakuro({ onExit }: { onExit: () => void }) {
     <div className="game game-kakuro">
       <GameHeader title="Kakuro" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
-        Runs of digits 1–9, no repeats, adding to the clue — across top-right,
-        down bottom-left.
+        Runs of digits 1–9, no repeats, adding to the clue — across top-right, down
+        bottom-left.
       </p>
       <GameTools
         diff={diff}
@@ -120,7 +131,22 @@ export default function Kakuro({ onExit }: { onExit: () => void }) {
             const a = puzzle.across.get(i);
             const d = puzzle.down.get(i);
             return (
-              <span key={i} className={`kk-black${a !== undefined || d !== undefined ? " clued" : ""}`}>
+              <span
+                key={i}
+                className={`kk-black${a !== undefined || d !== undefined ? " clued" : ""}`}
+                {...(a !== undefined || d !== undefined
+                  ? {
+                      role: "gridcell",
+                      "aria-label": cellLabel(
+                        i,
+                        G,
+                        "clue",
+                        a !== undefined && `across ${a}`,
+                        d !== undefined && `down ${d}`
+                      )
+                    }
+                  : { "aria-hidden": true })}
+              >
                 {a !== undefined && <i className="kk-across">{a}</i>}
                 {d !== undefined && <i className="kk-down">{d}</i>}
               </span>
@@ -135,6 +161,14 @@ export default function Kakuro({ onExit }: { onExit: () => void }) {
                 selected === i ? "selected" : "",
                 conflicts.has(i) ? "conflict" : ""
               ].join(" ")}
+              aria-label={cellLabel(
+                i,
+                G,
+                board[i],
+                runText.get(i)?.join(", "),
+                conflicts.has(i) && "conflict"
+              )}
+              aria-selected={selected === i}
               onClick={() => setSelected(i)}
             >
               {board[i] || ""}
@@ -143,31 +177,13 @@ export default function Kakuro({ onExit }: { onExit: () => void }) {
         })}
       </div>
 
-      <div className="numpad numpad-9">
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((dgt) => (
-          <button
-            key={dgt}
-            className="num-key"
-            onClick={() => selected !== null && setCell(selected, dgt)}
-          >
-            {dgt}
-          </button>
-        ))}
-        <button
-          className="num-key tool"
-          onClick={() => selected !== null && setCell(selected, 0)}
-        >
-          ⌫
-        </button>
-      </div>
+      <Numpad max={9} onDigit={(d) => selected !== null && setCell(selected, d)} />
 
       {saved.done && (
         <Result
           key={seed}
-          game="kakuro"
           won
           message="All sums add up!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

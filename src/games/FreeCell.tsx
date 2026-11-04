@@ -1,16 +1,12 @@
 import { useMemo, useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import type { Diff } from "../lib/storage";
+import { downAltColour, rank, stackPlace, suit } from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { Foundation, Pile, PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
 
-const SUITS = ["♠", "♥", "♦", "♣"];
-const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
-const rank = (id: number) => Math.floor(id / 4) + 1;
-const suit = (id: number) => id % 4;
-const isRed = (id: number) => suit(id) === 1 || suit(id) === 2;
-const label = (id: number) => `${RANKS[rank(id) - 1]}${SUITS[suit(id)]}`;
 const CELLS: Record<Diff, number> = { easy: 4, medium: 3, hard: 2 };
 const HELP =
   "Everything is face-up. Build the foundations up by suit from ace to " +
@@ -51,8 +47,9 @@ type Sel =
   | null;
 
 export default function FreeCell({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("freecell", (s, d) => deal(s, d));
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>(
+    (s, d) => deal(s, d)
+  );
   const [sel, setSel] = useState<Sel>(null);
 
   const selCards = useMemo((): number[] => {
@@ -67,8 +64,7 @@ export default function FreeCell({ onExit }: { onExit: () => void }) {
   /** A grabbable run descends in alternating colours. */
   function validRun(cards: number[]): boolean {
     for (let i = 0; i + 1 < cards.length; i++)
-      if (rank(cards[i]) !== rank(cards[i + 1]) + 1 || isRed(cards[i]) === isRed(cards[i + 1]))
-        return false;
+      if (!downAltColour(cards[i + 1], cards[i])) return false;
     return true;
   }
 
@@ -79,13 +75,12 @@ export default function FreeCell({ onExit }: { onExit: () => void }) {
     return (freeSlots + 1) * 2 ** usable;
   }
 
-  function finish(next: SavedState) {
+  function play(next: SavedState) {
     next.moves++;
     if (!next.done && next.foundations.every((f) => f === 13)) {
       next.done = true;
-      recordResult("freecell", true);
-    }
-    commit(next);
+      commit(next, { outcome: "won" });
+    } else commit(next);
     setSel(null);
   }
 
@@ -121,7 +116,7 @@ export default function FreeCell({ onExit }: { onExit: () => void }) {
     const next = clone();
     takeSelection(next);
     next.foundations[suit(card)]++;
-    finish(next);
+    play(next);
   }
 
   function tapCascade(pile: number, index: number | null) {
@@ -130,17 +125,17 @@ export default function FreeCell({ onExit }: { onExit: () => void }) {
 
     if (sel) {
       const run = selCards;
-      if (!run.length) { setSel(null); return; }
+      if (!run.length) {
+        setSel(null);
+        return;
+      }
       if (sel.from === "cascade" && sel.pile === pile) {
         setSel(null);
         if (run.length === 1) tryFoundation();
         return;
       }
       const top = cards.length ? cards[cards.length - 1] : null;
-      const fits =
-        top === null
-          ? true
-          : rank(run[0]) === rank(top) - 1 && isRed(run[0]) !== isRed(top);
+      const fits = top === null ? true : downAltColour(run[0], top);
       if (!fits || run.length > moveCapacity(top === null)) {
         setSel(null);
         return;
@@ -148,7 +143,7 @@ export default function FreeCell({ onExit }: { onExit: () => void }) {
       const next = clone();
       const moved = takeSelection(next);
       next.cascades[pile].push(...moved);
-      finish(next);
+      play(next);
       return;
     }
 
@@ -170,7 +165,7 @@ export default function FreeCell({ onExit }: { onExit: () => void }) {
         const next = clone();
         const [card] = takeSelection(next);
         next.free[slot] = card;
-        finish(next);
+        play(next);
         return;
       }
       setSel(null);
@@ -206,7 +201,7 @@ export default function FreeCell({ onExit }: { onExit: () => void }) {
         }
       }
     }
-    if (count > 0) finish(next);
+    if (count > 0) play(next);
   }
 
   function startNew(d?: Diff) {
@@ -221,8 +216,7 @@ export default function FreeCell({ onExit }: { onExit: () => void }) {
     <div className="game game-freecell" style={{ "--cols": 8 } as CSSProperties}>
       <GameHeader title="FreeCell" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
-        Tap a run, then where it goes; tap a selected card again to send it
-        up.
+        Tap a run, then where it goes; tap a selected card again to send it up.
       </p>
       <GameTools
         diff={diff}
@@ -234,55 +228,41 @@ export default function FreeCell({ onExit }: { onExit: () => void }) {
 
       <div className="kl-top">
         {saved.free.map((c, s) => (
-          <button
+          <PlayingCard
             key={s}
-            className={`kl-card${c === null ? " kl-empty" : ""}${
-              sel?.from === "free" && sel.slot === s ? " selected" : ""
-            }${c !== null && isRed(c) ? " red" : ""}`}
+            card={c}
+            selected={sel?.from === "free" && sel.slot === s}
             onClick={() => tapFree(s)}
-            aria-label={`Free cell ${s + 1}`}
+            place={`Free cell ${s + 1}`}
           >
-            {c === null ? "·" : label(c)}
-          </button>
+            {c === null ? "·" : undefined}
+          </PlayingCard>
         ))}
         {saved.foundations.map((f, s) => (
-          <button
-            key={s}
-            className={`kl-card kl-found${f === 0 ? " kl-empty" : ""}${
-              f > 0 && (s === 1 || s === 2) ? " red" : ""
-            }`}
-            onClick={tryFoundation}
-            aria-label={`${SUITS[s]} foundation`}
-          >
-            {f === 0 ? SUITS[s] : `${RANKS[f - 1]}${SUITS[s]}`}
-          </button>
+          <Foundation key={s} suit={s} top={f} onClick={tryFoundation} />
         ))}
       </div>
 
       <div className="kl-tableau">
         {saved.cascades.map((pile, p) => (
-          <div
+          <Pile
             key={p}
-            className="kl-pile"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) tapCascade(p, null);
-            }}
+            name={`Column ${p + 1}`}
+            empty={!pile.length}
+            onTap={() => tapCascade(p, null)}
           >
             {pile.map((card, i) => (
-              <button
+              <PlayingCard
                 key={card}
-                className={[
-                  "kl-card kl-stacked",
-                  isRed(card) ? "red" : "",
-                  isSelected(p, i) ? "selected" : ""
-                ].join(" ")}
+                card={card}
+                selected={isSelected(p, i)}
+                className="kl-stacked"
                 style={{ "--stack": i } as CSSProperties}
+                place={stackPlace(`Column ${p + 1}`, i, pile.length)}
                 onClick={() => tapCascade(p, i)}
-              >
-                {label(card)}
-              </button>
+              />
             ))}
-          </div>
+          </Pile>
         ))}
       </div>
 
@@ -296,10 +276,8 @@ export default function FreeCell({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="freecell"
           won
           message={`Cleared in ${saved.moves} moves!`}
-          playMs={playMs}
           onNew={startNew}
           onExit={onExit}
         />

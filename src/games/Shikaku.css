@@ -1,0 +1,86 @@
+/* Shikaku: styles only this board uses. Loaded with its chunk. */
+
+.shikaku-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--card);
+  align-self: center;
+  width: min(100%, 440px);
+  aspect-ratio: 1;
+  margin: 6px 0;
+}
+
+.shikaku-cell {
+  border: 0.5px solid var(--grid-line);
+  background: var(--card);
+  font-family: var(--mono);
+  font-size: clamp(13px, 3.8vw, 19px);
+  font-weight: 700;
+  color: var(--ink);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  cursor: pointer;
+}
+
+.shikaku-cell.anchor {
+  outline: 2.5px solid var(--purple);
+  outline-offset: -2.5px;
+}
+
+.shikaku-cell.hue-0 {
+  background: #f5e5e3;
+}
+
+.shikaku-cell.hue-1 {
+  background: #e0eaf7;
+}
+
+.shikaku-cell.hue-2 {
+  background: #e2f0e3;
+}
+
+.shikaku-cell.hue-3 {
+  background: #f7f0d8;
+}
+
+.shikaku-cell.hue-4 {
+  background: #ece3f5;
+}
+
+.shikaku-cell.hue-5 {
+  background: #dff0ef;
+}
+
+.shikaku-cell.boxed.et {
+  border-top: 2px solid var(--ink);
+}
+
+.shikaku-cell.boxed.eb {
+  border-bottom: 2px solid var(--ink);
+}
+
+.shikaku-cell.boxed.el {
+  border-left: 2px solid var(--ink);
+}
+
+.shikaku-cell.boxed.er {
+  border-right: 2px solid var(--ink);
+}
+
+@media (min-width: 700px) {
+  .shikaku-grid {
+    width: min(100%, 540px);
+  }
+  .shikaku-grid {
+    margin-top: auto;
+    margin-bottom: auto;
+  }
+}
+
+:root[data-theme="dark"] .shikaku-cell.boxed {
+  color: #1b2733;
+}

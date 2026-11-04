@@ -1,0 +1,70 @@
+/* Lits: styles only this board uses. Loaded with its chunk. */
+
+.lt-grid {
+  align-self: center;
+  width: min(100%, 420px);
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  aspect-ratio: 1;
+  background: var(--card);
+}
+
+.lt-cell {
+  aspect-ratio: 1;
+  border: 0.5px solid var(--grid-line);
+  background: var(--card);
+  padding: 0;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: clamp(11px, 3vw, 18px);
+  line-height: 1;
+  color: transparent;
+}
+
+/* Unsure shading reads as pencil grey; a region that spells a real
+   tetromino flips to ink, so progress is visible letter by letter. */
+.lt-cell.on {
+  background: var(--ink-soft);
+  color: var(--card);
+}
+
+.lt-cell.set {
+  background: var(--indigo);
+  color: #fff;
+}
+
+.lt-cell.dud {
+  background: var(--rose);
+  color: #fff;
+}
+
+.lt-cell.clash {
+  box-shadow: inset 0 0 0 3px var(--amber);
+}
+
+.lt-cell.sq {
+  box-shadow: inset 0 0 0 3px var(--rose);
+}
+
+.lt-cell.reg-t {
+  border-top: 2px solid var(--ink);
+}
+
+.lt-cell.reg-l {
+  border-left: 2px solid var(--ink);
+}
+
+.lt-cell.reg-b {
+  border-bottom: 2px solid var(--ink);
+}
+
+.lt-cell.reg-r {
+  border-right: 2px solid var(--ink);
+}
+
+.lt-warn {
+  color: var(--rose);
+}

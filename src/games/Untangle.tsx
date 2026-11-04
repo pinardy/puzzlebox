@@ -1,9 +1,10 @@
 import { useMemo, useRef, useState } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Untangle.css";
 
 const NODES: Record<Diff, number> = { easy: 8, medium: 12, hard: 16 };
 const HELP =
@@ -41,7 +42,10 @@ function generateGraph(seed: string, n: number): { edges: Edge[]; start: number[
   for (const { a, b } of pairs) {
     const clash = edges.some(
       (e) =>
-        e.a !== a && e.a !== b && e.b !== a && e.b !== b &&
+        e.a !== a &&
+        e.a !== b &&
+        e.b !== a &&
+        e.b !== b &&
         segsCross(px[a], py[a], px[b], py[b], px[e.a], py[e.a], px[e.b], py[e.b])
     );
     if (!clash) edges.push({ a, b });
@@ -61,11 +65,23 @@ function generateGraph(seed: string, n: number): { edges: Edge[]; start: number[
 
 /** Proper segment intersection (shared endpoints don't count). */
 function segsCross(
-  ax: number, ay: number, bx: number, by: number,
-  cx: number, cy: number, dx: number, dy: number
+  ax: number,
+  ay: number,
+  bx: number,
+  by: number,
+  cx: number,
+  cy: number,
+  dx: number,
+  dy: number
 ): boolean {
-  const cross = (ox: number, oy: number, ux: number, uy: number, vx: number, vy: number) =>
-    (ux - ox) * (vy - oy) - (uy - oy) * (vx - ox);
+  const cross = (
+    ox: number,
+    oy: number,
+    ux: number,
+    uy: number,
+    vx: number,
+    vy: number
+  ) => (ux - ox) * (vy - oy) - (uy - oy) * (vx - ox);
   const d1 = cross(cx, cy, dx, dy, ax, ay);
   const d2 = cross(cx, cy, dx, dy, bx, by);
   const d3 = cross(ax, ay, bx, by, cx, cy);
@@ -77,12 +93,19 @@ function crossingEdges(pos: number[], edges: Edge[]): Set<number> {
   const bad = new Set<number>();
   for (let i = 0; i < edges.length; i++)
     for (let j = i + 1; j < edges.length; j++) {
-      const e = edges[i], f = edges[j];
+      const e = edges[i],
+        f = edges[j];
       if (e.a === f.a || e.a === f.b || e.b === f.a || e.b === f.b) continue;
       if (
         segsCross(
-          pos[e.a * 2], pos[e.a * 2 + 1], pos[e.b * 2], pos[e.b * 2 + 1],
-          pos[f.a * 2], pos[f.a * 2 + 1], pos[f.b * 2], pos[f.b * 2 + 1]
+          pos[e.a * 2],
+          pos[e.a * 2 + 1],
+          pos[e.b * 2],
+          pos[e.b * 2 + 1],
+          pos[f.a * 2],
+          pos[f.a * 2 + 1],
+          pos[f.b * 2],
+          pos[f.b * 2 + 1]
         )
       ) {
         bad.add(i);
@@ -98,11 +121,12 @@ interface SavedState {
 }
 
 export default function Untangle({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("untangle", (s, d) => ({
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>(
+    (s, d) => ({
       pos: generateGraph(`untangle-${s}`, NODES[d]).start,
       done: false
-    }));
+    })
+  );
   const { edges } = useMemo(
     () => generateGraph(`untangle-${seed}`, NODES[diff]),
     [seed, diff]
@@ -148,8 +172,7 @@ export default function Untangle({ onExit }: { onExit: () => void }) {
     const solved = crossingEdges(live, edges).size === 0;
     const next: SavedState = { pos: live, done: solved };
     setLive(null);
-    commit(next);
-    if (solved) recordResult("untangle", true);
+    commit(next, { outcome: solved ? "won" : undefined });
   }
 
   return (
@@ -202,10 +225,8 @@ export default function Untangle({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="untangle"
           won
           message="Untangled!"
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

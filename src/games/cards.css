@@ -1,0 +1,12 @@
+/* cards: styles only this board uses. Loaded with its chunk. */
+
+.kl-card.kl-back {
+  background: var(--indigo);
+  background-image: radial-gradient(
+    circle at 50% 50%,
+    rgba(255, 255, 255, 0.25) 12%,
+    transparent 13%
+  );
+  background-size: 10px 10px;
+  color: #fff;
+}

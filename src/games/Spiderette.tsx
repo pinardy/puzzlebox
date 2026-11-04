@@ -16,7 +16,6 @@ const HELP =
 export default function Spiderette({ onExit }: { onExit: () => void }) {
   return (
     <SpiderGame
-      game="spiderette"
       title="Spiderette"
       hint="Down by rank anywhere; same-suit runs move together."
       help={HELP}

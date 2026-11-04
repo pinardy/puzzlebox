@@ -1,10 +1,12 @@
 import { useMemo, useState } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { isRed, label, rank } from "../lib/cards";
-import { recordResult } from "../lib/storage";
+import { rank } from "../lib/cards";
+import { useGridNav } from "../lib/gridnav";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
+import "./MonteCarlo.css";
 
 const SIZE = 5;
 const CELLS = SIZE * SIZE;
@@ -60,11 +62,11 @@ function hasPair(grid: (number | null)[]): boolean {
 }
 
 export default function MonteCarlo({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle, playMs } = useGame<SavedState>(
-    "montecarlo",
-    (s) => deal(s)
+  const { seed, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>((s) =>
+    deal(s)
   );
   const [sel, setSel] = useState<number | null>(null);
+  const nav = useGridNav();
 
   /** Cells the held card can pair with, for the target highlight. */
   const targets = useMemo(() => {
@@ -86,7 +88,11 @@ export default function MonteCarlo({ onExit }: { onExit: () => void }) {
       return;
     }
     if (sel !== null && targets.has(i)) {
-      const next: SavedState = { ...saved, grid: saved.grid.slice(), stock: saved.stock.slice() };
+      const next: SavedState = {
+        ...saved,
+        grid: saved.grid.slice(),
+        stock: saved.stock.slice()
+      };
       next.grid[sel] = null;
       next.grid[i] = null;
       next.removed += 2;
@@ -95,13 +101,11 @@ export default function MonteCarlo({ onExit }: { onExit: () => void }) {
       if (!left && !next.stock.length) {
         next.done = true;
         next.won = true;
-        recordResult("montecarlo", true);
       } else if (!hasPair(next.grid)) {
         next.done = true;
         next.won = false;
-        recordResult("montecarlo", false);
       }
-      commit(next);
+      commit(next, { outcome: next.done ? (next.won ? "won" : "lost") : undefined });
       setSel(null);
       return;
     }
@@ -128,23 +132,18 @@ export default function MonteCarlo({ onExit }: { onExit: () => void }) {
         canUndo={canUndo && !saved.done}
       />
 
-      <div className="mc-grid" role="grid" aria-label="Monte Carlo layout">
+      <div className="mc-grid" role="grid" aria-label="Monte Carlo layout" {...nav}>
         {saved.grid.map((card, i) => (
-          <button
+          <PlayingCard
             key={i}
+            data-cell={i}
+            card={card}
             role="gridcell"
-            className={[
-              "kl-card mc-cell",
-              card === null ? "kl-empty" : "",
-              card !== null && isRed(card) ? "red" : "",
-              sel === i ? "selected" : "",
-              targets.has(i) ? "bc-target" : ""
-            ].join(" ")}
+            selected={sel === i}
+            className={targets.has(i) ? "mc-cell bc-target" : "mc-cell"}
             onClick={() => tap(i)}
-            aria-label={card === null ? "Empty" : label(card)}
-          >
-            {card === null ? "" : label(card)}
-          </button>
+            place={`Row ${Math.floor(i / SIZE) + 1}, column ${(i % SIZE) + 1}`}
+          />
         ))}
       </div>
 
@@ -157,14 +156,12 @@ export default function MonteCarlo({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="montecarlo"
           won={saved.won}
           message={
             saved.won
               ? "Every pair found — cleared!"
               : `No touching pairs left — ${saved.removed} of 52 discarded.`
           }
-          playMs={playMs}
           onNew={startNew}
           onExit={onExit}
         />

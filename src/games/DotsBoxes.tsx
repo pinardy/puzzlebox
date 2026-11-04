@@ -1,9 +1,10 @@
 import { useEffect, useMemo, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./DotsBoxes.css";
 
 const SIZE: Record<Diff, number> = { easy: 4, medium: 5, hard: 5 };
 const HELP =
@@ -37,7 +38,8 @@ function fresh(n: number): SavedState {
 type Edge = { kind: "h" | "v"; i: number };
 
 const boxEdges = (b: number, n: number) => {
-  const r = Math.floor(b / n), c = b % n;
+  const r = Math.floor(b / n),
+    c = b % n;
   return {
     top: r * n + c,
     bottom: (r + 1) * n + c,
@@ -49,8 +51,10 @@ const boxEdges = (b: number, n: number) => {
 function sidesOf(b: number, n: number, h: boolean[], v: boolean[]): number {
   const e = boxEdges(b, n);
   return (
-    (h[e.top] ? 1 : 0) + (h[e.bottom] ? 1 : 0) +
-    (v[e.left] ? 1 : 0) + (v[e.right] ? 1 : 0)
+    (h[e.top] ? 1 : 0) +
+    (h[e.bottom] ? 1 : 0) +
+    (v[e.left] ? 1 : 0) +
+    (v[e.right] ? 1 : 0)
   );
 }
 
@@ -63,7 +67,8 @@ function openEdges(h: boolean[], v: boolean[]): Edge[] {
 
 /** Boxes this edge would complete. */
 function completedBy(e: Edge, n: number, h: boolean[], v: boolean[]): number[] {
-  const nh = h.slice(), nv = v.slice();
+  const nh = h.slice(),
+    nv = v.slice();
   if (e.kind === "h") nh[e.i] = true;
   else nv[e.i] = true;
   const out: number[] = [];
@@ -75,7 +80,8 @@ function completedBy(e: Edge, n: number, h: boolean[], v: boolean[]): number[] {
 /** How many boxes a greedy opponent could run off after this edge — the
  *  cost of opening a chain. */
 function giveaway(e: Edge, n: number, h0: boolean[], v0: boolean[]): number {
-  const h = h0.slice(), v = v0.slice();
+  const h = h0.slice(),
+    v = v0.slice();
   if (e.kind === "h") h[e.i] = true;
   else v[e.i] = true;
   let taken = 0;
@@ -98,7 +104,12 @@ function giveaway(e: Edge, n: number, h0: boolean[], v0: boolean[]): number {
 
 /** Free boxes first; then a line that gifts nothing; then, when every
  *  line gives something away, the one that gives away least. */
-function chooseMove(state: SavedState, n: number, diff: Diff, rng: () => number): Edge | null {
+function chooseMove(
+  state: SavedState,
+  n: number,
+  diff: Diff,
+  rng: () => number
+): Edge | null {
   const { h, v } = state;
   const open = shuffled(openEdges(h, v), rng);
   if (!open.length) return null;
@@ -108,7 +119,8 @@ function chooseMove(state: SavedState, n: number, diff: Diff, rng: () => number)
   if (diff === "easy") return open[0];
 
   const safe = open.filter((e) => {
-    const nh = h.slice(), nv = v.slice();
+    const nh = h.slice(),
+      nv = v.slice();
     if (e.kind === "h") nh[e.i] = true;
     else nv[e.i] = true;
     for (let b = 0; b < n * n; b++) if (sidesOf(b, n, nh, nv) === 3) return false;
@@ -130,14 +142,14 @@ function chooseMove(state: SavedState, n: number, diff: Diff, rng: () => number)
 }
 
 export default function DotsBoxes({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, newPuzzle, playMs } = useGame<SavedState>(
-    "dots",
-    (_s, d) => fresh(SIZE[d])
+  const { seed, diff, saved, commit, newPuzzle } = useGame<SavedState>((_s, d) =>
+    fresh(SIZE[d])
   );
   const n = SIZE[diff];
 
   const scores = useMemo(() => {
-    let you = 0, them = 0;
+    let you = 0,
+      them = 0;
     for (const o of saved.owner) {
       if (o === 0) you++;
       else if (o === 1) them++;
@@ -147,7 +159,8 @@ export default function DotsBoxes({ onExit }: { onExit: () => void }) {
 
   /** Draw an edge for `who`; closing a box keeps the turn. */
   function play(e: Edge, who: number) {
-    const h = saved.h.slice(), v = saved.v.slice();
+    const h = saved.h.slice(),
+      v = saved.v.slice();
     if (e.kind === "h") h[e.i] = true;
     else v[e.i] = true;
     const owner = saved.owner.slice();
@@ -169,8 +182,10 @@ export default function DotsBoxes({ onExit }: { onExit: () => void }) {
       done: full,
       won: full && you > them
     };
-    commit(next, { undoable: false });
-    if (full) recordResult("dots", next.won);
+    commit(next, {
+      undoable: false,
+      outcome: full ? (next.won ? "won" : "lost") : undefined
+    });
   }
 
   useEffect(() => {
@@ -193,11 +208,7 @@ export default function DotsBoxes({ onExit }: { onExit: () => void }) {
     <div className="game game-dots">
       <GameHeader title="Dots & Boxes" onExit={onExit} onNew={() => newPuzzle()} />
       <p className="game-hint">
-        {saved.done
-          ? "Game over."
-          : yourTurn
-            ? "Your line."
-            : "Opponent thinking…"}
+        {saved.done ? "Game over." : yourTurn ? "Your line." : "Opponent thinking…"}
       </p>
       <GameTools diff={diff} onDiff={newPuzzle} help={HELP} />
 
@@ -217,9 +228,10 @@ export default function DotsBoxes({ onExit }: { onExit: () => void }) {
         aria-label="Dots and boxes"
       >
         {Array.from({ length: span * span }, (_, k) => {
-          const gr = Math.floor(k / span), gc = k % span;
+          const gr = Math.floor(k / span),
+            gc = k % span;
           if (gr % 2 === 0 && gc % 2 === 0)
-            return <span key={k} className="db-dot" />;
+            return <span key={k} className="db-dot" aria-hidden="true" />;
           if (gr % 2 === 0) {
             const i = (gr / 2) * n + (gc - 1) / 2;
             return (
@@ -228,7 +240,9 @@ export default function DotsBoxes({ onExit }: { onExit: () => void }) {
                 className={`db-edge db-h${saved.h[i] ? " on" : ""}`}
                 disabled={saved.h[i] || !yourTurn}
                 onClick={() => play({ kind: "h", i }, 0)}
-                aria-label="Horizontal line"
+                aria-label={`Horizontal line, row ${gr / 2 + 1}, between dots ${(gc + 1) / 2} and ${
+                  (gc + 3) / 2
+                }${saved.h[i] ? ", drawn" : ""}`}
               />
             );
           }
@@ -240,14 +254,23 @@ export default function DotsBoxes({ onExit }: { onExit: () => void }) {
                 className={`db-edge db-v${saved.v[i] ? " on" : ""}`}
                 disabled={saved.v[i] || !yourTurn}
                 onClick={() => play({ kind: "v", i }, 0)}
-                aria-label="Vertical line"
+                aria-label={`Vertical line, column ${gc / 2 + 1}, between dots ${(gr + 1) / 2} and ${
+                  (gr + 3) / 2
+                }${saved.v[i] ? ", drawn" : ""}`}
               />
             );
           }
           const b = ((gr - 1) / 2) * n + (gc - 1) / 2;
           const o = saved.owner[b];
           return (
-            <span key={k} className={`db-box${o === 0 ? " you" : o === 1 ? " them" : ""}`}>
+            <span
+              key={k}
+              className={`db-box${o === 0 ? " you" : o === 1 ? " them" : ""}`}
+              role="img"
+              aria-label={`Box row ${Math.floor(b / n) + 1}, column ${(b % n) + 1}: ${
+                o === 0 ? "yours" : o === 1 ? "opponent's" : "open"
+              }`}
+            >
               {o === 0 ? "●" : o === 1 ? "○" : ""}
             </span>
           );
@@ -257,7 +280,6 @@ export default function DotsBoxes({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="dots"
           won={saved.won}
           message={
             scores.you === scores.them
@@ -266,7 +288,6 @@ export default function DotsBoxes({ onExit }: { onExit: () => void }) {
                 ? `You win ${scores.you}–${scores.them}!`
                 : `Lost ${scores.you}–${scores.them}`
           }
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

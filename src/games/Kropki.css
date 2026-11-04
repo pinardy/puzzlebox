@@ -1,0 +1,16 @@
+/* Kropki: styles only this board uses. Loaded with its chunk. */
+
+.kropki-dot {
+  display: grid;
+  place-items: center;
+  font-size: clamp(11px, 3vw, 15px);
+  color: var(--ink);
+}
+
+.kropki-cell {
+  color: var(--rose);
+}
+
+.kropki-cell.selected {
+  outline-color: var(--rose);
+}

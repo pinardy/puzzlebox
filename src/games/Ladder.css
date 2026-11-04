@@ -1,0 +1,33 @@
+/* Ladder: styles only this board uses. Loaded with its chunk. */
+
+.ld-status {
+  display: flex;
+  justify-content: space-between;
+  align-self: center;
+  width: min(100%, 280px);
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+.ld-target {
+  font-family: var(--mono);
+  color: var(--green);
+  letter-spacing: 1px;
+}
+
+.ld-grid {
+  margin: 4px 0;
+}
+
+.ld-cell {
+  cursor: pointer;
+}
+
+.ld-cell:disabled {
+  cursor: default;
+}
+
+.ld-cell.ld-slot {
+  outline: 3px solid var(--blue);
+  outline-offset: -1px;
+}

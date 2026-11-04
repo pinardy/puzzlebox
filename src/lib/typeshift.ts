@@ -45,9 +45,7 @@ export function makeShift(seed: string, count: number): Shift {
   // Fall back to the first `count` words; the strips are still consistent.
   const picked = FIVES.slice(0, count);
   return {
-    cols: Array.from({ length: LEN }, (_, i) => [
-      ...new Set(picked.map((w) => w[i]))
-    ]),
+    cols: Array.from({ length: LEN }, (_, i) => [...new Set(picked.map((w) => w[i]))]),
     source: picked
   };
 }

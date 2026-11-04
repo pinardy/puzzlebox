@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { makeRng } from "../lib/rng";
 import { LetterState, scoreGuess } from "../lib/words";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
+import { cellLabel } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result, Toast } from "./ui";
+import "./Equation.css";
 
 const ROWS = 6;
 const LEN = 8;
@@ -29,7 +31,7 @@ function evalExpr(s: string): number | null {
     } else ops.push(parts[i]);
   }
   // × and ÷ first…
-  for (let i = 0; i < ops.length; ) {
+  for (let i = 0; i < ops.length;) {
     if (ops[i] === "×" || ops[i] === "÷") {
       if (ops[i] === "÷" && (nums[i + 1] === 0 || nums[i] % nums[i + 1] !== 0))
         return null;
@@ -73,10 +75,13 @@ function answerFor(seed: string, diff: Diff): string {
     const twoOps = diff === "hard" ? rng() < 0.7 : diff === "medium" && rng() < 0.3;
     let s: string;
     if (twoOps) {
-      const a = int(1, 99), b = int(1, 12), c = int(1, 99);
+      const a = int(1, 99),
+        b = int(1, 12),
+        c = int(1, 99);
       s = `${a}${ops[int(0, ops.length - 1)]}${b}${ops[int(0, ops.length - 1)]}${c}`;
     } else {
-      const a = int(1, 999), b = int(1, 999);
+      const a = int(1, 999),
+        b = int(1, 999);
       s = `${a}${ops[int(0, ops.length - 1)]}${b}`;
     }
     const val = evalExpr(s);
@@ -93,12 +98,25 @@ interface SavedState {
 }
 
 const KEY_ROWS = ["1234567890", "+-×÷="];
+const SAY_CHAR: Record<string, string> = {
+  "+": "plus",
+  "-": "minus",
+  "×": "times",
+  "÷": "divided by",
+  "=": "equals"
+};
+const SAY_SCORE: Record<LetterState, string> = {
+  correct: "right spot",
+  present: "elsewhere",
+  absent: "not in the equation"
+};
 
 export default function Equation({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, newPuzzle, playMs } = useGame<SavedState>(
-    "equation",
-    () => ({ guesses: [], done: false, won: false })
-  );
+  const { seed, diff, saved, commit, newPuzzle } = useGame<SavedState>(() => ({
+    guesses: [],
+    done: false,
+    won: false
+  }));
   const answer = useMemo(() => answerFor(seed, diff), [seed, diff]);
   const [current, setCurrent] = useState("");
   const [shake, setShake] = useState(false);
@@ -139,9 +157,8 @@ export default function Equation({ onExit }: { onExit: () => void }) {
     const guesses = [...saved.guesses, current];
     const won = current === answer;
     const done = won || guesses.length >= ROWS;
-    commit({ guesses, done, won });
+    commit({ guesses, done, won }, done ? { outcome: won ? "won" : "lost" } : undefined);
     setCurrent("");
-    if (done) recordResult("equation", won);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current, saved, answer]);
 
@@ -150,8 +167,7 @@ export default function Equation({ onExit }: { onExit: () => void }) {
       if (saved.done) return;
       if (k === "enter") submit();
       else if (k === "back") setCurrent((c) => c.slice(0, -1));
-      else if (/^[\d+\-×÷=]$/.test(k) && current.length < LEN)
-        setCurrent((c) => c + k);
+      else if (/^[\d+\-×÷=]$/.test(k) && current.length < LEN) setCurrent((c) => c + k);
     },
     [saved.done, submit, current.length]
   );
@@ -196,6 +212,12 @@ export default function Equation({ onExit }: { onExit: () => void }) {
                 <div
                   key={c}
                   role="gridcell"
+                  aria-label={cellLabel(
+                    r * LEN + c,
+                    LEN,
+                    chars[c] && (SAY_CHAR[chars[c]] ?? chars[c]),
+                    score && SAY_SCORE[score[c]]
+                  )}
                   className={`word-cell${score ? ` is-${score[c]}` : ""}${
                     chars[c] ? " filled" : ""
                   }`}
@@ -226,13 +248,18 @@ export default function Equation({ onExit }: { onExit: () => void }) {
                   key={k}
                   className={`key${st ? ` is-${st}` : ""}`}
                   onClick={() => onKey(k)}
+                  aria-label={`${SAY_CHAR[k] ?? k}${st ? `, ${SAY_SCORE[st]}` : ""}`}
                 >
                   {k}
                 </button>
               );
             })}
             {i === 1 && (
-              <button className="key key-wide" onClick={() => onKey("back")}>
+              <button
+                className="key key-wide"
+                onClick={() => onKey("back")}
+                aria-label="Backspace"
+              >
                 ⌫
               </button>
             )}
@@ -243,10 +270,8 @@ export default function Equation({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="equation"
           won={saved.won}
           message={saved.won ? "Balanced!" : `It was ${answer}`}
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { dealNim, machineMove, type NimMove } from "../lib/nim";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Nim.css";
 
 const HEAPS: Record<Diff, number> = { easy: 3, medium: 4, hard: 5 };
 const MAX: Record<Diff, number> = { easy: 5, medium: 7, hard: 9 };
@@ -37,8 +38,8 @@ const fresh = (seed: string, d: Diff): SavedState => ({
 const describe = (m: NimMove) => `took ${m.take} from heap ${m.heap + 1}`;
 
 export default function Nim({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("nim", fresh);
+  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>(fresh);
   const [hover, setHover] = useState<NimMove | null>(null);
 
   // The reply is keyed on the committed state, so a doubled effect run in
@@ -54,9 +55,8 @@ export default function Nim({ onExit }: { onExit: () => void }) {
       const cleared = heaps.every((h) => h === 0);
       commit(
         { heaps, turn: "you", last: mv, tip: null, done: cleared, won: false },
-        { undoable: false }
+        { undoable: false, outcome: cleared ? "lost" : undefined }
       );
-      if (cleared) recordResult("nim", false);
     }, REPLY_MS);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -70,15 +70,17 @@ export default function Nim({ onExit }: { onExit: () => void }) {
     const heaps = saved.heaps.slice();
     heaps[i] = j;
     const cleared = heaps.every((h) => h === 0);
-    commit({
-      heaps,
-      turn: cleared ? "you" : "machine",
-      last: null,
-      tip: null,
-      done: cleared,
-      won: cleared
-    });
-    if (cleared) recordResult("nim", true);
+    commit(
+      {
+        heaps,
+        turn: cleared ? "you" : "machine",
+        last: null,
+        tip: null,
+        done: cleared,
+        won: cleared
+      },
+      { outcome: cleared ? "won" : undefined }
+    );
     setHover(null);
   }
 
@@ -137,9 +139,7 @@ export default function Nim({ onExit }: { onExit: () => void }) {
                   const doomed =
                     hover !== null && hover.heap === i && h - hover.take <= j;
                   const tipped =
-                    saved.tip !== null &&
-                    saved.tip.heap === i &&
-                    h - saved.tip.take <= j;
+                    saved.tip !== null && saved.tip.heap === i && h - saved.tip.take <= j;
                   return (
                     <button
                       key={j}
@@ -175,12 +175,10 @@ export default function Nim({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="nim"
           won={saved.won}
           message={
             saved.won ? "You took the last counter!" : "The machine took the last one."
           }
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

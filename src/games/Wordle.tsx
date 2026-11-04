@@ -2,13 +2,20 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { makeRng } from "../lib/rng";
 import { ANSWERS, LetterState, scoreGuess } from "../lib/words";
 import { COMMON4 } from "../lib/words4";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result, Toast } from "./ui";
+import "./Wordle.css";
 
 const ROWS = 6;
 const LEN: Record<Diff, number> = { easy: 4, medium: 5, hard: 5 };
+const STATE_LABEL: Record<LetterState, string> = {
+  correct: "correct position",
+  present: "in the word, wrong position",
+  absent: "not in the word"
+};
+
 const KEY_ROWS = ["qwertyuiop", "asdfghjkl", "zxcvbnm"];
 const HELP =
   "Guess the word within six tries. Green is the right letter in the " +
@@ -54,13 +61,14 @@ function hardModeViolation(
 }
 
 export default function Wordle({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, newPuzzle, playMs } =
-    useGame<SavedState>("word", (_s, d) => ({
+  const { seed, diff, saved, commit, commitHint, newPuzzle } = useGame<SavedState>(
+    (_s, d) => ({
       guesses: [],
       revealed: Array(LEN[d]).fill(null),
       done: false,
       won: false
-    }));
+    })
+  );
   const cols = LEN[diff];
   const answer = useMemo(() => answerFor(seed, diff), [seed, diff]);
   // Slots saved before hints existed lack `revealed`.
@@ -109,9 +117,11 @@ export default function Wordle({ onExit }: { onExit: () => void }) {
     const guesses = [...saved.guesses, current];
     const won = current === answer;
     const done = won || guesses.length >= ROWS;
-    commit({ ...saved, guesses, done, won });
+    commit(
+      { ...saved, guesses, done, won },
+      { outcome: done ? (won ? "won" : "lost") : undefined }
+    );
     setCurrent("");
-    if (done) recordResult("word", won);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current, saved, answer, diff, cols]);
 
@@ -120,8 +130,7 @@ export default function Wordle({ onExit }: { onExit: () => void }) {
       if (saved.done) return;
       if (k === "enter") submit();
       else if (k === "back") setCurrent((c) => c.slice(0, -1));
-      else if (/^[A-Z]$/.test(k) && current.length < cols)
-        setCurrent((c) => c + k);
+      else if (/^[A-Z]$/.test(k) && current.length < cols) setCurrent((c) => c + k);
     },
     [saved.done, submit, current.length, cols]
   );
@@ -173,7 +182,12 @@ export default function Wordle({ onExit }: { onExit: () => void }) {
         {anyRevealed && !saved.done && (
           <div className="word-row" role="row" aria-label="Revealed letters">
             {revealed.map((c, i) => (
-              <div key={i} className={`word-cell hint-reveal${c ? " filled" : ""}`}>
+              <div
+                key={i}
+                role="gridcell"
+                aria-label={c ? `Letter ${i + 1} is ${c}` : `Letter ${i + 1} unknown`}
+                className={`word-cell hint-reveal${c ? " filled" : ""}`}
+              >
                 {c ?? ""}
               </div>
             ))}
@@ -194,6 +208,13 @@ export default function Wordle({ onExit }: { onExit: () => void }) {
                 <div
                   key={c}
                   role="gridcell"
+                  aria-label={
+                    letters[c]
+                      ? `Row ${r + 1}, letter ${letters[c]}${
+                          score ? `, ${STATE_LABEL[score[c]]}` : ""
+                        }`
+                      : `Row ${r + 1}, empty`
+                  }
                   className={`word-cell${score ? ` is-${score[c]}` : ""}${
                     letters[c] ? " filled" : ""
                   }`}
@@ -208,7 +229,7 @@ export default function Wordle({ onExit }: { onExit: () => void }) {
         {saved.done && !saved.won && (
           <div className="word-row" role="row" aria-label="The answer">
             {answer.split("").map((c, i) => (
-              <div key={i} className="word-cell filled answer-cell">
+              <div key={i} role="gridcell" className="word-cell filled answer-cell">
                 {c}
               </div>
             ))}
@@ -218,7 +239,7 @@ export default function Wordle({ onExit }: { onExit: () => void }) {
 
       <Toast message={toast} />
 
-      <div className="keyboard">
+      <div className="keyboard" role="group" aria-label="Keyboard">
         {KEY_ROWS.map((row, i) => (
           <div className="key-row" key={row}>
             {i === 2 && (
@@ -234,13 +255,18 @@ export default function Wordle({ onExit }: { onExit: () => void }) {
                   key={k}
                   className={`key${st ? ` is-${st}` : ""}`}
                   onClick={() => onKey(K)}
+                  aria-label={st ? `${K}, ${STATE_LABEL[st]}` : K}
                 >
                   {K}
                 </button>
               );
             })}
             {i === 2 && (
-              <button className="key key-wide" onClick={() => onKey("back")}>
+              <button
+                className="key key-wide"
+                onClick={() => onKey("back")}
+                aria-label="Delete letter"
+              >
                 ⌫
               </button>
             )}
@@ -251,10 +277,10 @@ export default function Wordle({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="word"
           won={saved.won}
-          message={saved.won ? winMessage(saved.guesses.length) : `The word was ${answer}`}
-          playMs={playMs}
+          message={
+            saved.won ? winMessage(saved.guesses.length) : `The word was ${answer}`
+          }
           onNew={() => startNew()}
           onExit={onExit}
         />

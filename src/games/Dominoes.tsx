@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useGridNav } from "../lib/gridnav";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Dominoes.css";
 
 // A full double-N set tiles a (N+1) × (N+2) grid exactly.
 const MAX_PIP: Record<Diff, number> = { easy: 4, medium: 5, hard: 6 };
@@ -18,12 +20,15 @@ interface Puzzle {
   cols: number;
   values: number[];
   maxPip: number;
+  /** The tiling the pairs were dealt onto (one valid answer). */
+  tiles: [number, number][];
 }
 
 /** Tile the grid with dominoes by randomized backtracking, then deal the
  *  full pair set onto the tiles. Solvable by construction. */
 function generateDominoes(seed: string, maxPip: number): Puzzle {
-  const rows = maxPip + 1, cols = maxPip + 2;
+  const rows = maxPip + 1,
+    cols = maxPip + 2;
   const rng = makeRng(seed);
   const total = rows * cols;
 
@@ -32,7 +37,8 @@ function generateDominoes(seed: string, maxPip: number): Puzzle {
   const fill = (): boolean => {
     const at = owner.indexOf(-1);
     if (at === -1) return true;
-    const r = Math.floor(at / cols), c = at % cols;
+    const r = Math.floor(at / cols),
+      c = at % cols;
     const options: number[] = [];
     if (c < cols - 1 && owner[at + 1] === -1) options.push(at + 1);
     if (r < rows - 1 && owner[at + cols] === -1) options.push(at + cols);
@@ -48,16 +54,20 @@ function generateDominoes(seed: string, maxPip: number): Puzzle {
   fill();
 
   const pairs: [number, number][] = [];
-  for (let a = 0; a <= maxPip; a++)
-    for (let b = a; b <= maxPip; b++) pairs.push([a, b]);
+  for (let a = 0; a <= maxPip; a++) for (let b = a; b <= maxPip; b++) pairs.push([a, b]);
   const dealt = shuffled(pairs, rng);
   const values = Array(total).fill(0);
   tiles.forEach(([a, b], k) => {
     const [x, y] = dealt[k];
-    if (rng() < 0.5) { values[a] = x; values[b] = y; }
-    else { values[a] = y; values[b] = x; }
+    if (rng() < 0.5) {
+      values[a] = x;
+      values[b] = y;
+    } else {
+      values[a] = y;
+      values[b] = x;
+    }
   });
-  return { rows, cols, values, maxPip };
+  return { rows, cols, values, maxPip, tiles };
 }
 
 type Placed = [number, number]; // two adjacent cell indices
@@ -68,8 +78,8 @@ interface SavedState {
 }
 
 export default function Dominoes({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("dominoes", () => ({ placed: [], done: false }));
+  const { seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>(() => ({ placed: [], done: false }));
   const maxPip = MAX_PIP[diff];
   const puzzle = useMemo(
     () => generateDominoes(`dominoes-${seed}`, maxPip),
@@ -81,7 +91,10 @@ export default function Dominoes({ onExit }: { onExit: () => void }) {
   /** cell → placed-domino index */
   const placedAt = useMemo(() => {
     const map = new Map<number, number>();
-    saved.placed.forEach(([a, b], k) => { map.set(a, k); map.set(b, k); });
+    saved.placed.forEach(([a, b], k) => {
+      map.set(a, k);
+      map.set(b, k);
+    });
     return map;
   }, [saved.placed]);
 
@@ -102,20 +115,17 @@ export default function Dominoes({ onExit }: { onExit: () => void }) {
     return out;
   }, [maxPip]);
 
+  const solved =
+    placedAt.size === rows * cols && allPairs.every((k) => pairCounts.get(k) === 1);
   useEffect(() => {
-    if (saved.done) return;
-    const covered = placedAt.size === rows * cols;
-    const exact = allPairs.every((k) => pairCounts.get(k) === 1);
-    if (covered && exact) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("dominoes", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [placedAt, pairCounts, allPairs, saved, rows, cols]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   function adjacent(a: number, b: number): boolean {
-    const ra = Math.floor(a / cols), ca = a % cols;
-    const rb = Math.floor(b / cols), cb = b % cols;
+    const ra = Math.floor(a / cols),
+      ca = a % cols;
+    const rb = Math.floor(b / cols),
+      cb = b % cols;
     return Math.abs(ra - rb) + Math.abs(ca - cb) === 1;
   }
 
@@ -130,10 +140,30 @@ export default function Dominoes({ onExit }: { onExit: () => void }) {
       setAnchor(i);
       return;
     }
-    if (anchor === i) { setAnchor(null); return; }
+    if (anchor === i) {
+      setAnchor(null);
+      return;
+    }
     setAnchor(null);
     if (at !== undefined || !adjacent(anchor, i)) return;
     commit({ ...saved, placed: [...saved.placed, [anchor, i]] });
+  }
+
+  const nav = useGridNav();
+
+  /** Place one domino of the generated tiling, splitting any in its way. */
+  function hint() {
+    if (saved.done) return;
+    const has = (a: number, b: number) =>
+      saved.placed.some(([x, y]) => (x === a && y === b) || (x === b && y === a));
+    const missing = puzzle.tiles.filter(([a, b]) => !has(a, b));
+    if (!missing.length) return;
+    const [a, b] = missing[Math.floor(Math.random() * missing.length)];
+    const placed = saved.placed.filter(
+      ([x, y]) => x !== a && x !== b && y !== a && y !== b
+    );
+    setAnchor(null);
+    commitHint({ ...saved, placed: [...placed, [a, b]] });
   }
 
   function startNew(d?: Diff) {
@@ -145,8 +175,7 @@ export default function Dominoes({ onExit }: { onExit: () => void }) {
     <div className="game game-dominoes">
       <GameHeader title="Dominoes" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
-        Tap two adjacent numbers to pair them; each domino appears exactly
-        once.
+        Tap two adjacent numbers to pair them; each domino appears exactly once.
       </p>
       <GameTools
         diff={diff}
@@ -154,6 +183,7 @@ export default function Dominoes({ onExit }: { onExit: () => void }) {
         help={HELP}
         onUndo={undo}
         canUndo={canUndo && !saved.done}
+        onHint={saved.done ? undefined : hint}
       />
 
       <div
@@ -161,12 +191,15 @@ export default function Dominoes({ onExit }: { onExit: () => void }) {
         style={{ "--cols": cols, "--rows": rows } as CSSProperties}
         role="grid"
         aria-label="Dominoes board"
+        {...nav}
       >
         {values.map((v, i) => {
           const k = placedAt.get(i);
           const mate =
             k !== undefined
-              ? saved.placed[k][0] === i ? saved.placed[k][1] : saved.placed[k][0]
+              ? saved.placed[k][0] === i
+                ? saved.placed[k][1]
+                : saved.placed[k][0]
               : null;
           const key =
             k !== undefined
@@ -179,6 +212,22 @@ export default function Dominoes({ onExit }: { onExit: () => void }) {
             <button
               key={i}
               role="gridcell"
+              data-cell={i}
+              aria-label={`Row ${Math.floor(i / cols) + 1}, column ${(i % cols) + 1}, ${v}, ${
+                mate === null
+                  ? anchor === i
+                    ? "selected"
+                    : "unpaired"
+                  : `paired with the ${
+                      mate === i + 1
+                        ? "right"
+                        : mate === i - 1
+                          ? "left"
+                          : mate === i + cols
+                            ? "cell below"
+                            : "cell above"
+                    }`
+              }${dup ? ", duplicate pair" : ""}`}
               className={[
                 "dom-cell",
                 k !== undefined ? "paired" : "",
@@ -214,10 +263,8 @@ export default function Dominoes({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="dominoes"
           won
           message="A perfect set!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

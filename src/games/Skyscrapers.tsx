@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { generateLatin } from "../lib/latin";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
-import { useGridKeys } from "../lib/keys";
+import { cellLabel, useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import { Numpad } from "./Numpad";
+import "./Skyscrapers.css";
 
 const SIZE: Record<Diff, number> = { easy: 4, medium: 5, hard: 6 };
 const HELP =
@@ -15,9 +17,13 @@ const HELP =
 
 /** Towers visible along a line of heights: each new maximum is visible. */
 function visible(line: number[]): number {
-  let max = 0, count = 0;
+  let max = 0,
+    count = 0;
   for (const v of line) {
-    if (v > max) { max = v; count++; }
+    if (v > max) {
+      max = v;
+      count++;
+    }
   }
   return count;
 }
@@ -47,8 +53,8 @@ interface SavedState {
 }
 
 export default function Skyscrapers({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("sky", (_s, d) => ({
+  const { seed, diff, saved, commit, commitHint, finish, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
       entries: Array(SIZE[d] * SIZE[d]).fill(0),
       done: false
     }));
@@ -66,9 +72,11 @@ export default function Skyscrapers({ onExit }: { onExit: () => void }) {
     for (let i = 0; i < n * n; i++) {
       const v = board[i];
       if (v === 0) continue;
-      const r = Math.floor(i / n), c = i % n;
+      const r = Math.floor(i / n),
+        c = i % n;
       for (let k = 0; k < n; k++) {
-        const row = r * n + k, col = k * n + c;
+        const row = r * n + k,
+          col = k * n + c;
         if (row !== i && board[row] === v) bad.add(i);
         if (col !== i && board[col] === v) bad.add(i);
       }
@@ -90,19 +98,15 @@ export default function Skyscrapers({ onExit }: { onExit: () => void }) {
     };
   }, [board, clues, n]);
 
+  const solved =
+    board.every((v) => v !== 0) &&
+    conflicts.size === 0 &&
+    [...clueOk.top, ...clueOk.bottom, ...clueOk.left, ...clueOk.right].every(
+      (ok) => ok === true
+    );
   useEffect(() => {
-    const allOk =
-      board.every((v) => v !== 0) &&
-      conflicts.size === 0 &&
-      [...clueOk.top, ...clueOk.bottom, ...clueOk.left, ...clueOk.right].every(
-        (ok) => ok === true
-      );
-    if (!saved.done && allOk) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("sky", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [board, conflicts, clueOk, saved]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   function setCell(idx: number, val: number) {
     if (saved.done) return;
@@ -136,13 +140,30 @@ export default function Skyscrapers({ onExit }: { onExit: () => void }) {
     `sky-clue${ok === true ? " ok" : ok === false ? " bad" : ""}`;
 
   const G = n + 2;
+  /** An edge clue, named for screen readers: "Column 2 from the top: 3
+   *  visible". */
+  const clue = (k: number, side: keyof typeof clues, at: number, line: string) => {
+    const ok = clueOk[side][at];
+    return (
+      <span
+        key={k}
+        className={clueClass(ok)}
+        role="gridcell"
+        aria-label={`${line === "row" ? "Row" : "Column"} ${at + 1} from the ${side}: ${
+          clues[side][at]
+        } visible${ok === true ? ", met" : ok === false ? ", broken" : ""}`}
+      >
+        {clues[side][at]}
+      </span>
+    );
+  };
 
   return (
     <div className="game game-sky">
       <GameHeader title="Skyscrapers" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
-        Heights 1–{n} once per row and column. Edge numbers count the towers
-        visible from that side.
+        Heights 1–{n} once per row and column. Edge numbers count the towers visible from
+        that side.
       </p>
       <GameTools
         diff={diff}
@@ -160,7 +181,8 @@ export default function Skyscrapers({ onExit }: { onExit: () => void }) {
         aria-label="Skyscrapers board"
       >
         {Array.from({ length: G * G }).map((_, k) => {
-          const gr = Math.floor(k / G), gc = k % G;
+          const gr = Math.floor(k / G),
+            gc = k % G;
           const inner = gr > 0 && gr <= n && gc > 0 && gc <= n;
           if (inner) {
             const i = (gr - 1) * n + (gc - 1);
@@ -173,49 +195,30 @@ export default function Skyscrapers({ onExit }: { onExit: () => void }) {
                   selected === i ? "selected" : "",
                   conflicts.has(i) ? "conflict" : ""
                 ].join(" ")}
+                aria-label={cellLabel(i, n, board[i], conflicts.has(i) && "conflict")}
+                aria-selected={selected === i}
                 onClick={() => setSelected(i)}
               >
                 {board[i] || ""}
               </button>
             );
           }
-          if (gr === 0 && gc > 0 && gc <= n)
-            return <span key={k} className={clueClass(clueOk.top[gc - 1])}>{clues.top[gc - 1]}</span>;
+          if (gr === 0 && gc > 0 && gc <= n) return clue(k, "top", gc - 1, "column");
           if (gr === G - 1 && gc > 0 && gc <= n)
-            return <span key={k} className={clueClass(clueOk.bottom[gc - 1])}>{clues.bottom[gc - 1]}</span>;
-          if (gc === 0 && gr > 0 && gr <= n)
-            return <span key={k} className={clueClass(clueOk.left[gr - 1])}>{clues.left[gr - 1]}</span>;
-          if (gc === G - 1 && gr > 0 && gr <= n)
-            return <span key={k} className={clueClass(clueOk.right[gr - 1])}>{clues.right[gr - 1]}</span>;
+            return clue(k, "bottom", gc - 1, "column");
+          if (gc === 0 && gr > 0 && gr <= n) return clue(k, "left", gr - 1, "row");
+          if (gc === G - 1 && gr > 0 && gr <= n) return clue(k, "right", gr - 1, "row");
           return <span key={k} />;
         })}
       </div>
 
-      <div className="numpad numpad-5">
-        {Array.from({ length: n }, (_, d) => d + 1).map((d) => (
-          <button
-            key={d}
-            className="num-key"
-            onClick={() => selected !== null && setCell(selected, d)}
-          >
-            {d}
-          </button>
-        ))}
-        <button
-          className="num-key tool"
-          onClick={() => selected !== null && setCell(selected, 0)}
-        >
-          ⌫
-        </button>
-      </div>
+      <Numpad max={n} onDigit={(d) => selected !== null && setCell(selected, d)} />
 
       {saved.done && (
         <Result
           key={seed}
-          game="sky"
           won
           message="Skyline complete!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

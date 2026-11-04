@@ -1,0 +1,57 @@
+/* Sokoban: styles only this board uses. Loaded with its chunk. */
+
+.soko-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--card);
+  align-self: center;
+  width: min(100%, 420px);
+  aspect-ratio: 1;
+  margin: 6px 0 auto;
+}
+
+.soko-cell {
+  border: 0.5px solid var(--grid-line);
+  background: var(--card);
+  font-size: clamp(13px, 3.8vw, 22px);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  cursor: pointer;
+}
+
+.soko-cell.wall {
+  background: var(--ink);
+  border-color: #33424f;
+  cursor: default;
+}
+
+.soko-cell.goal {
+  background: #f3ecd9;
+}
+
+.soko-cell.box.on-goal {
+  background: #dff0d3;
+}
+
+@media (min-width: 700px) {
+  .soko-grid {
+    width: min(100%, 500px);
+  }
+}
+
+:root[data-theme="dark"] .soko-cell.wall {
+  background: #0b0e12;
+  border-color: #2b3540;
+}
+
+:root[data-theme="dark"] .soko-cell.goal {
+  background: #3a3420;
+}
+
+:root[data-theme="dark"] .soko-cell.box.on-goal {
+  background: #26331e;
+}

@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
 import { generateLatin } from "../lib/latin";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
-import { useGridKeys } from "../lib/keys";
+import { cellLabel, useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import { Numpad } from "./Numpad";
+import "./Futoshiki.css";
 
 const SIZE: Record<Diff, number> = { easy: 4, medium: 5, hard: 6 };
 const CLUES: Record<Diff, number> = { easy: 8, medium: 10, hard: 14 };
@@ -26,7 +28,12 @@ interface Puzzle {
   solution: number[];
 }
 
-function generateFutoshiki(seed: string, n: number, clues: number, givenCount: number): Puzzle {
+function generateFutoshiki(
+  seed: string,
+  n: number,
+  clues: number,
+  givenCount: number
+): Puzzle {
   const sol = generateLatin(`futo-${seed}`, n);
   const rng = makeRng(`futo-clues-${seed}`);
 
@@ -51,9 +58,20 @@ interface SavedState {
   done: boolean;
 }
 
+/** An inequality sign between two cells, named for screen readers. */
+function SignMark({ mark, names }: { mark: string; names: Record<string, string> }) {
+  return mark ? (
+    <span className="futo-sign" role="img" aria-label={names[mark]}>
+      {mark}
+    </span>
+  ) : (
+    <span className="futo-sign" aria-hidden="true" />
+  );
+}
+
 export default function Futoshiki({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("futoshiki", (_s, d) => ({
+  const { seed, diff, saved, commit, commitHint, finish, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
       entries: Array(SIZE[d] * SIZE[d]).fill(0),
       done: false
     }));
@@ -74,9 +92,11 @@ export default function Futoshiki({ onExit }: { onExit: () => void }) {
     for (let i = 0; i < n * n; i++) {
       const v = board[i];
       if (v === 0) continue;
-      const r = Math.floor(i / n), c = i % n;
+      const r = Math.floor(i / n),
+        c = i % n;
       for (let k = 0; k < n; k++) {
-        const row = r * n + k, col = k * n + c;
+        const row = r * n + k,
+          col = k * n + c;
         if (row !== i && board[row] === v) bad.add(i);
         if (col !== i && board[col] === v) bad.add(i);
       }
@@ -89,13 +109,10 @@ export default function Futoshiki({ onExit }: { onExit: () => void }) {
     return bad;
   }, [board, ineqs, n]);
 
+  const solved = board.every((v) => v !== 0) && conflicts.size === 0;
   useEffect(() => {
-    if (!saved.done && board.every((v) => v !== 0) && conflicts.size === 0) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("futoshiki", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [board, conflicts, saved]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   function setCell(idx: number, val: number) {
     if (saved.done || givens[idx] !== 0) return;
@@ -134,15 +151,39 @@ export default function Futoshiki({ onExit }: { onExit: () => void }) {
     return "";
   };
 
+  /** The inequalities touching a cell, in words, for its accessible name. */
+  const relations = (i: number): string | null => {
+    const out: string[] = [];
+    const sides: [number, string][] = [];
+    if (i % n < n - 1) sides.push([i + 1, "right"]);
+    if (i % n > 0) sides.push([i - 1, "left"]);
+    if (i + n < n * n) sides.push([i + n, "below"]);
+    if (i - n >= 0) sides.push([i - n, "above"]);
+    for (const [j, where] of sides)
+      for (const { lo, hi } of ineqs) {
+        if (lo === i && hi === j) out.push(`less than the cell ${where}`);
+        if (lo === j && hi === i) out.push(`greater than the cell ${where}`);
+      }
+    return out.length ? out.join(", ") : null;
+  };
+  const signName: Record<string, string> = {
+    "<": "left is less than right",
+    ">": "left is greater than right",
+    "∧": "upper is less than lower",
+    "∨": "upper is greater than lower"
+  };
+
   const G = 2 * n - 1;
-  const track = Array(n - 1).fill("1fr 0.42fr").join(" ") + " 1fr";
+  const track =
+    Array(n - 1)
+      .fill("1fr 0.42fr")
+      .join(" ") + " 1fr";
 
   return (
     <div className="game game-futoshiki">
       <GameHeader title="Futoshiki" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
-        Every row and column holds 1–{n} once; the arrows point at the smaller
-        number.
+        Every row and column holds 1–{n} once; the arrows point at the smaller number.
       </p>
       <GameTools
         diff={diff}
@@ -160,7 +201,8 @@ export default function Futoshiki({ onExit }: { onExit: () => void }) {
         aria-label="Futoshiki board"
       >
         {Array.from({ length: G * G }).map((_, k) => {
-          const gr = Math.floor(k / G), gc = k % G;
+          const gr = Math.floor(k / G),
+            gc = k % G;
           if (gr % 2 === 0 && gc % 2 === 0) {
             const i = (gr / 2) * n + gc / 2;
             const given = givens[i] !== 0;
@@ -174,6 +216,15 @@ export default function Futoshiki({ onExit }: { onExit: () => void }) {
                   selected === i ? "selected" : "",
                   conflicts.has(i) ? "conflict" : ""
                 ].join(" ")}
+                aria-label={cellLabel(
+                  i,
+                  n,
+                  board[i],
+                  given && "given",
+                  relations(i),
+                  conflicts.has(i) && "conflict"
+                )}
+                aria-selected={selected === i}
                 onClick={() => setSelected(i)}
               >
                 {board[i] || ""}
@@ -182,49 +233,23 @@ export default function Futoshiki({ onExit }: { onExit: () => void }) {
           }
           if (gr % 2 === 0 && gc % 2 === 1) {
             const a = (gr / 2) * n + (gc - 1) / 2;
-            return (
-              <span key={k} className="futo-sign" aria-hidden="true">
-                {sign(a, a + 1, true)}
-              </span>
-            );
+            return <SignMark key={k} mark={sign(a, a + 1, true)} names={signName} />;
           }
           if (gr % 2 === 1 && gc % 2 === 0) {
             const a = ((gr - 1) / 2) * n + gc / 2;
-            return (
-              <span key={k} className="futo-sign" aria-hidden="true">
-                {sign(a, a + n, false)}
-              </span>
-            );
+            return <SignMark key={k} mark={sign(a, a + n, false)} names={signName} />;
           }
           return <span key={k} />;
         })}
       </div>
 
-      <div className="numpad numpad-5">
-        {Array.from({ length: n }, (_, d) => d + 1).map((d) => (
-          <button
-            key={d}
-            className="num-key"
-            onClick={() => selected !== null && setCell(selected, d)}
-          >
-            {d}
-          </button>
-        ))}
-        <button
-          className="num-key tool"
-          onClick={() => selected !== null && setCell(selected, 0)}
-        >
-          ⌫
-        </button>
-      </div>
+      <Numpad max={n} onDigit={(d) => selected !== null && setCell(selected, d)} />
 
       {saved.done && (
         <Result
           key={seed}
-          game="futoshiki"
           won
           message="Inequalities satisfied!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

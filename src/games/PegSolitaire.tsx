@@ -1,8 +1,10 @@
 import { useMemo, useState, type CSSProperties } from "react";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import { useGridNav } from "../lib/gridnav";
+import "./PegSolitaire.css";
 
 const HELP =
   "A peg jumps over an adjacent peg into an empty hole, and the jumped peg " +
@@ -32,7 +34,14 @@ function boardFor(diff: Diff): Board {
     for (let r = 0; r < 5; r++) for (let c = 0; c <= r; c++) cells.push({ r, c });
     return {
       cells,
-      vectors: [[0, 2], [0, -2], [2, 0], [-2, 0], [2, 2], [-2, -2]],
+      vectors: [
+        [0, 2],
+        [0, -2],
+        [2, 0],
+        [-2, 0],
+        [2, 2],
+        [-2, -2]
+      ],
       emptyAt: 0,
       center: -1,
       winCenter: false,
@@ -47,7 +56,12 @@ function boardFor(diff: Diff): Board {
   const center = cells.findIndex((p) => p.r === 3 && p.c === 3);
   return {
     cells,
-    vectors: [[0, 2], [0, -2], [2, 0], [-2, 0]],
+    vectors: [
+      [0, 2],
+      [0, -2],
+      [2, 0],
+      [-2, 0]
+    ],
     emptyAt: center,
     center,
     winCenter: diff === "hard",
@@ -69,8 +83,9 @@ function fresh(diff: Diff): SavedState {
 }
 
 export default function PegSolitaire({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("pegs", (_s, d) => fresh(d));
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>(
+    (_s, d) => fresh(d)
+  );
   const board = useMemo(() => boardFor(diff), [diff]);
   const [picked, setPicked] = useState<number | null>(null);
 
@@ -82,8 +97,7 @@ export default function PegSolitaire({ onExit }: { onExit: () => void }) {
 
   // A pre-modes save is a 7×7 pegs array (49 booleans, invalid cells
   // included); its shape no longer matches, so restart cleanly.
-  const pegs =
-    saved.pegs.length === board.cells.length ? saved.pegs : fresh(diff).pegs;
+  const pegs = saved.pegs.length === board.cells.length ? saved.pegs : fresh(diff).pegs;
 
   function jumps(from: number, state: boolean[]): { to: number; over: number }[] {
     const { r, c } = board.cells[from];
@@ -121,10 +135,11 @@ export default function PegSolitaire({ onExit }: { onExit: () => void }) {
     const anyMove = next.some((p, k) => p && jumps(k, next).length > 0);
     const left = next.filter(Boolean).length;
     const done = !anyMove;
-    const won =
-      done && left === 1 && (!board.winCenter || next[board.center]);
-    commit({ pegs: next, moves: saved.moves + 1, done, won });
-    if (done) recordResult("pegs", won);
+    const won = done && left === 1 && (!board.winCenter || next[board.center]);
+    commit(
+      { pegs: next, moves: saved.moves + 1, done, won },
+      { outcome: done ? (won ? "won" : "lost") : undefined }
+    );
   }
 
   function startNew(d?: Diff) {
@@ -137,6 +152,9 @@ export default function PegSolitaire({ onExit }: { onExit: () => void }) {
     board.cells.forEach((p, i) => out[p.r].push(i));
     return out;
   }, [board]);
+
+  // Arrows walk the holes; Enter / Space picks or jumps (the button's click).
+  const nav = useGridNav();
 
   return (
     <div className="game game-pegs">
@@ -171,6 +189,7 @@ export default function PegSolitaire({ onExit }: { onExit: () => void }) {
         style={{ "--n": board.rows } as CSSProperties}
         role="grid"
         aria-label="Peg solitaire board"
+        {...nav}
       >
         {rows.map((row, r) => (
           <div key={r} className="pegs-row" role="row">
@@ -178,6 +197,7 @@ export default function PegSolitaire({ onExit }: { onExit: () => void }) {
               <button
                 key={i}
                 role="gridcell"
+                data-cell={i}
                 className={[
                   "peg-hole",
                   pegs[i] ? "peg" : "",
@@ -186,7 +206,11 @@ export default function PegSolitaire({ onExit }: { onExit: () => void }) {
                   i === board.center && board.winCenter ? "center" : ""
                 ].join(" ")}
                 onClick={() => tap(i)}
-                aria-label={pegs[i] ? "Peg" : "Empty hole"}
+                aria-label={`Row ${r + 1}, hole ${row.indexOf(i) + 1}, ${
+                  pegs[i] ? (picked === i ? "peg, picked up" : "peg") : "empty"
+                }${targets.has(i) ? ", can jump here" : ""}${
+                  i === board.center && board.winCenter ? ", centre" : ""
+                }`}
               />
             ))}
           </div>
@@ -196,7 +220,6 @@ export default function PegSolitaire({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="pegs"
           won={saved.won}
           message={
             saved.won
@@ -207,7 +230,6 @@ export default function PegSolitaire({ onExit }: { onExit: () => void }) {
                 ? "One peg left, but not in the centre"
                 : `No moves left — ${pegCount} pegs remain`
           }
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

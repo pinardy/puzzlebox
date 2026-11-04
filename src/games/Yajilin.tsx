@@ -1,6 +1,7 @@
 import { useEffect, useMemo, type CSSProperties } from "react";
+import { useGridNav } from "../lib/gridnav";
 import type { EdgeState } from "../lib/slither";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import {
   DIR_ARROW,
@@ -13,6 +14,7 @@ import {
 } from "../lib/yajilin";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Yajilin.css";
 
 const SIZE: Record<Diff, number> = { easy: 6, medium: 8, hard: 10 };
 const HELP =
@@ -37,50 +39,57 @@ const fresh = (n: number): SavedState => ({
 });
 
 export default function Yajilin({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("yajilin", (_s, d) => fresh(SIZE[d]));
+  const { seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => fresh(SIZE[d]));
   const n = SIZE[diff];
   const puzzle = useMemo(() => generateYajilin(`yajilin-${seed}`, n), [seed, n]);
 
   const view = useMemo(() => {
-    const deg = Array.from({ length: n * n }, (_, i) =>
-      cellDegree(n, saved.edges, i)
-    );
+    const deg = Array.from({ length: n * n }, (_, i) => cellDegree(n, saved.edges, i));
     // A cell is wrong when two shaded cells touch, when the loop runs into
     // a grey or shaded cell, or when a clue's ray holds too many shades.
     const bad = new Set<number>();
     for (let i = 0; i < n * n; i++) {
-      const r = Math.floor(i / n), c = i % n;
+      const r = Math.floor(i / n),
+        c = i % n;
       if (saved.shaded[i]) {
         if (deg[i] > 0) bad.add(i);
         for (const j of [c > 0 ? i - 1 : -1, r > 0 ? i - n : -1])
-          if (j >= 0 && saved.shaded[j]) { bad.add(i); bad.add(j); }
+          if (j >= 0 && saved.shaded[j]) {
+            bad.add(i);
+            bad.add(j);
+          }
       } else if (puzzle.clues[i] && deg[i] > 0) bad.add(i);
     }
-    let okClues = 0, total = 0;
+    let okClues = 0,
+      total = 0;
     const clueState = puzzle.clues.map((cl, i) => {
       if (!cl) return "";
       total++;
       const got = rayCount(n, i, cl.dir, saved.shaded);
-      if (got === cl.count) { okClues++; return "ok"; }
+      if (got === cl.count) {
+        okClues++;
+        return "ok";
+      }
       return got > cl.count ? "over" : "";
     });
     const shadedCount = saved.shaded.filter(Boolean).length;
     return { deg, bad, clueState, okClues, total, shadedCount };
   }, [n, saved.edges, saved.shaded, puzzle]);
 
+  const solved = useMemo(
+    () => yajilinSolved(puzzle, saved.edges, saved.shaded),
+    [puzzle, saved.edges, saved.shaded]
+  );
   useEffect(() => {
-    if (!saved.done && yajilinSolved(puzzle, saved.edges, saved.shaded)) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("yajilin", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [saved, puzzle]);
+    if (solved) finish();
+  }, [solved, finish]);
 
-  function tapEdge(kind: "h" | "v", idx: number) {
+  /** Cycle a segment empty → line → ✕ (`back` runs the cycle the other way). */
+  function tapEdge(kind: "h" | "v", idx: number, back = false) {
     if (saved.done) return;
     const edges = { h: saved.edges.h.slice(), v: saved.edges.v.slice() };
-    edges[kind][idx] = (edges[kind][idx] + 1) % 3;
+    edges[kind][idx] = (edges[kind][idx] + (back ? 2 : 1)) % 3;
     commit({ ...saved, edges });
   }
 
@@ -91,9 +100,52 @@ export default function Yajilin({ onExit }: { onExit: () => void }) {
     commit({ ...saved, shaded });
   }
 
+  // Cells and the segments between them are all focusable: cells are
+  // 0..n²-1, horizontal segments follow, then vertical ones. Arrows move
+  // to the nearest one on screen; Enter shades a cell or cycles a segment
+  // (Shift+Enter cycles a segment back).
+  const N2 = n * n,
+    H = n * (n - 1);
+  const nav = useGridNav((i, back) => {
+    if (i < N2) tapCell(i);
+    else if (i < N2 + H) tapEdge("h", i - N2, back);
+    else tapEdge("v", i - N2 - H, back);
+  });
+
+  /** Fix one cell or segment that disagrees with the generated answer. */
+  function hint() {
+    if (saved.done) return;
+    const sol = puzzle.solution;
+    const wrong: ["c" | "h" | "v", number][] = [];
+    saved.shaded.forEach((on, i) => {
+      if (!puzzle.clues[i] && on !== sol.shaded[i]) wrong.push(["c", i]);
+    });
+    saved.edges.h.forEach((m, i) => {
+      if ((m === 1) !== (sol.edges.h[i] === 1)) wrong.push(["h", i]);
+    });
+    saved.edges.v.forEach((m, i) => {
+      if ((m === 1) !== (sol.edges.v[i] === 1)) wrong.push(["v", i]);
+    });
+    if (!wrong.length) return;
+    const [kind, i] = wrong[Math.floor(Math.random() * wrong.length)];
+    if (kind === "c") {
+      const shaded = saved.shaded.slice();
+      shaded[i] = sol.shaded[i];
+      commitHint({ ...saved, shaded });
+      return;
+    }
+    const edges = { h: saved.edges.h.slice(), v: saved.edges.v.slice() };
+    edges[kind][i] = sol.edges[kind][i] === 1 ? 1 : 2;
+    commitHint({ ...saved, edges });
+  }
+
   const G = 2 * n - 1;
-  const track = Array(n - 1).fill("1fr 0.55fr").join(" ") + " 1fr";
+  const track =
+    Array(n - 1)
+      .fill("1fr 0.55fr")
+      .join(" ") + " 1fr";
   const edgeMark = (m: number) => (m === 1 ? "line" : m === 2 ? "off" : "");
+  const edgeState = (m: number) => (m === 1 ? "line" : m === 2 ? "crossed" : "empty");
   const edgeBad = (m: number, a: number, b: number) =>
     m === 1 && [a, b].some((i) => saved.shaded[i] || puzzle.clues[i]) ? " bad" : "";
 
@@ -109,6 +161,7 @@ export default function Yajilin({ onExit }: { onExit: () => void }) {
         help={HELP}
         onUndo={undo}
         canUndo={canUndo && !saved.done}
+        onHint={saved.done ? undefined : hint}
       />
 
       <div
@@ -116,14 +169,17 @@ export default function Yajilin({ onExit }: { onExit: () => void }) {
         style={{ gridTemplateColumns: track, gridTemplateRows: track } as CSSProperties}
         role="grid"
         aria-label="Yajilin board"
+        {...nav}
       >
         {Array.from({ length: G * G }).map((_, k) => {
-          const gr = Math.floor(k / G), gc = k % G;
-          const r = gr >> 1, c = gc >> 1;
+          const gr = Math.floor(k / G),
+            gc = k % G;
+          const r = gr >> 1,
+            c = gc >> 1;
 
           if (gr % 2 === 0 && gc % 2 === 0) {
             const i = r * n + c;
-            const where = `Row ${r + 1} column ${c + 1}`;
+            const where = `Row ${r + 1}, column ${c + 1}`;
             const clue = puzzle.clues[i];
             if (clue) {
               const state = view.clueState[i];
@@ -152,6 +208,7 @@ export default function Yajilin({ onExit }: { onExit: () => void }) {
               <button
                 key={k}
                 role="gridcell"
+                data-cell={i}
                 className={[
                   "yj-cell",
                   shaded ? "shade" : "",
@@ -160,7 +217,7 @@ export default function Yajilin({ onExit }: { onExit: () => void }) {
                 ].join(" ")}
                 onClick={() => tapCell(i)}
                 aria-pressed={shaded}
-                aria-label={`${where}, ${shaded ? "shaded" : "empty"}${
+                aria-label={`${where}, ${shaded ? "shaded" : view.deg[i] === 2 ? "on the loop" : "empty"}${
                   flag ? ", conflict" : ""
                 }`}
               >
@@ -175,9 +232,10 @@ export default function Yajilin({ onExit }: { onExit: () => void }) {
             return (
               <button
                 key={k}
+                data-cell={N2 + idx}
                 className={`yj-edge h ${edgeMark(m)}${edgeBad(m, r * n + c, r * n + c + 1)}`}
                 onClick={() => tapEdge("h", idx)}
-                aria-label={`Segment right of row ${r + 1} column ${c + 1}`}
+                aria-label={`Segment right of row ${r + 1}, column ${c + 1}, ${edgeState(m)}`}
               >
                 {m === 2 ? "×" : ""}
               </button>
@@ -190,9 +248,10 @@ export default function Yajilin({ onExit }: { onExit: () => void }) {
             return (
               <button
                 key={k}
+                data-cell={N2 + H + idx}
                 className={`yj-edge v ${edgeMark(m)}${edgeBad(m, r * n + c, (r + 1) * n + c)}`}
                 onClick={() => tapEdge("v", idx)}
-                aria-label={`Segment below row ${r + 1} column ${c + 1}`}
+                aria-label={`Segment below row ${r + 1}, column ${c + 1}, ${edgeState(m)}`}
               >
                 {m === 2 ? "×" : ""}
               </button>
@@ -214,10 +273,8 @@ export default function Yajilin({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="yajilin"
           won
           message="Loop closed, every arrow counted!"
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

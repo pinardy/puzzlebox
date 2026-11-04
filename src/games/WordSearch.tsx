@@ -1,10 +1,12 @@
 import { useMemo, useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
 import { ANSWERS } from "../lib/words";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import { useGridNav } from "../lib/gridnav";
+import "./WordSearch.css";
 
 const GRID = 10;
 const WORDS: Record<Diff, number> = { easy: 6, medium: 7, hard: 9 };
@@ -13,8 +15,14 @@ const HELP =
   "backwards. Tap a word's first letter, then its last; found words light up.";
 
 const DIRS = [
-  [0, 1], [1, 0], [1, 1], [1, -1],
-  [0, -1], [-1, 0], [-1, -1], [-1, 1]
+  [0, 1],
+  [1, 0],
+  [1, 1],
+  [1, -1],
+  [0, -1],
+  [-1, 0],
+  [-1, -1],
+  [-1, 1]
 ] as const;
 
 interface Placed {
@@ -48,11 +56,16 @@ function buildPuzzle(seed: string, wordCount: number): Puzzle {
       let ok = true;
       for (let i = 0; i < word.length; i++) {
         const idx = (r0 + dr * i) * GRID + (c0 + dc * i);
-        if (letters[idx] !== "" && letters[idx] !== word[i]) { ok = false; break; }
+        if (letters[idx] !== "" && letters[idx] !== word[i]) {
+          ok = false;
+          break;
+        }
         cells.push(idx);
       }
       if (!ok) continue;
-      cells.forEach((idx, i) => { letters[idx] = word[i]; });
+      cells.forEach((idx, i) => {
+        letters[idx] = word[i];
+      });
       placed.push({ word, cells });
       done = true;
     }
@@ -67,12 +80,14 @@ function buildPuzzle(seed: string, wordCount: number): Puzzle {
 
 /** Cells on a straight line between two indices, or null if not straight. */
 function lineBetween(a: number, b: number): number[] | null {
-  const r0 = Math.floor(a / GRID), c0 = a % GRID;
-  const r1 = Math.floor(b / GRID), c1 = b % GRID;
-  const dr = Math.sign(r1 - r0), dc = Math.sign(c1 - c0);
+  const r0 = Math.floor(a / GRID),
+    c0 = a % GRID;
+  const r1 = Math.floor(b / GRID),
+    c1 = b % GRID;
+  const dr = Math.sign(r1 - r0),
+    dc = Math.sign(c1 - c0);
   const len = Math.max(Math.abs(r1 - r0), Math.abs(c1 - c0)) + 1;
-  if (!(r0 === r1 || c0 === c1 || Math.abs(r1 - r0) === Math.abs(c1 - c0)))
-    return null;
+  if (!(r0 === r1 || c0 === c1 || Math.abs(r1 - r0) === Math.abs(c1 - c0))) return null;
   return Array.from({ length: len }, (_, i) => (r0 + dr * i) * GRID + (c0 + dc * i));
 }
 
@@ -82,9 +97,11 @@ interface SavedState {
 }
 
 export default function WordSearch({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, newPuzzle, playMs } = useGame<SavedState>(
-    "wordsearch",
-    () => ({ found: [], done: false })
+  const { seed, diff, saved, commit, commitHint, newPuzzle } = useGame<SavedState>(
+    () => ({
+      found: [],
+      done: false
+    })
   );
   const { letters, placed } = useMemo(
     () => buildPuzzle(`wordsearch-${seed}`, WORDS[diff]),
@@ -102,8 +119,14 @@ export default function WordSearch({ onExit }: { onExit: () => void }) {
 
   function tap(idx: number) {
     if (saved.done) return;
-    if (anchor === null) { setAnchor(idx); return; }
-    if (anchor === idx) { setAnchor(null); return; }
+    if (anchor === null) {
+      setAnchor(idx);
+      return;
+    }
+    if (anchor === idx) {
+      setAnchor(null);
+      return;
+    }
     const line = lineBetween(anchor, idx);
     setAnchor(null);
     if (!line) return;
@@ -115,9 +138,22 @@ export default function WordSearch({ onExit }: { onExit: () => void }) {
     if (!hit) return;
     const found = [...saved.found, hit.word];
     const done = found.length === placed.length;
-    commit({ found, done });
-    if (done) recordResult("wordsearch", true);
+    commit({ found, done }, { outcome: done ? "won" : undefined });
   }
+
+  // Hint: mark one unfound word as found.
+  function hint() {
+    if (saved.done) return;
+    const left = placed.filter((p) => !saved.found.includes(p.word));
+    if (!left.length) return;
+    const pick = left[Math.floor(Math.random() * left.length)];
+    const found = [...saved.found, pick.word];
+    const done = found.length === placed.length;
+    setAnchor(null);
+    commitHint({ found, done }, { outcome: done ? "won" : undefined });
+  }
+
+  const nav = useGridNav();
 
   function startNew(d?: Diff) {
     newPuzzle(d);
@@ -127,21 +163,30 @@ export default function WordSearch({ onExit }: { onExit: () => void }) {
   return (
     <div className="game game-wordsearch">
       <GameHeader title="Word Search" onExit={onExit} onNew={() => startNew()} />
-      <p className="game-hint">
-        Tap the first letter of a word, then its last letter.
-      </p>
-      <GameTools diff={diff} onDiff={startNew} help={HELP} />
+      <p className="game-hint">Tap the first letter of a word, then its last letter.</p>
+      <GameTools
+        diff={diff}
+        onDiff={startNew}
+        help={HELP}
+        onHint={saved.done ? undefined : hint}
+      />
 
       <div
         className="ws-grid"
         style={{ "--n": GRID } as CSSProperties}
         role="grid"
         aria-label="Letter grid"
+        {...nav}
       >
         {letters.map((ch, i) => (
           <button
             key={i}
             role="gridcell"
+            data-cell={i}
+            aria-label={`Row ${Math.floor(i / GRID) + 1}, column ${(i % GRID) + 1}, ${ch}${
+              foundCells.has(i) ? ", found" : ""
+            }${anchor === i ? ", selected" : ""}`}
+            aria-selected={anchor === i}
             className={[
               "ws-cell",
               foundCells.has(i) ? "found" : "",
@@ -154,11 +199,13 @@ export default function WordSearch({ onExit }: { onExit: () => void }) {
         ))}
       </div>
 
-      <div className="ws-words">
+      <div className="ws-words" role="list" aria-label="Words to find">
         {placed.map((p) => (
           <span
             key={p.word}
+            role="listitem"
             className={`ws-word${saved.found.includes(p.word) ? " found" : ""}`}
+            aria-label={`${p.word.toLowerCase()}${saved.found.includes(p.word) ? ", found" : ""}`}
           >
             {p.word.toLowerCase()}
           </span>
@@ -168,10 +215,8 @@ export default function WordSearch({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="wordsearch"
           won
           message="All words found!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

@@ -1,14 +1,22 @@
 import { useState } from "react";
 import { makeRng } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Mastermind.css";
 
 const ALL_COLORS = [
-  "#e05252", "#e0a23b", "#2e9e6b", "#3b6fe0", "#7857c9", "#e06fb2",
-  "#2a9d8f", "#8a5a2b"
+  "#e05252",
+  "#e0a23b",
+  "#2e9e6b",
+  "#3b6fe0",
+  "#7857c9",
+  "#e06fb2",
+  "#2a9d8f",
+  "#8a5a2b"
 ];
+const COLOR_NAMES = ["red", "amber", "green", "blue", "purple", "pink", "teal", "brown"];
 const COLOR_COUNT: Record<Diff, number> = { easy: 5, medium: 6, hard: 8 };
 const CODE_LEN: Record<Diff, number> = { easy: 4, medium: 4, hard: 5 };
 const MAX_GUESSES = 10;
@@ -26,15 +34,22 @@ function codeFor(seed: string, colors: number, len: number): number[] {
  *  wrong spot (counted without double-use). */
 function score(guess: number[], code: number[]): { exact: number; near: number } {
   let exact = 0;
-  const codeLeft: number[] = [], guessLeft: number[] = [];
+  const codeLeft: number[] = [],
+    guessLeft: number[] = [];
   for (let i = 0; i < code.length; i++) {
     if (guess[i] === code[i]) exact++;
-    else { codeLeft.push(code[i]); guessLeft.push(guess[i]); }
+    else {
+      codeLeft.push(code[i]);
+      guessLeft.push(guess[i]);
+    }
   }
   let near = 0;
   for (const g of guessLeft) {
     const at = codeLeft.indexOf(g);
-    if (at !== -1) { near++; codeLeft.splice(at, 1); }
+    if (at !== -1) {
+      near++;
+      codeLeft.splice(at, 1);
+    }
   }
   return { exact, near };
 }
@@ -46,10 +61,11 @@ interface SavedState {
 }
 
 export default function Mastermind({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, newPuzzle, playMs } = useGame<SavedState>(
-    "mastermind",
-    () => ({ guesses: [], done: false, won: false })
-  );
+  const { seed, diff, saved, commit, newPuzzle } = useGame<SavedState>(() => ({
+    guesses: [],
+    done: false,
+    won: false
+  }));
   const colors = COLOR_COUNT[diff];
   const codeLen = CODE_LEN[diff];
   const code = codeFor(seed, colors, codeLen);
@@ -61,9 +77,11 @@ export default function Mastermind({ onExit }: { onExit: () => void }) {
     const { exact } = score(current, code);
     const won = exact === codeLen;
     const done = won || guesses.length >= MAX_GUESSES;
-    commit({ guesses, done, won });
+    commit(
+      { guesses, done, won },
+      { outcome: done ? (won ? "won" : "lost") : undefined }
+    );
     setCurrent([]);
-    if (done) recordResult("mastermind", won);
   }
 
   function startNew(d?: Diff) {
@@ -75,8 +93,8 @@ export default function Mastermind({ onExit }: { onExit: () => void }) {
     <div className="game game-mastermind">
       <GameHeader title="Mastermind" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
-        Crack the {codeLen}-colour code in {MAX_GUESSES}. ● right colour &
-        spot, ○ right colour, wrong spot.
+        Crack the {codeLen}-colour code in {MAX_GUESSES}. ● right colour & spot, ○ right
+        colour, wrong spot.
       </p>
       <GameTools diff={diff} onDiff={startNew} help={HELP} />
 
@@ -84,9 +102,19 @@ export default function Mastermind({ onExit }: { onExit: () => void }) {
         {saved.guesses.map((g, i) => {
           const { exact, near } = score(g, code);
           return (
-            <div key={i} className="mm-row">
+            <div
+              key={i}
+              className="mm-row"
+              role="group"
+              aria-label={`Guess ${i + 1}: ${g.map((c) => COLOR_NAMES[c]).join(", ")}. ${exact} right spot, ${near} wrong spot`}
+            >
               {g.map((c, j) => (
-                <span key={j} className="mm-peg" data-c={c + 1} style={{ background: ALL_COLORS[c] }} />
+                <span
+                  key={j}
+                  className="mm-peg"
+                  data-c={c + 1}
+                  style={{ background: ALL_COLORS[c] }}
+                />
               ))}
               <span className="mm-feedback">
                 {"●".repeat(exact)}
@@ -102,9 +130,15 @@ export default function Mastermind({ onExit }: { onExit: () => void }) {
                 key={j}
                 className="mm-peg mm-slot"
                 data-c={current[j] !== undefined ? current[j] + 1 : undefined}
-                style={current[j] !== undefined ? { background: ALL_COLORS[current[j]] } : undefined}
+                style={
+                  current[j] !== undefined
+                    ? { background: ALL_COLORS[current[j]] }
+                    : undefined
+                }
                 onClick={() => setCurrent((c) => c.slice(0, j))}
-                aria-label={`Slot ${j + 1}`}
+                aria-label={`Slot ${j + 1}, ${
+                  current[j] !== undefined ? COLOR_NAMES[current[j]] : "empty"
+                }`}
               />
             ))}
             <span className="mm-feedback mm-count">
@@ -113,26 +147,33 @@ export default function Mastermind({ onExit }: { onExit: () => void }) {
           </div>
         )}
         {saved.done && !saved.won && (
-          <div className="mm-row mm-answer">
+          <div
+            className="mm-row mm-answer"
+            role="group"
+            aria-label={`The code: ${code.map((c) => COLOR_NAMES[c]).join(", ")}`}
+          >
             {code.map((c, j) => (
-              <span key={j} className="mm-peg" data-c={c + 1} style={{ background: ALL_COLORS[c] }} />
+              <span
+                key={j}
+                className="mm-peg"
+                data-c={c + 1}
+                style={{ background: ALL_COLORS[c] }}
+              />
             ))}
             <span className="mm-feedback">code</span>
           </div>
         )}
       </div>
 
-      <div className="mm-palette">
+      <div className="mm-palette" role="group" aria-label="Colours">
         {ALL_COLORS.slice(0, colors).map((col, i) => (
           <button
             key={col}
             className="mm-peg mm-pick"
             data-c={i + 1}
             style={{ background: col }}
-            onClick={() =>
-              setCurrent((c) => (c.length < codeLen ? [...c, i] : c))
-            }
-            aria-label={`Colour ${i + 1}`}
+            onClick={() => setCurrent((c) => (c.length < codeLen ? [...c, i] : c))}
+            aria-label={`Colour ${i + 1}, ${COLOR_NAMES[i]}`}
           />
         ))}
         <button
@@ -147,14 +188,12 @@ export default function Mastermind({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="mastermind"
           won={saved.won}
           message={
             saved.won
               ? `Cracked in ${saved.guesses.length}!`
               : "Out of guesses — code revealed"
           }
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

@@ -161,14 +161,18 @@ showing a blank screen; stats and every other game are untouched.
 
 ## UX features
 
+- **Puzzle of the day** at the top of the hub (`#/daily`): one logic,
+  number or word puzzle per date, the same board for everyone, played at
+  Medium in its own save slot so your regular board of that game is left
+  alone. Solving on consecutive days builds a daily streak.
 - **Undo** (20 steps) in every game where it makes sense, via a shared
   `useGame` hook that also tracks active play time.
-- **Hints** (💡) in the solution-backed games — Sudoku, Killer Sudoku,
-  Picross, Fill-a-Pix, Fillomino, Futoshiki, Skyscrapers, KenKen,
-  Kropki, Kakuro, Suguru, Cryptogram, the Mini Crossword, Sujiko,
-  Str8ts, Numbrix, Jigsaw Sudoku, Sandwich, and Knight's Tour — reveal
-  one cell; hinted solves still count, but never set a best time or
-  extend a streak.
+- **Hints** (💡) in 68 games — every puzzle with a known answer or a
+  cheap, always-correct next step: reveal a cell, an edge, a bridge, a
+  word, a rung, or play the next optimal move. Hinted solves still count,
+  but never set a best time or extend a streak. Card, dice and AI games,
+  and ones where a correct step needs a full search (Sokoban, Unblock,
+  Fifteen…), have none.
 - **Streaks & best times**: per-game win streaks, longest streak, a
   fastest-solve time per difficulty, and per-difficulty play splits —
   all surfaced on the win banner ("★ New best time!").
@@ -217,13 +221,19 @@ showing a blank screen; stats and every other game are untouched.
   right-letter feedback for Okabe-Ito blue and vermillion across Word
   Guess, Equation, Hangman and Word Ladder, and numbers Mastermind's
   pegs, whose eight colours can't be told apart by hue alone.
-- **Drag-to-paint** in Picross, Nurikabe, Tents, Battleships, and Hitori
-  (a whole stroke is one undo step).
-- **Keyboard play** on desktop: digits, arrows, and Backspace in all six
-  number-grid games; arrows/letters in 2048, Word Guess, Hangman. Shell
-  shortcuts too — `Esc` back to the hub, `Ctrl`/`Cmd`+`Z` to undo, and
-  bare `u`/`n` for undo and new board in games that don't read letters
-  as guesses.
+- **Drag-to-paint** in Picross, Nurikabe, Tents, Battleships, Hitori,
+  Aquarium, Fill-a-Pix, Galaxies, Tapa, Kurodoko and Cave (a whole stroke
+  is one undo step).
+- **Keyboard play** in every game but Untangle: on the grids, Tab enters
+  the board once, arrow keys move to the nearest square, and Enter/Space
+  acts (Shift+Enter for the second action — flag, cycle backwards);
+  digits fill the number grids (two-digit numbers too), and the solitaires
+  are tab-and-Enter. Shell shortcuts too — `Esc` back to the hub,
+  `Ctrl`/`Cmd`+`Z` to undo, and bare `u`/`n` for undo and new board in
+  games that don't read letters as guesses.
+- **Screen readers**: every square says where it is and what's in it
+  ("Row 2, column 3, shaded"), clues are read out, and cards are named
+  ("Column 3, card 2 of 5, queen of hearts").
 - **Minesweeper**: long-press (or right-click) to flag, chording on
   satisfied numbers.
 - **2048**: animated tile slides, merges, and spawns via identity-keyed
@@ -243,7 +253,7 @@ npm run dev        # local dev server
 npm run build      # production build in dist/
 npm run preview    # serve the production build locally
 npm run lint       # ESLint (also runs in CI before deploys)
-npm run format     # Prettier over src/
+npm run format     # Prettier over src/ (CI fails on unformatted code)
 ```
 
 > **PWA note:** service workers require a secure context. `npm run preview`
@@ -273,8 +283,18 @@ src/
     storage.ts   typed localStorage: current-puzzle slots + solve stats
     theme.ts     light/dark choice, shared so any screen can toggle it
     haptics.ts   the per-move tick, behind one preference
-    tips.ts      the once-only gesture hint per game
+    useGame.ts   per-game plumbing: seed, difficulty, undo, play time,
+                 saving, and recording the result (`finish` / `outcome`)
+    shell.ts     context that tells shared chrome which game is running
+    drag.ts      pointer drags across grid cells: path drawing, drag-paint
+    cards.ts     card ids, ranks, suits and building rules
   games/
+    registry.ts  one entry per game: copy, category, keywords, hints, loader
+    ui.tsx       toolbar, rules sheet, toast, and the result banner
+    cards.tsx    <PlayingCard> and <Foundation>, shared by every solitaire
+    Numpad.tsx   the digit pad under the number grids
+    <Game>.tsx   one component per game, plus <Game>.css for styles only
+                 that board uses (loaded with its chunk)
     Wordle.tsx   grid, on-screen + hardware keyboard, key-state colouring
     Sudoku.tsx   notes mode, conflict highlighting, remaining-digit counts
     Picross.tsx  fill/cross tools, live clue satisfaction dimming
@@ -284,6 +304,7 @@ src/
     Queens.tsx     region-coloured board, conflict highlighting
     Tango.tsx      cycle suns/moons, live rule-violation marking
     Zip.tsx        drag-to-draw path, checkpoint order enforced, rewind
+  styles.css     tokens, hub, shared game chrome, styles used by several games
   Stats.tsx      lifetime record + the preference switches
   App.tsx        hub: game cards with continue/play-again state + solve counts
 ```
@@ -303,11 +324,17 @@ src/
 
 - **Add a game:** implement `({ onExit }) => JSX`, then add one entry to
   `src/games/registry.ts` — the `GameId` union, the hub card, its named run,
-  hash routing, and the lazy chunk all derive from it. Use
-  `loadSlot`/`saveSlot`/`recordResult` for persistence, and reuse an engine
-  where one fits: `lib/piles.ts` (fan/castle solitaires), `games/CellGame`
+  hash routing, and the lazy chunk all derive from it; set `textInput` if
+  the board reads bare letters and `tip` for a hidden gesture. Inside the
+  game, `useGame(fresh)` handles persistence (the id comes from context):
+  end a game with `commit(next, { outcome: "won" })` from a move handler,
+  or `useEffect(() => { if (solved) finish(); }, [solved, finish])` for a
+  "solved?" check; `<Result>` then reads the stats itself. Put styles only
+  this board uses in `<Game>.css` and import it from the component. Reuse
+  what fits: `lib/piles.ts` (fan/castle solitaires), `games/CellGame`
   (FreeCell family), `games/SpiderGame`, `games/ShadeGame` (shading
-  puzzles), `lib/cards.ts` (card primitives).
+  puzzles), `<PlayingCard>`, `<Numpad>`, and `useDragPaint` /
+  `useMarkPaint` / `useCellDrag` from `lib/drag.ts`.
 
 - **Guess dictionary:** guesses are currently shape-validated (any 5
   letters). To enforce a dictionary, add a word set and check it in

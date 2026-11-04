@@ -1,9 +1,9 @@
 import { useMemo, useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { isRed, label, rank, suit } from "../lib/cards";
-import { recordResult, type GameId } from "../lib/storage";
+import { downAnySuit, downInSuit, nCards, rank, stackPlace, suit } from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { Pile, PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
 
 /** Single-pack Spider: seven columns, four suits, four runs to clear.
@@ -63,7 +63,6 @@ function clearRuns(next: SavedState): void {
 type Sel = { pile: number; index: number } | null;
 
 export function SpiderGame({
-  game,
   title,
   hint,
   help,
@@ -71,7 +70,6 @@ export function SpiderGame({
   wonMessage,
   onExit
 }: {
-  game: GameId;
   title: string;
   hint: string;
   help: string;
@@ -79,9 +77,8 @@ export function SpiderGame({
   wonMessage: (moves: number) => string;
   onExit: () => void;
 }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle, playMs } = useGame<SavedState>(
-    game,
-    (s) => deal(s, rules)
+  const { seed, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>((s) =>
+    deal(s, rules)
   );
   const [sel, setSel] = useState<Sel>(null);
 
@@ -93,8 +90,7 @@ export function SpiderGame({
   /** Only a same-suit descending run travels as one unit. */
   function validRun(cards: number[]): boolean {
     for (let i = 0; i + 1 < cards.length; i++)
-      if (rank(cards[i]) !== rank(cards[i + 1]) + 1 || suit(cards[i]) !== suit(cards[i + 1]))
-        return false;
+      if (!downInSuit(cards[i + 1], cards[i])) return false;
     return true;
   }
 
@@ -107,14 +103,13 @@ export function SpiderGame({
     };
   }
 
-  function finish(next: SavedState) {
+  function play(next: SavedState) {
     next.moves++;
     clearRuns(next);
     if (!next.done && next.completed === 4) {
       next.done = true;
-      recordResult(game, true);
-    }
-    commit(next);
+      commit(next, { outcome: "won" });
+    } else commit(next);
     setSel(null);
   }
 
@@ -134,7 +129,7 @@ export function SpiderGame({
       }
       const top = cards.length ? cards[cards.length - 1] : null;
       // Stacking ignores suit; an empty column takes any run.
-      const fits = top === null || rank(run[0]) === rank(top) - 1;
+      const fits = top === null || downAnySuit(run[0], top);
       if (!fits) {
         setSel(null);
         return;
@@ -145,7 +140,7 @@ export function SpiderGame({
       const src = next.cols[sel.pile];
       if (src.length > 0 && src.length === next.faceDown[sel.pile])
         next.faceDown[sel.pile]--;
-      finish(next);
+      play(next);
       return;
     }
 
@@ -161,7 +156,7 @@ export function SpiderGame({
     const next = clone();
     for (let p = 0; p < PILES && next.stock.length; p++)
       next.cols[p].push(next.stock.shift()!);
-    finish(next);
+    play(next);
   }
 
   function startNew() {
@@ -187,43 +182,34 @@ export function SpiderGame({
 
       <div className="kl-tableau">
         {saved.cols.map((pile, p) => (
-          <div
-            key={p}
-            className="kl-pile"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) tapPile(p, null);
-            }}
-          >
+          <Pile key={p} name={`Column ${p + 1}`} onTap={() => tapPile(p, null)}>
             {pile.length === 0 && (
-              <button
-                className="kl-card kl-empty kl-stacked"
+              <PlayingCard
+                card={null}
+                className="kl-stacked"
                 style={{ "--stack": 0 } as CSSProperties}
                 onClick={() => tapPile(p, null)}
                 aria-label={`Column ${p + 1}, empty`}
               >
                 ·
-              </button>
+              </PlayingCard>
             )}
             {pile.map((card, i) => {
               const down = i < saved.faceDown[p];
               return (
-                <button
+                <PlayingCard
                   key={card}
-                  className={[
-                    "kl-card kl-stacked",
-                    down ? "kl-back" : "",
-                    !down && isRed(card) ? "red" : "",
-                    isSelected(p, i) ? "selected" : ""
-                  ].join(" ")}
+                  card={card}
+                  faceDown={down}
+                  selected={isSelected(p, i)}
+                  className="kl-stacked"
                   style={{ "--stack": i } as CSSProperties}
                   onClick={() => tapPile(p, i)}
-                  aria-label={down ? "Face-down card" : label(card)}
-                >
-                  {down ? "" : label(card)}
-                </button>
+                  place={stackPlace(`Column ${p + 1}`, i, pile.length)}
+                />
               );
             })}
-          </div>
+          </Pile>
         ))}
       </div>
 
@@ -235,6 +221,7 @@ export function SpiderGame({
           className="mini-btn"
           onClick={dealRow}
           disabled={!saved.stock.length}
+          aria-label={`Deal a row, stock ${nCards(saved.stock.length)}`}
         >
           Deal ({saved.stock.length})
         </button>
@@ -243,10 +230,8 @@ export function SpiderGame({
       {saved.done && (
         <Result
           key={seed}
-          game={game}
           won
           message={wonMessage(saved.moves)}
-          playMs={playMs}
           onNew={startNew}
           onExit={onExit}
         />

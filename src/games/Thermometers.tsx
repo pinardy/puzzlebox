@@ -1,10 +1,12 @@
 import { useEffect, useMemo, type CSSProperties } from "react";
+import { useGridNav } from "../lib/gridnav";
 import { makeRng } from "../lib/rng";
 import { hamiltonianPath } from "../lib/zip";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Thermometers.css";
 
 const SIZE: Record<Diff, number> = { easy: 5, medium: 6, hard: 7 };
 const HELP =
@@ -22,6 +24,8 @@ interface Puzzle {
   thermos: Thermo[];
   rows: number[];
   cols: number[];
+  /** Per thermometer: the fill the counts were read from. */
+  levels: number[];
 }
 
 /** Snake a Hamiltonian path through the grid and cut it into thermometers,
@@ -41,15 +45,18 @@ function generateThermo(seed: string, n: number): Puzzle {
     at += len;
   }
 
-  const rows = Array(n).fill(0), cols = Array(n).fill(0);
+  const rows = Array(n).fill(0),
+    cols = Array(n).fill(0);
+  const levels: number[] = [];
   for (const t of thermos) {
     const fill = Math.floor(rng() * (t.cells.length + 1));
+    levels.push(fill);
     for (const i of t.cells.slice(0, fill)) {
       rows[Math.floor(i / n)]++;
       cols[i % n]++;
     }
   }
-  return { n, thermos, rows, cols };
+  return { n, thermos, rows, cols, levels };
 }
 
 interface SavedState {
@@ -66,8 +73,8 @@ function dirClass(from: number, to: number, n: number): string {
 }
 
 export default function Thermometers({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("thermo", (s, d) => {
+  const { seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((s, d) => {
       const p = generateThermo(`thermo-${s}`, SIZE[d]);
       return { fills: Array(p.thermos.length).fill(0), done: false };
     });
@@ -89,7 +96,8 @@ export default function Thermometers({ onExit }: { onExit: () => void }) {
   }, [puzzle, n]);
 
   const counts = useMemo(() => {
-    const rows = Array(n).fill(0), cols = Array(n).fill(0);
+    const rows = Array(n).fill(0),
+      cols = Array(n).fill(0);
     puzzle.thermos.forEach((th, t) => {
       for (const i of th.cells.slice(0, saved.fills[t])) {
         rows[Math.floor(i / n)]++;
@@ -99,17 +107,12 @@ export default function Thermometers({ onExit }: { onExit: () => void }) {
     return { rows, cols };
   }, [puzzle, saved.fills, n]);
 
+  const solved =
+    counts.rows.every((v, r) => v === puzzle.rows[r]) &&
+    counts.cols.every((v, c) => v === puzzle.cols[c]);
   useEffect(() => {
-    if (saved.done) return;
-    const ok =
-      counts.rows.every((v, r) => v === puzzle.rows[r]) &&
-      counts.cols.every((v, c) => v === puzzle.cols[c]);
-    if (ok) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("thermo", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [counts, puzzle, saved]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   function tap(i: number) {
     if (saved.done) return;
@@ -120,6 +123,19 @@ export default function Thermometers({ onExit }: { onExit: () => void }) {
     commit({ ...saved, fills });
   }
 
+  const nav = useGridNav();
+
+  /** Set one thermometer to its generated level. */
+  function hint() {
+    if (saved.done) return;
+    const wrong = puzzle.levels.flatMap((v, t) => (saved.fills[t] === v ? [] : [t]));
+    if (!wrong.length) return;
+    const t = wrong[Math.floor(Math.random() * wrong.length)];
+    const fills = saved.fills.slice();
+    fills[t] = puzzle.levels[t];
+    commitHint({ ...saved, fills });
+  }
+
   const G = n + 1;
   const countClass = (got: number, want: number) =>
     `edge-count${got === want ? " ok" : got > want ? " bad" : ""}`;
@@ -127,15 +143,14 @@ export default function Thermometers({ onExit }: { onExit: () => void }) {
   return (
     <div className="game game-thermo">
       <GameHeader title="Thermometers" onExit={onExit} onNew={() => newPuzzle()} />
-      <p className="game-hint">
-        Fill from the bulb to match the row and column counts.
-      </p>
+      <p className="game-hint">Fill from the bulb to match the row and column counts.</p>
       <GameTools
         diff={diff}
         onDiff={newPuzzle}
         help={HELP}
         onUndo={undo}
         canUndo={canUndo && !saved.done}
+        onHint={saved.done ? undefined : hint}
       />
 
       <div
@@ -143,19 +158,29 @@ export default function Thermometers({ onExit }: { onExit: () => void }) {
         style={{ "--gn": G } as CSSProperties}
         role="grid"
         aria-label="Thermometers board"
+        {...nav}
       >
         {Array.from({ length: G * G }).map((_, k) => {
-          const gr = Math.floor(k / G), gc = k % G;
+          const gr = Math.floor(k / G),
+            gc = k % G;
           if (gr === 0 && gc === 0) return <span key={k} />;
           if (gr === 0)
             return (
-              <span key={k} className={countClass(counts.cols[gc - 1], puzzle.cols[gc - 1])}>
+              <span
+                key={k}
+                className={countClass(counts.cols[gc - 1], puzzle.cols[gc - 1])}
+                aria-label={`Column ${gc}: ${puzzle.cols[gc - 1]} filled`}
+              >
                 {puzzle.cols[gc - 1]}
               </span>
             );
           if (gc === 0)
             return (
-              <span key={k} className={countClass(counts.rows[gr - 1], puzzle.rows[gr - 1])}>
+              <span
+                key={k}
+                className={countClass(counts.rows[gr - 1], puzzle.rows[gr - 1])}
+                aria-label={`Row ${gr}: ${puzzle.rows[gr - 1]} filled`}
+              >
                 {puzzle.rows[gr - 1]}
               </span>
             );
@@ -166,13 +191,16 @@ export default function Thermometers({ onExit }: { onExit: () => void }) {
             <button
               key={k}
               role="gridcell"
+              data-cell={i}
               className={[
                 "thermo-cell",
                 filled ? "filled" : "",
                 info.p === 0 ? "bulb" : ""
               ].join(" ")}
               onClick={() => tap(i)}
-              aria-label={`Thermometer cell${filled ? ", filled" : ""}`}
+              aria-label={`Row ${gr}, column ${gc}, thermometer ${info.t + 1} ${
+                info.p === 0 ? "bulb" : `cell ${info.p + 1}`
+              }, ${filled ? "filled" : "empty"}`}
             >
               {info.arms.map((a) => (
                 <span key={a} className={`th-arm arm-${a}`} />
@@ -186,10 +214,8 @@ export default function Thermometers({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="thermo"
           won
           message="Temperatures balanced!"
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

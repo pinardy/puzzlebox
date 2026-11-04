@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { generateSudoku, isSolved, peersConflict, Grid } from "../lib/sudoku";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
-import { useGridKeys } from "../lib/keys";
+import { cellLabel, notesLabel, useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import { Numpad } from "./Numpad";
 
 const REMOVALS: Record<Diff, number> = { easy: 42, medium: 47, hard: 53 };
 const HELP =
@@ -27,13 +28,15 @@ function fresh(): SavedState {
 }
 
 function peers(idx: number): number[] {
-  const r = Math.floor(idx / 9), c = idx % 9;
+  const r = Math.floor(idx / 9),
+    c = idx % 9;
   const out = new Set<number>();
   for (let k = 0; k < 9; k++) {
     out.add(r * 9 + k);
     out.add(k * 9 + c);
   }
-  const br = Math.floor(r / 3) * 3, bc = Math.floor(c / 3) * 3;
+  const br = Math.floor(r / 3) * 3,
+    bc = Math.floor(c / 3) * 3;
   for (let dr = 0; dr < 3; dr++)
     for (let dc = 0; dc < 3; dc++) out.add((br + dr) * 9 + (bc + dc));
   out.delete(idx);
@@ -41,8 +44,8 @@ function peers(idx: number): number[] {
 }
 
 export default function Sudoku({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("sudoku", fresh);
+  const { seed, diff, saved, commit, commitHint, finish, undo, canUndo, newPuzzle } =
+    useGame<SavedState>(fresh);
   const { puzzle, solution } = useMemo(
     () => generateSudoku(`sudoku-${seed}`, REMOVALS[diff]),
     [seed, diff]
@@ -55,13 +58,10 @@ export default function Sudoku({ onExit }: { onExit: () => void }) {
     [puzzle, saved.entries]
   );
 
+  const solved = board.every((v) => v !== 0) && isSolved(board, solution);
   useEffect(() => {
-    if (!saved.done && board.every((v) => v !== 0) && isSolved(board, solution)) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("sudoku", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [board, solution, saved]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   function setCell(idx: number, val: number) {
     if (saved.done || puzzle[idx] !== 0) return;
@@ -146,8 +146,7 @@ export default function Sudoku({ onExit }: { onExit: () => void }) {
           const c = i % 9;
           const sameVal = selVal !== 0 && v === selVal;
           const inLine =
-            selected !== null &&
-            (Math.floor(selected / 9) === r || selected % 9 === c);
+            selected !== null && (Math.floor(selected / 9) === r || selected % 9 === c);
           return (
             <button
               key={i}
@@ -162,6 +161,15 @@ export default function Sudoku({ onExit }: { onExit: () => void }) {
                 c % 3 === 2 && c !== 8 ? "br" : "",
                 r % 3 === 2 && r !== 8 ? "bb" : ""
               ].join(" ")}
+              aria-label={cellLabel(
+                i,
+                9,
+                v,
+                given && "given",
+                v === 0 && notesLabel(saved.notes[i]),
+                conflict && "conflict"
+              )}
+              aria-selected={selected === i}
               onClick={() => setSelected(i)}
             >
               {v !== 0 ? (
@@ -180,43 +188,18 @@ export default function Sudoku({ onExit }: { onExit: () => void }) {
         })}
       </div>
 
-      <div className="numpad">
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => {
-          const remaining = 9 - board.filter((v) => v === d).length;
-          return (
-            <button
-              key={d}
-              className="num-key"
-              disabled={remaining <= 0 && !pencil}
-              onClick={() => selected !== null && setCell(selected, d)}
-            >
-              {d}
-              <small>{remaining > 0 ? remaining : ""}</small>
-            </button>
-          );
-        })}
-        <button
-          className={`num-key tool${pencil ? " active" : ""}`}
-          onClick={() => setPencil((p) => !p)}
-          aria-pressed={pencil}
-        >
-          ✏️<small>notes</small>
-        </button>
-        <button
-          className="num-key tool"
-          onClick={() => selected !== null && setCell(selected, 0)}
-        >
-          ⌫<small>erase</small>
-        </button>
-      </div>
+      <Numpad
+        max={9}
+        onDigit={(d) => selected !== null && setCell(selected, d)}
+        remaining={(d) => 9 - board.filter((v) => v === d).length}
+        notes={{ on: pencil, toggle: () => setPencil((p) => !p) }}
+      />
 
       {saved.done && (
         <Result
           key={seed}
-          game="sudoku"
           won
           message="Solved!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

@@ -1,16 +1,12 @@
 import { useMemo, useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult } from "../lib/storage";
+import { label, nCards, rank, spoken, suit } from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
+import "./Accordion.css";
 
-const SUITS = ["♠", "♥", "♦", "♣"];
-const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
-const rank = (id: number) => Math.floor(id / 4) + 1;
-const suit = (id: number) => id % 4;
-const isRed = (id: number) => suit(id) === 1 || suit(id) === 2;
-const label = (id: number) => `${RANKS[rank(id) - 1]}${SUITS[suit(id)]}`;
 const HELP =
   "Fifty-two piles in a row, squeezing together like an accordion. A pile " +
   "may jump onto the pile immediately to its left, or the one three to " +
@@ -35,15 +31,14 @@ const matches = (a: number[], b: number[]) =>
   suit(top(a)) === suit(top(b)) || rank(top(a)) === rank(top(b));
 
 export default function Accordion({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("accordion", (s) => deal(s));
+  const { seed, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>((s) =>
+    deal(s)
+  );
   const [sel, setSel] = useState<number | null>(null);
 
   /** A pile can move left one or left three, onto a matching top card. */
   const targetsOf = (i: number): number[] =>
-    [i - 1, i - 3].filter(
-      (j) => j >= 0 && matches(saved.piles[i], saved.piles[j])
-    );
+    [i - 1, i - 3].filter((j) => j >= 0 && matches(saved.piles[i], saved.piles[j]));
 
   const anyMove = useMemo(
     () => saved.piles.some((_, i) => targetsOf(i).length > 0),
@@ -67,14 +62,14 @@ export default function Accordion({ onExit }: { onExit: () => void }) {
     if (piles.length === 1) {
       next.done = true;
       next.won = true;
-      recordResult("accordion", true);
-    } else if (!piles.some((_, i) =>
-      [i - 1, i - 3].some((j) => j >= 0 && matches(piles[i], piles[j]))
-    )) {
+    } else if (
+      !piles.some((_, i) =>
+        [i - 1, i - 3].some((j) => j >= 0 && matches(piles[i], piles[j]))
+      )
+    ) {
       next.done = true;
-      recordResult("accordion", false);
     }
-    commit(next);
+    commit(next, { outcome: next.done ? (next.won ? "won" : "lost") : undefined });
     setSel(null);
   }
 
@@ -120,21 +115,28 @@ export default function Accordion({ onExit }: { onExit: () => void }) {
         {saved.piles.map((pile, i) => {
           const card = top(pile);
           return (
-            <button
+            <PlayingCard
               key={`${i}-${card}`}
+              card={card}
+              selected={sel === i}
               className={[
-                "kl-card ac-card",
-                isRed(card) ? "red" : "",
-                sel === i ? "selected" : "",
+                "ac-card",
                 targets.includes(i) ? "ac-target" : "",
                 sel === null && targetsOf(i).length ? "ac-live" : ""
               ].join(" ")}
               style={{ "--cols": 9 } as CSSProperties}
+              aria-label={`Pile ${i + 1}, ${spoken(card)}${
+                pile.length > 1 ? `, ${nCards(pile.length)}` : ""
+              }`}
               onClick={() => tap(i)}
             >
               {label(card)}
-              {pile.length > 1 && <small className="ac-depth">{pile.length}</small>}
-            </button>
+              {pile.length > 1 && (
+                <small className="ac-depth" aria-hidden="true">
+                  {pile.length}
+                </small>
+              )}
+            </PlayingCard>
           );
         })}
       </div>
@@ -142,14 +144,12 @@ export default function Accordion({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="accordion"
           won={saved.won}
           message={
             saved.won
               ? `Squeezed to one pile in ${saved.moves} moves!`
               : `Stuck at ${saved.piles.length} piles`
           }
-          playMs={playMs}
           onNew={startNew}
           onExit={onExit}
         />

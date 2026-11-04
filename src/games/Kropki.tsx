@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { makeRng } from "../lib/rng";
 import { generateLatin } from "../lib/latin";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
-import { useGridKeys } from "../lib/keys";
+import { cellLabel, useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import { Numpad } from "./Numpad";
+import "./Kropki.css";
 
 const SIZE: Record<Diff, number> = { easy: 4, medium: 5, hard: 6 };
 const HELP =
@@ -32,13 +34,13 @@ function dotFor(a: number, b: number, rng: () => number): Dot {
 function generateKropki(seed: string, n: number): Puzzle {
   const sol = generateLatin(`kropki-${seed}`, n);
   const rng = makeRng(`kropki-dots-${seed}`);
-  const h: Dot[] = [], v: Dot[] = [];
+  const h: Dot[] = [],
+    v: Dot[] = [];
   for (let r = 0; r < n; r++)
     for (let c = 0; c < n - 1; c++)
       h.push(dotFor(sol[r * n + c], sol[r * n + c + 1], rng));
   for (let r = 0; r < n - 1; r++)
-    for (let c = 0; c < n; c++)
-      v.push(dotFor(sol[r * n + c], sol[(r + 1) * n + c], rng));
+    for (let c = 0; c < n; c++) v.push(dotFor(sol[r * n + c], sol[(r + 1) * n + c], rng));
   return { h, v };
 }
 
@@ -58,8 +60,8 @@ interface SavedState {
 }
 
 export default function Kropki({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("kropki", (_s, d) => ({
+  const { seed, diff, saved, commit, commitHint, finish, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
       entries: Array(SIZE[d] * SIZE[d]).fill(0),
       done: false
     }));
@@ -77,37 +79,40 @@ export default function Kropki({ onExit }: { onExit: () => void }) {
     for (let i = 0; i < n * n; i++) {
       const val = board[i];
       if (val === 0) continue;
-      const r = Math.floor(i / n), c = i % n;
+      const r = Math.floor(i / n),
+        c = i % n;
       for (let k = 0; k < n; k++) {
-        const row = r * n + k, col = k * n + c;
+        const row = r * n + k,
+          col = k * n + c;
         if (row !== i && board[row] === val) bad.add(i);
         if (col !== i && board[col] === val) bad.add(i);
       }
     }
     for (let r = 0; r < n; r++)
       for (let c = 0; c < n - 1; c++) {
-        const a = r * n + c, b = a + 1;
+        const a = r * n + c,
+          b = a + 1;
         if (board[a] && board[b] && !pairOk(board[a], board[b], h[r * (n - 1) + c])) {
-          bad.add(a); bad.add(b);
+          bad.add(a);
+          bad.add(b);
         }
       }
     for (let r = 0; r < n - 1; r++)
       for (let c = 0; c < n; c++) {
-        const a = r * n + c, b = a + n;
+        const a = r * n + c,
+          b = a + n;
         if (board[a] && board[b] && !pairOk(board[a], board[b], v[r * n + c])) {
-          bad.add(a); bad.add(b);
+          bad.add(a);
+          bad.add(b);
         }
       }
     return bad;
   }, [board, h, v, n]);
 
+  const solved = board.every((x) => x !== 0) && conflicts.size === 0;
   useEffect(() => {
-    if (!saved.done && board.every((x) => x !== 0) && conflicts.size === 0) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("kropki", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [board, conflicts, saved]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   function setCell(idx: number, val: number) {
     if (saved.done) return;
@@ -138,15 +143,42 @@ export default function Kropki({ onExit }: { onExit: () => void }) {
   useGridKeys({ cols: n, rows: n, max: n, selected, setSelected, setCell });
 
   const G = 2 * n - 1;
-  const track = Array(n - 1).fill("1fr 0.3fr").join(" ") + " 1fr";
+  const track =
+    Array(n - 1)
+      .fill("1fr 0.3fr")
+      .join(" ") + " 1fr";
   const dotChar = (d: Dot) => (d === "black" ? "●" : d === "white" ? "○" : "");
+  const dotName = (d: Dot) =>
+    d === "black" ? "black dot, one is double the other" : "white dot, consecutive";
+  /** The dots touching a cell, in words, for its accessible name. */
+  const dotsAround = (i: number): string | null => {
+    const r = Math.floor(i / n),
+      c = i % n;
+    const out: string[] = [];
+    const say = (d: Dot, where: string) => {
+      if (d) out.push(`${d} dot ${where}`);
+    };
+    if (c < n - 1) say(h[r * (n - 1) + c], "right");
+    if (c > 0) say(h[r * (n - 1) + c - 1], "left");
+    if (r < n - 1) say(v[r * n + c], "below");
+    if (r > 0) say(v[(r - 1) * n + c], "above");
+    return out.length ? out.join(", ") : null;
+  };
+  const dot = (k: number, d: Dot) =>
+    d ? (
+      <span key={k} className="kropki-dot" role="img" aria-label={dotName(d)}>
+        {dotChar(d)}
+      </span>
+    ) : (
+      <span key={k} className="kropki-dot" aria-hidden="true" />
+    );
 
   return (
     <div className="game game-kropki">
       <GameHeader title="Kropki" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
-        ○ joins consecutive numbers, ● joins a number and its double — and no
-        dot means neither.
+        ○ joins consecutive numbers, ● joins a number and its double — and no dot means
+        neither.
       </p>
       <GameTools
         diff={diff}
@@ -164,7 +196,8 @@ export default function Kropki({ onExit }: { onExit: () => void }) {
         aria-label="Kropki board"
       >
         {Array.from({ length: G * G }).map((_, k) => {
-          const gr = Math.floor(k / G), gc = k % G;
+          const gr = Math.floor(k / G),
+            gc = k % G;
           if (gr % 2 === 0 && gc % 2 === 0) {
             const i = (gr / 2) * n + gc / 2;
             return (
@@ -176,6 +209,14 @@ export default function Kropki({ onExit }: { onExit: () => void }) {
                   selected === i ? "selected" : "",
                   conflicts.has(i) ? "conflict" : ""
                 ].join(" ")}
+                aria-label={cellLabel(
+                  i,
+                  n,
+                  board[i],
+                  dotsAround(i),
+                  conflicts.has(i) && "conflict"
+                )}
+                aria-selected={selected === i}
                 onClick={() => setSelected(i)}
               >
                 {board[i] || ""}
@@ -183,46 +224,19 @@ export default function Kropki({ onExit }: { onExit: () => void }) {
             );
           }
           if (gr % 2 === 0 && gc % 2 === 1)
-            return (
-              <span key={k} className="kropki-dot" aria-hidden="true">
-                {dotChar(h[(gr / 2) * (n - 1) + (gc - 1) / 2])}
-              </span>
-            );
-          if (gr % 2 === 1 && gc % 2 === 0)
-            return (
-              <span key={k} className="kropki-dot" aria-hidden="true">
-                {dotChar(v[((gr - 1) / 2) * n + gc / 2])}
-              </span>
-            );
+            return dot(k, h[(gr / 2) * (n - 1) + (gc - 1) / 2]);
+          if (gr % 2 === 1 && gc % 2 === 0) return dot(k, v[((gr - 1) / 2) * n + gc / 2]);
           return <span key={k} />;
         })}
       </div>
 
-      <div className="numpad numpad-5">
-        {Array.from({ length: n }, (_, d) => d + 1).map((d) => (
-          <button
-            key={d}
-            className="num-key"
-            onClick={() => selected !== null && setCell(selected, d)}
-          >
-            {d}
-          </button>
-        ))}
-        <button
-          className="num-key tool"
-          onClick={() => selected !== null && setCell(selected, 0)}
-        >
-          ⌫
-        </button>
-      </div>
+      <Numpad max={n} onDigit={(d) => selected !== null && setCell(selected, d)} />
 
       {saved.done && (
         <Result
           key={seed}
-          game="kropki"
           won
           message="Every dot satisfied!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

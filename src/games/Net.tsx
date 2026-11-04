@@ -1,9 +1,11 @@
-import { useMemo, type CSSProperties } from "react";
+import { useEffect, useMemo, type CSSProperties } from "react";
+import { useGridNav } from "../lib/gridnav";
 import { makeRng } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Net.css";
 
 const SIZE: Record<Diff, number> = { easy: 5, medium: 7, hard: 9 };
 const HELP =
@@ -12,7 +14,10 @@ const HELP =
   "glow once they're connected to the centre.";
 
 // Direction bits: U=1, R=2, D=4, L=8. Rotating clockwise maps U→R→D→L.
-const U = 1, R = 2, D = 4, L = 8;
+const U = 1,
+  R = 2,
+  D = 4,
+  L = 8;
 const rot = (m: number, times: number): number =>
   ((m << times) | (m >> (4 - times))) & 15;
 
@@ -26,7 +31,8 @@ function generateNet(seed: string, n: number): number[] {
   const frontier: [number, number, number, number][] = []; // from, to, bitFrom, bitTo
 
   const pushEdges = (i: number) => {
-    const r = Math.floor(i / n), c = i % n;
+    const r = Math.floor(i / n),
+      c = i % n;
     if (r > 0 && !inTree[i - n]) frontier.push([i, i - n, U, D]);
     if (r < n - 1 && !inTree[i + n]) frontier.push([i, i + n, D, U]);
     if (c > 0 && !inTree[i - 1]) frontier.push([i, i - 1, L, R]);
@@ -61,7 +67,8 @@ function reachable(masks: number[], n: number): Set<number> {
   const stack = [centre];
   while (stack.length) {
     const i = stack.pop()!;
-    const r = Math.floor(i / n), c = i % n;
+    const r = Math.floor(i / n),
+      c = i % n;
     const m = masks[i];
     const tryGo = (j: number, need: number) => {
       if (!seen.has(j) && masks[j] & need) {
@@ -80,7 +87,8 @@ function reachable(masks: number[], n: number): Set<number> {
 /** Solved: no open or mismatched pipe ends, and one connected network. */
 function solved(masks: number[], n: number): boolean {
   for (let i = 0; i < n * n; i++) {
-    const r = Math.floor(i / n), c = i % n;
+    const r = Math.floor(i / n),
+      c = i % n;
     const m = masks[i];
     if (m & U && (r === 0 || !(masks[i - n] & D))) return false;
     if (m & D && (r === n - 1 || !(masks[i + n] & U))) return false;
@@ -97,8 +105,8 @@ interface SavedState {
 }
 
 export default function Net({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("net", (s, d) => ({
+  const { seed, diff, saved, commit, commitHint, finish, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((s, d) => ({
       rots: scramble(`net-${s}`, SIZE[d]),
       taps: 0,
       done: false
@@ -113,14 +121,32 @@ export default function Net({ onExit }: { onExit: () => void }) {
 
   const lit = useMemo(() => reachable(masks, n), [masks, n]);
 
+  // A hint can seal the network; finish the way a tap would.
+  const solvedNow = useMemo(() => solved(masks, n), [masks, n]);
+  useEffect(() => {
+    if (solvedNow) finish();
+  }, [solvedNow, finish]);
+
+  /** Turn one misrotated tile back to its generated orientation. */
+  function hint() {
+    if (saved.done) return;
+    const wrong = masks.flatMap((m, i) => (m === base[i] ? [] : [i]));
+    if (!wrong.length) return;
+    const i = wrong[Math.floor(Math.random() * wrong.length)];
+    const rots = saved.rots.slice();
+    rots[i] = 0;
+    commitHint({ ...saved, rots });
+  }
+
+  const nav = useGridNav();
+
   function tap(i: number) {
     if (saved.done) return;
     const rots = saved.rots.slice();
     rots[i] = (rots[i] + 1) % 4;
     const nextMasks = base.map((m, k) => rot(m, rots[k] % 4));
     const done = solved(nextMasks, n);
-    commit({ rots, taps: saved.taps + 1, done });
-    if (done && !saved.done) recordResult("net", true);
+    commit({ rots, taps: saved.taps + 1, done }, { outcome: done ? "won" : undefined });
   }
 
   return (
@@ -135,6 +161,7 @@ export default function Net({ onExit }: { onExit: () => void }) {
         help={HELP}
         onUndo={undo}
         canUndo={canUndo && !saved.done}
+        onHint={saved.done ? undefined : hint}
       />
 
       <div className="lights-meta">
@@ -148,6 +175,7 @@ export default function Net({ onExit }: { onExit: () => void }) {
         style={{ "--n": n } as CSSProperties}
         role="grid"
         aria-label="Pipes board"
+        {...nav}
       >
         {masks.map((m, i) => {
           const arms: string[] = [];
@@ -161,6 +189,12 @@ export default function Net({ onExit }: { onExit: () => void }) {
             <button
               key={i}
               role="gridcell"
+              data-cell={i}
+              aria-label={`Row ${Math.floor(i / n) + 1}, column ${(i % n) + 1}${
+                centre ? ", centre" : ""
+              }, pipe ${arms
+                .map((a) => ({ u: "up", r: "right", d: "down", l: "left" })[a])
+                .join(" ")}, ${lit.has(i) ? "connected" : "not connected"}`}
               className={[
                 "net-cell",
                 lit.has(i) ? "lit" : "",
@@ -180,10 +214,8 @@ export default function Net({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="net"
           won
           message={`Network sealed in ${saved.taps} taps!`}
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

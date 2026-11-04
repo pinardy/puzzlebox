@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useRef, type CSSProperties } from "react";
+import { useEffect, useMemo, type CSSProperties } from "react";
+import { useMarkPaint } from "../lib/drag";
 import { makeRng } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./FillAPix.css";
 
 type Mark = 0 | 1 | 2; // empty | filled | crossed
 
@@ -29,11 +31,14 @@ function generateFillAPix(seed: string, n: number, rate: number): Puzzle {
     const target = Array.from({ length: n * n }, () => (rng() < 0.52 ? 1 : 0));
     // Smooth once toward neighbours so the picture clumps like a mosaic.
     const smoothed = target.map((_, i) => {
-      const r = Math.floor(i / n), c = i % n;
-      let on = 0, all = 0;
+      const r = Math.floor(i / n),
+        c = i % n;
+      let on = 0,
+        all = 0;
       for (let dr = -1; dr <= 1; dr++)
         for (let dc = -1; dc <= 1; dc++) {
-          const rr = r + dr, cc = c + dc;
+          const rr = r + dr,
+            cc = c + dc;
           if (rr < 0 || rr >= n || cc < 0 || cc >= n) continue;
           all++;
           on += target[rr * n + cc];
@@ -45,11 +50,13 @@ function generateFillAPix(seed: string, n: number, rate: number): Puzzle {
 
     const clues = smoothed.map((_, i) => {
       if (rng() >= rate) return null;
-      const r = Math.floor(i / n), c = i % n;
+      const r = Math.floor(i / n),
+        c = i % n;
       let count = 0;
       for (let dr = -1; dr <= 1; dr++)
         for (let dc = -1; dc <= 1; dc++) {
-          const rr = r + dr, cc = c + dc;
+          const rr = r + dr,
+            cc = c + dc;
           if (rr >= 0 && rr < n && cc >= 0 && cc < n) count += smoothed[rr * n + cc];
         }
       return count;
@@ -65,8 +72,8 @@ interface SavedState {
 }
 
 export default function FillAPix({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("fillapix", (_s, d) => ({
+  const { seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
       marks: Array(SIZE[d] * SIZE[d]).fill(0) as Mark[],
       done: false
     }));
@@ -75,18 +82,20 @@ export default function FillAPix({ onExit }: { onExit: () => void }) {
     () => generateFillAPix(`fillapix-${seed}`, n, CLUE_RATE[diff]),
     [seed, n, diff]
   );
-  const paint = useRef<Mark | null>(null);
 
   /** Per-clue state: satisfied (exact count, block fully marked), broken
    *  (too many fills, or block complete with too few), or open. */
   const clueState = useMemo(() => {
     return clues.map((clue, i) => {
       if (clue === null) return null;
-      const r = Math.floor(i / n), c = i % n;
-      let filled = 0, undecided = 0;
+      const r = Math.floor(i / n),
+        c = i % n;
+      let filled = 0,
+        undecided = 0;
       for (let dr = -1; dr <= 1; dr++)
         for (let dc = -1; dc <= 1; dc++) {
-          const rr = r + dr, cc = c + dc;
+          const rr = r + dr,
+            cc = c + dc;
           if (rr < 0 || rr >= n || cc < 0 || cc >= n) continue;
           const m = saved.marks[rr * n + cc];
           if (m === 1) filled++;
@@ -98,39 +107,32 @@ export default function FillAPix({ onExit }: { onExit: () => void }) {
     });
   }, [clues, saved.marks, n]);
 
+  const complete =
+    saved.marks.every((m) => m !== 0) && clueState.every((s) => s === null || s === "ok");
   useEffect(() => {
-    const complete =
-      saved.marks.every((m) => m !== 0) &&
-      clueState.every((s) => s === null || s === "ok");
-    if (!saved.done && complete) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("fillapix", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clueState, saved]);
+    if (complete) finish();
+  }, [complete, finish]);
 
-  function apply(i: number, v: Mark, undoable: boolean) {
-    const marks = saved.marks.slice() as Mark[];
-    marks[i] = v;
-    commit({ ...saved, marks }, { undoable });
-  }
+  // First tap cycles empty → fill → cross → empty; the stroke then paints
+  // that same mark over the cells that differ, as one undo step.
+  const drag = useMarkPaint<Mark>({
+    marks: saved.marks,
+    next: (i) => (saved.done ? null : (((saved.marks[i] + 1) % 3) as Mark)),
+    write: (marks, undoable) => commit({ ...saved, marks }, { undoable })
+  });
 
-  /** Correct one cell that disagrees with the hidden picture. */
+  /** Correct one cell that disagrees with the hidden picture — including
+   *  a blank one that should be crossed, since a win needs every square
+   *  marked. */
   function hint() {
     const wrong = [...Array(n * n).keys()].filter(
-      (i) => (saved.marks[i] === 1) !== (target[i] === 1)
+      (i) => saved.marks[i] !== (target[i] === 1 ? 1 : 2)
     );
     if (!wrong.length) return;
     const idx = wrong[Math.floor(Math.random() * wrong.length)];
     const marks = saved.marks.slice() as Mark[];
     marks[idx] = target[idx] === 1 ? 1 : 2;
     commitHint({ ...saved, marks });
-  }
-
-  function cellFromPoint(x: number, y: number): number | null {
-    const el = document.elementFromPoint(x, y)?.closest("[data-fap-idx]");
-    const v = el instanceof HTMLElement ? el.dataset.fapIdx : undefined;
-    return v === undefined ? null : Number(v);
   }
 
   return (
@@ -151,39 +153,28 @@ export default function FillAPix({ onExit }: { onExit: () => void }) {
       <div
         className="fap-grid drag-paint"
         style={{ "--n": n } as CSSProperties}
-        onPointerDown={(e) => {
-          if (saved.done) return;
-          (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-          const i = cellFromPoint(e.clientX, e.clientY);
-          if (i === null) return;
-          // First tap cycles empty → fill → cross → empty; the stroke
-          // then paints that same mark.
-          const v = ((saved.marks[i] + 1) % 3) as Mark;
-          paint.current = v;
-          apply(i, v, true);
-        }}
-        onPointerMove={(e) => {
-          if (paint.current === null) return;
-          const i = cellFromPoint(e.clientX, e.clientY);
-          if (i !== null && saved.marks[i] !== paint.current)
-            apply(i, paint.current, false); // whole stroke = one undo step
-        }}
-        onPointerUp={() => { paint.current = null; }}
-        onPointerCancel={() => { paint.current = null; }}
+        role="grid"
+        aria-label="Fill-a-Pix board"
+        {...drag}
       >
         {saved.marks.map((m, i) => {
           const state = clueState[i];
           return (
             <button
               key={i}
-              data-fap-idx={i}
+              data-cell={i}
+              role="gridcell"
               className={[
                 "fap-cell",
                 m === 1 ? "fill" : m === 2 ? "cross" : "",
                 state === "ok" ? "satisfied" : "",
                 state === "broken" ? "broken" : ""
               ].join(" ")}
-              aria-label={`Cell ${Math.floor(i / n) + 1},${(i % n) + 1}`}
+              aria-label={`Row ${Math.floor(i / n) + 1}, column ${(i % n) + 1}, ${
+                m === 1 ? "painted" : m === 2 ? "crossed" : "empty"
+              }${clues[i] !== null ? `, clue ${clues[i]}` : ""}${
+                state === "ok" ? ", satisfied" : state === "broken" ? ", broken" : ""
+              }`}
             >
               {clues[i] !== null ? clues[i] : m === 2 ? "×" : ""}
             </button>
@@ -194,10 +185,8 @@ export default function FillAPix({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="fillapix"
           won
           message="Mosaic complete!"
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

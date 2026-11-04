@@ -1,0 +1,86 @@
+/* Zip: styles only this board uses. Loaded with its chunk. */
+
+.zip-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--card);
+  align-self: center;
+  width: min(100%, 420px);
+  aspect-ratio: 1;
+  margin: 6px 0;
+  touch-action: none;
+  user-select: none;
+}
+
+.zip-cell {
+  border: 0.5px solid var(--grid-line);
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: clamp(14px, 4vw, 20px);
+  color: var(--ink);
+}
+
+.zip-cell.on {
+  background: #dcead0;
+}
+
+.zip-cell.head {
+  background: var(--olive);
+  color: #fff;
+}
+
+.zip-cell.cp {
+  position: relative;
+}
+
+.zip-cell.cp::before {
+  content: "";
+  position: absolute;
+  width: 68%;
+  height: 68%;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  background: var(--card);
+  z-index: 0;
+}
+
+.zip-cell.cp {
+  z-index: 0;
+}
+
+.zip-cell.cp > * {
+  z-index: 1;
+}
+
+.zip-cell.cp-done::before {
+  background: var(--olive);
+  border-color: var(--olive);
+}
+
+.zip-cell.cp-done {
+  color: #fff;
+}
+
+.zip-cell .cp-num {
+  position: relative;
+  z-index: 1;
+}
+
+@media (min-width: 700px) {
+  .zip-grid {
+    width: min(100%, 540px);
+  }
+  .zip-grid {
+    margin-top: auto;
+    margin-bottom: auto;
+  }
+}
+
+:root[data-theme="dark"] .zip-cell.on {
+  background: #2c3a24;
+}

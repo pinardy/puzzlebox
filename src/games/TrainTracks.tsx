@@ -11,10 +11,12 @@ import {
   SOUTH,
   WEST
 } from "../lib/tracks";
-import { recordResult, Diff } from "../lib/storage";
+import { useGridNav } from "../lib/gridnav";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./TrainTracks.css";
 
 const SIZE: Record<Diff, number> = { easy: 5, medium: 6, hard: 7 };
 const STATES = [0, ...PIECES];
@@ -38,8 +40,8 @@ interface SavedState {
 }
 
 export default function TrainTracks({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("tracks", (_s, d) => ({
+  const { seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
       cells: Array(SIZE[d] * SIZE[d]).fill(0),
       done: false
     }));
@@ -69,13 +71,10 @@ export default function TrainTracks({ onExit }: { onExit: () => void }) {
   const total = useMemo(() => rowCounts.reduce((a, b) => a + b, 0), [rowCounts]);
   const placed = useMemo(() => board.filter(Boolean).length, [board]);
 
+  const solved = useMemo(() => checkTracks(board, puzzle), [board, puzzle]);
   useEffect(() => {
-    if (!saved.done && checkTracks(board, puzzle)) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("tracks", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [board, puzzle, saved]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   /** Step a cell through blank → the six pieces → blank; `step` is -1 for the
    *  long-press, since seven states is a long way round the wrong way. */
@@ -87,10 +86,12 @@ export default function TrainTracks({ onExit }: { onExit: () => void }) {
     commit({ ...saved, cells });
   }
 
+  // Enter steps a cell to the next piece, Shift+Enter to the previous one
+  // (the long-press).
+  const nav = useGridNav((i, back) => cycle(i, back ? -1 : 1));
+
   function hint() {
-    const wrong = [...board.keys()].filter(
-      (i) => !givens[i] && board[i] !== solution[i]
-    );
+    const wrong = [...board.keys()].filter((i) => !givens[i] && board[i] !== solution[i]);
     if (!wrong.length) return;
     const cells = saved.cells.slice();
     const i = wrong[Math.floor(Math.random() * wrong.length)];
@@ -128,6 +129,7 @@ export default function TrainTracks({ onExit }: { onExit: () => void }) {
         style={{ "--n": n + 1 } as CSSProperties}
         role="grid"
         aria-label="Train Tracks board"
+        {...nav}
       >
         <span className="tt-corner" />
         {colCounts.map((want, c) => (
@@ -157,6 +159,7 @@ export default function TrainTracks({ onExit }: { onExit: () => void }) {
               <button
                 key={i}
                 role="gridcell"
+                data-cell={i}
                 className={[
                   "tt-cell",
                   givens[i] ? "given" : "",
@@ -183,7 +186,7 @@ export default function TrainTracks({ onExit }: { onExit: () => void }) {
                   if (pressTimer.current !== null) clearTimeout(pressTimer.current);
                 }}
                 aria-label={
-                  `Row ${r + 1} column ${c + 1}, ` +
+                  `Row ${r + 1}, column ${c + 1}, ` +
                   (board[i] ? PIECE_NAME[board[i]] : "empty") +
                   (givens[i] ? ", fixed" : "") +
                   (end ? (end === entry ? ", entrance" : ", exit") : "")
@@ -199,10 +202,8 @@ export default function TrainTracks({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="tracks"
           won
           message="The line runs through!"
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

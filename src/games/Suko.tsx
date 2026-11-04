@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { generateSuko, sukoSolved, SUKO_CIRCLES } from "../lib/suko";
-import { useGridKeys } from "../lib/keys";
-import { recordResult, Diff } from "../lib/storage";
+import { cellLabel, useGridKeys } from "../lib/keys";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Suko.css";
 
 const LETTERS = ["A", "B", "C"];
 const CORNER = ["Top left", "Top right", "Bottom left", "Bottom right"];
@@ -31,29 +32,38 @@ const markOf = (vals: number[], target: number): Mark =>
 const GLYPH: Record<Mark, string> = { open: "", ok: "✓", bad: "✗" };
 
 export default function Suko({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("suko", () => ({ entries: Array(9).fill(0), done: false }));
+  const { seed, diff, saved, commit, commitHint, finish, undo, canUndo, newPuzzle } =
+    useGame<SavedState>(() => ({ entries: Array(9).fill(0), done: false }));
   const puzzle = useMemo(() => generateSuko(`suko-${seed}`, diff), [seed, diff]);
   const { circles, groups, groupOf, groupSums, solution } = puzzle;
   const [selected, setSelected] = useState<number | null>(null);
   const board = saved.entries;
 
   const circleMark = useMemo(
-    () => SUKO_CIRCLES.map((q, k) => markOf(q.map((c) => board[c]), circles[k])),
+    () =>
+      SUKO_CIRCLES.map((q, k) =>
+        markOf(
+          q.map((c) => board[c]),
+          circles[k]
+        )
+      ),
     [board, circles]
   );
   const groupMark = useMemo(
-    () => groups.map((g, k) => markOf(g.map((c) => board[c]), groupSums[k])),
+    () =>
+      groups.map((g, k) =>
+        markOf(
+          g.map((c) => board[c]),
+          groupSums[k]
+        )
+      ),
     [board, groups, groupSums]
   );
 
+  const solved = sukoSolved(board, puzzle);
   useEffect(() => {
-    if (!saved.done && sukoSolved(board, puzzle)) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("suko", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [board, puzzle, saved]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   function setCell(idx: number, val: number) {
     if (saved.done) return;
@@ -116,7 +126,8 @@ export default function Suko({ onExit }: { onExit: () => void }) {
                   `sk-g${groupOf[i]}`,
                   selected === i ? "selected" : ""
                 ].join(" ")}
-                aria-label={`Row ${Math.floor(i / 3) + 1} column ${(i % 3) + 1}, block ${letter}, ${v || "empty"}`}
+                aria-label={cellLabel(i, 3, v, `block ${letter}`)}
+                aria-selected={selected === i}
                 onClick={() => {
                   if (v !== 0 && selected === i) setCell(i, 0);
                   else setSelected(i);
@@ -189,10 +200,8 @@ export default function Suko({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="suko"
           won
           message="Every sum lands!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

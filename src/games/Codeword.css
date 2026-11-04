@@ -1,0 +1,103 @@
+/* Codeword: styles only this board uses. Loaded with its chunk. */
+
+.cw-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+  gap: 2px;
+  align-self: center;
+  width: min(100%, 400px);
+}
+
+.cw-block {
+  aspect-ratio: 1;
+  background: transparent;
+}
+
+.cw-cell {
+  aspect-ratio: 1;
+  position: relative;
+  border: 1.5px solid var(--ink);
+  border-radius: 4px;
+  background: var(--card);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.cw-cell.selected {
+  outline: 3px solid var(--blue);
+  outline-offset: 1px;
+  z-index: 1;
+}
+
+.cw-cell.cw-same {
+  background: rgba(59, 111, 224, 0.14);
+}
+
+.cw-cell.cw-given {
+  background: var(--paper);
+}
+
+.cw-letter {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: clamp(14px, 4.2vw, 20px);
+  line-height: 1;
+}
+
+.cw-num {
+  position: absolute;
+  top: 1px;
+  right: 3px;
+  font-family: var(--mono);
+  font-size: 8px;
+  color: var(--ink-soft);
+}
+
+.cw-tracker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  justify-content: center;
+  align-self: center;
+  margin-top: 6px;
+}
+
+.cw-key {
+  width: 30px;
+  height: 34px;
+  border: 1.5px solid var(--ink);
+  border-radius: 6px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.cw-key:active {
+  transform: translateY(2px);
+  box-shadow: none;
+}
+
+.cw-key.cw-spent {
+  background: var(--grid-line);
+  color: var(--ink-soft);
+}
+
+.cw-erase {
+  width: 40px;
+}
+
+:root[data-theme="dark"] .cw-cell.cw-given {
+  background: #202b39;
+}
+
+:root[data-theme="dark"] .cw-cell.cw-same {
+  background: #263a52;
+}
+
+:root[data-theme="dark"] .cw-key.cw-spent {
+  background: #202b39;
+}

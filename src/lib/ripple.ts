@@ -23,7 +23,8 @@ interface Layout {
 }
 
 const nbrsOf = (i: number, n: number): number[] => {
-  const r = Math.floor(i / n), c = i % n;
+  const r = Math.floor(i / n),
+    c = i % n;
   const out: number[] = [];
   if (r > 0) out.push(i - n);
   if (r < n - 1) out.push(i + n);
@@ -115,7 +116,8 @@ const fits = (
 ): boolean => {
   if (v > rooms[roomOf[i]].length) return false;
   for (const j of rooms[roomOf[i]]) if (j !== i && cur[j] === v) return false;
-  const r = Math.floor(i / n), c = i % n;
+  const r = Math.floor(i / n),
+    c = i % n;
   for (let d = 1; d <= v; d++) {
     if (c - d >= 0 && cur[i - d] === v) return false;
     if (c + d < n && cur[i + d] === v) return false;
@@ -154,7 +156,8 @@ export function solveRipple(
 
   const nextCell = (): number => {
     if (rng) return cur.indexOf(0);
-    let best = -1, bestK = MAX_ROOM + 1;
+    let best = -1,
+      bestK = MAX_ROOM + 1;
     for (let i = 0; i < N; i++) {
       if (cur[i] !== 0) continue;
       let k = 0;
@@ -210,7 +213,8 @@ export function rippleConflicts(
         bad.add(i);
         bad.add(j);
       }
-    const r = Math.floor(i / n), c = i % n;
+    const r = Math.floor(i / n),
+      c = i % n;
     for (let d = 1; d <= v; d++) {
       if (c + d < n && board[i + d] === v) {
         bad.add(i);
@@ -284,15 +288,7 @@ export function generateRipple(seed: string, n: number, givenRate: number): Ripp
   for (let attempt = 0; attempt < MAX_LAYOUTS; attempt++) {
     const layout = makeRooms(n, rng);
     const budget = attempt < 100 ? 2500 : 25000;
-    const filled = solveRipple(
-      n,
-      layout.roomOf,
-      layout.rooms,
-      blank,
-      1,
-      rng,
-      budget
-    );
+    const filled = solveRipple(n, layout.roomOf, layout.rooms, blank, 1, rng, budget);
     if (filled.solution) return carve(n, layout, filled.solution, target, rng);
   }
   // Every random layout came up empty — the band layout always fills.

@@ -1,0 +1,55 @@
+/* Memory: styles only this board uses. Loaded with its chunk. */
+
+.memory-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  gap: 10px;
+  align-self: center;
+  width: min(100%, 400px);
+  aspect-ratio: 1;
+  margin: 8px 0;
+}
+
+.memory-card {
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  background: var(--indigo);
+  background-image: radial-gradient(
+    circle at 50% 50%,
+    rgba(255, 255, 255, 0.22) 12%,
+    transparent 13%
+  );
+  background-size: 14px 14px;
+  box-shadow: var(--shadow);
+  font-size: clamp(22px, 7vw, 34px);
+  cursor: pointer;
+  transition:
+    background 160ms,
+    transform 160ms;
+}
+
+.memory-card.up {
+  background: var(--card);
+  background-image: none;
+}
+
+.memory-card.matched {
+  background: #eef7ee;
+  border-color: var(--green);
+  box-shadow: none;
+  cursor: default;
+}
+
+@media (min-width: 700px) {
+  .memory-grid {
+    width: min(100%, 480px);
+  }
+  .memory-grid {
+    margin-top: auto;
+    margin-bottom: auto;
+  }
+}
+
+:root[data-theme="dark"] .memory-card.matched {
+  background: #1f3126;
+}

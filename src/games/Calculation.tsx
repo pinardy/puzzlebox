@@ -1,9 +1,10 @@
 import { makeRng, shuffled } from "../lib/rng";
-import { RANKS, isRed, label, rank } from "../lib/cards";
-import { recordResult } from "../lib/storage";
+import { RANKS, isRed, label, nCards, rank, spoken, spokenRank } from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
+import "./Calculation.css";
 
 // Foundation k counts up in steps of k+1, wrapping past the king: the ace
 // pile is A,2,3…K, the two pile is 2,4,6…, and so on. Suit never matters.
@@ -48,9 +49,8 @@ function deal(seed: string): SavedState {
 }
 
 export default function Calculation({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle, playMs } = useGame<SavedState>(
-    "calculation",
-    (s) => deal(s)
+  const { seed, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>((s) =>
+    deal(s)
   );
 
   const current = saved.stock.length ? saved.stock[saved.stock.length - 1] : null;
@@ -64,22 +64,24 @@ export default function Calculation({ onExit }: { onExit: () => void }) {
     };
   }
 
-  function finish(next: SavedState) {
+  function play(next: SavedState) {
     next.moves++;
     if (!next.done && next.founds.every((f) => f === 13)) {
       next.done = true;
       next.won = true;
-      recordResult("calculation", true);
+      return commit(next, { outcome: "won" });
     } else if (!next.done && !next.stock.length) {
       // Out of deck: only playable waste tops can still move.
       const canMove = next.wastes.some((w) => {
         const top = w.length ? w[w.length - 1] : null;
-        return top !== null && next.founds.some((f, k) => f < 13 && wants(k, f) === rank(top));
+        return (
+          top !== null && next.founds.some((f, k) => f < 13 && wants(k, f) === rank(top))
+        );
       });
       if (!canMove) {
         next.done = true;
         next.won = false;
-        recordResult("calculation", false);
+        return commit(next, { outcome: "lost" });
       }
     }
     commit(next);
@@ -99,7 +101,7 @@ export default function Calculation({ onExit }: { onExit: () => void }) {
     if (from === "stock") next.stock.pop();
     else next.wastes[from].pop();
     next.founds[k]++;
-    finish(next);
+    play(next);
   }
 
   /** Park the turned card on a waste heap. */
@@ -108,7 +110,7 @@ export default function Calculation({ onExit }: { onExit: () => void }) {
     const next = clone();
     next.stock.pop();
     next.wastes[w].push(current);
-    finish(next);
+    play(next);
   }
 
   function startNew() {
@@ -132,12 +134,13 @@ export default function Calculation({ onExit }: { onExit: () => void }) {
           return (
             <button
               key={k}
+              type="button"
               className={`kl-card ca-found${fits ? " bc-target" : ""}${
                 f === 13 ? " cl-done" : ""
               }`}
               onClick={() => toFoundation(k, "stock")}
-              aria-label={`Foundation ${STEP_LABEL[k]}, ${f} of 13${
-                need ? `, wants ${RANKS[need - 1]}` : ", complete"
+              aria-label={`Foundation ${k + 1}, counts by ${k + 1}, ${f} of 13${
+                need ? `, needs ${spokenRank(need)}` : ", complete"
               }`}
             >
               <span className="ca-step">{STEP_LABEL[k]}</span>
@@ -148,9 +151,16 @@ export default function Calculation({ onExit }: { onExit: () => void }) {
         })}
       </div>
 
-      <div className="ca-deck">
-        <span className="ca-deck-label">Turned</span>
+      <div className="ca-deck" aria-live="polite">
+        <span className="ca-deck-label" aria-hidden="true">
+          Turned
+        </span>
         <span
+          key={current ?? "none"}
+          role="img"
+          aria-label={
+            current === null ? "No turned card" : `Turned card, ${spoken(current)}`
+          }
           className={`kl-card${current === null ? " kl-empty" : ""}${
             current !== null && isRed(current) ? " red" : ""
           }`}
@@ -168,13 +178,9 @@ export default function Calculation({ onExit }: { onExit: () => void }) {
             saved.founds.some((f, k) => f < 13 && wants(k, f) === rank(top));
           return (
             <div key={i} className="ca-heap">
-              <button
-                className={[
-                  "kl-card",
-                  top === null ? "kl-empty" : "",
-                  top !== null && isRed(top) ? "red" : "",
-                  playable ? "bc-live" : ""
-                ].join(" ")}
+              <PlayingCard
+                card={top}
+                className={playable ? "bc-live" : undefined}
                 onClick={() => {
                   if (current !== null) {
                     toWaste(i);
@@ -190,12 +196,14 @@ export default function Calculation({ onExit }: { onExit: () => void }) {
                 aria-label={
                   top === null
                     ? `Heap ${i + 1}, empty`
-                    : `Heap ${i + 1}, ${label(top)}, ${w.length} cards`
+                    : `Heap ${i + 1}, ${spoken(top)}, ${nCards(w.length)}`
                 }
               >
-                {top === null ? "·" : label(top)}
-              </button>
-              <span className="ca-heap-n">{w.length || ""}</span>
+                {top === null ? "·" : undefined}
+              </PlayingCard>
+              <span className="ca-heap-n" aria-hidden="true">
+                {w.length || ""}
+              </span>
             </div>
           );
         })}
@@ -210,14 +218,12 @@ export default function Calculation({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="calculation"
           won={saved.won}
           message={
             saved.won
               ? `All forty-eight calculated in ${saved.moves} moves!`
               : `Stuck with ${home} of 48 home.`
           }
-          playMs={playMs}
           onNew={startNew}
           onExit={onExit}
         />

@@ -19,7 +19,8 @@ export interface MagnetsPuzzle {
 }
 
 export const nbrsOf = (i: number, n: number): number[] => {
-  const r = Math.floor(i / n), c = i % n;
+  const r = Math.floor(i / n),
+    c = i % n;
   const out: number[] = [];
   if (r > 0) out.push(i - n);
   if (r < n - 1) out.push(i + n);
@@ -38,12 +39,16 @@ function tileGrid(n: number, rng: () => number): number[] | null {
 
   const rec = (): boolean => {
     if (++steps > 20000) return false;
-    let pick = -1, fewest = 5;
+    let pick = -1,
+      fewest = 5;
     for (const i of order) {
       if (partner[i] !== -1) continue;
       const free = nbrsOf(i, n).filter((j) => partner[j] === -1).length;
       if (free === 0) return false;
-      if (free < fewest) { fewest = free; pick = i; }
+      if (free < fewest) {
+        fewest = free;
+        pick = i;
+      }
       if (fewest === 1) break;
     }
     if (pick === -1) return true;
@@ -75,8 +80,7 @@ function brickTiling(n: number): number[] {
 /** Matching array → one ordered pair per domino, lower cell first. */
 function pairsOf(partner: readonly number[]): [number, number][] {
   const out: [number, number][] = [];
-  for (let i = 0; i < partner.length; i++)
-    if (partner[i] > i) out.push([i, partner[i]]);
+  for (let i = 0; i < partner.length; i++) if (partner[i] > i) out.push([i, partner[i]]);
   return out;
 }
 
@@ -96,7 +100,10 @@ function assignSigns(
   target: number
 ): Sign[] | null {
   const board = Array<Sign>(n * n).fill(0);
-  const order = shuffled(dominoes.map((_, k) => k), rng);
+  const order = shuffled(
+    dominoes.map((_, k) => k),
+    rng
+  );
   let magnets = 0;
   let steps = 0;
 
@@ -108,12 +115,14 @@ function assignSigns(
     if (++steps > 40000) return false;
     const [a, b] = dominoes[order[k]];
     const mags = shuffled(MAGNET_STATES, rng);
-    const opts: [Sign, Sign][] =
-      magnets < target ? [...mags, [0, 0]] : [[0, 0], ...mags];
+    const opts: [Sign, Sign][] = magnets < target ? [...mags, [0, 0]] : [[0, 0], ...mags];
     for (const [sa, sb] of opts) {
       if (!free(a, sa)) continue;
       board[a] = sa;
-      if (!free(b, sb)) { board[a] = 0; continue; }
+      if (!free(b, sb)) {
+        board[a] = 0;
+        continue;
+      }
       board[b] = sb;
       if (sa !== 0) magnets++;
       if (rec(k + 1)) return true;
@@ -138,7 +147,10 @@ function chessboardSigns(
   target: number
 ): Sign[] {
   const board = Array<Sign>(n * n).fill(0);
-  for (const k of shuffled(dominoes.map((_, i) => i), rng).slice(0, target)) {
+  for (const k of shuffled(
+    dominoes.map((_, i) => i),
+    rng
+  ).slice(0, target)) {
     const [a, b] = dominoes[k];
     const light = (Math.floor(a / n) + (a % n)) % 2 === 0;
     board[a] = light ? 1 : 2;
@@ -162,7 +174,10 @@ function hideClues(
   for (const [li, i] of chosen) clues[li][i] = null;
   if (!clues.some((list) => list.some((v) => v !== null && v > 0)))
     for (const [li, i] of chosen) {
-      if (full[li][i] > 0) { clues[li][i] = full[li][i]; break; }
+      if (full[li][i] > 0) {
+        clues[li][i] = full[li][i];
+        break;
+      }
     }
   return clues;
 }
@@ -171,11 +186,7 @@ function hideClues(
  *  clue lists straight off the result. Retries with a fresh seed offset if
  *  either search stalls; falls back to a brick tiling plus the chessboard
  *  assignment, which is always legal. */
-export function generateMagnets(
-  seed: string,
-  n: number,
-  hidden = 0
-): MagnetsPuzzle {
+export function generateMagnets(seed: string, n: number, hidden = 0): MagnetsPuzzle {
   let partner: number[] | null = null;
   let solution: Sign[] | null = null;
   let rng = makeRng(seed);
@@ -194,14 +205,13 @@ export function generateMagnets(
     solution = chessboardSigns(dominoes, n, rng, Math.round(dominoes.length * 0.7));
 
   const dominoOf = Array<number>(n * n).fill(-1);
-  dominoes.forEach(([a, b], id) => { dominoOf[a] = id; dominoOf[b] = id; });
+  dominoes.forEach(([a, b], id) => {
+    dominoOf[a] = id;
+    dominoOf[b] = id;
+  });
 
   const c = countSigns(solution, n);
-  const clues = hideClues(
-    [c.rowPlus, c.rowMinus, c.colPlus, c.colMinus],
-    hidden,
-    rng
-  );
+  const clues = hideClues([c.rowPlus, c.rowMinus, c.colPlus, c.colMinus], hidden, rng);
 
   return {
     n,
@@ -225,12 +235,21 @@ export interface SignCounts {
 export function countSigns(board: readonly Sign[], n: number): SignCounts {
   const z = () => Array<number>(n).fill(0);
   const out: SignCounts = {
-    rowPlus: z(), rowMinus: z(), colPlus: z(), colMinus: z()
+    rowPlus: z(),
+    rowMinus: z(),
+    colPlus: z(),
+    colMinus: z()
   };
   board.forEach((s, i) => {
-    const r = Math.floor(i / n), c = i % n;
-    if (s === 1) { out.rowPlus[r]++; out.colPlus[c]++; }
-    else if (s === 2) { out.rowMinus[r]++; out.colMinus[c]++; }
+    const r = Math.floor(i / n),
+      c = i % n;
+    if (s === 1) {
+      out.rowPlus[r]++;
+      out.colPlus[c]++;
+    } else if (s === 2) {
+      out.rowMinus[r]++;
+      out.colMinus[c]++;
+    }
   });
   return out;
 }
@@ -240,20 +259,22 @@ export function clashingCells(board: readonly Sign[], n: number): Set<number> {
   const bad = new Set<number>();
   for (let i = 0; i < board.length; i++) {
     if (board[i] === 0) continue;
-    for (const j of nbrsOf(i, n)) if (board[j] === board[i]) { bad.add(i); bad.add(j); }
+    for (const j of nbrsOf(i, n))
+      if (board[j] === board[i]) {
+        bad.add(i);
+        bad.add(j);
+      }
   }
   return bad;
 }
 
 /** Dominoes the player has half-finished or filled illegally. A fully blank
  *  domino is fine, and so is one plus with one minus; anything else is wrong. */
-export function brokenDominoes(
-  p: MagnetsPuzzle,
-  board: readonly Sign[]
-): Set<number> {
+export function brokenDominoes(p: MagnetsPuzzle, board: readonly Sign[]): Set<number> {
   const bad = new Set<number>();
   p.dominoes.forEach(([a, b], id) => {
-    const x = board[a], y = board[b];
+    const x = board[a],
+      y = board[b];
     if (x === 0 && y === 0) return;
     if ((x === 1 && y === 2) || (x === 2 && y === 1)) return;
     bad.add(id);
@@ -273,7 +294,5 @@ export function magnetsSolved(p: MagnetsPuzzle, board: readonly Sign[]): boolean
     [p.colPlus, got.colPlus],
     [p.colMinus, got.colMinus]
   ];
-  return lists.every(([want, have]) =>
-    want.every((v, i) => v === null || v === have[i])
-  );
+  return lists.every(([want, have]) => want.every((v, i) => v === null || v === have[i]));
 }

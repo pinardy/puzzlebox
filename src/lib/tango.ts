@@ -15,16 +15,21 @@ export interface TangoPuzzle {
 /** Would placing `v` at `idx` break a rule, given partial grid? */
 export function tangoInvalid(grid: number[], idx: number, v: number): boolean {
   if (v === 0) return false;
-  const r = Math.floor(idx / T), c = idx % T;
+  const r = Math.floor(idx / T),
+    c = idx % T;
   const at = (rr: number, cc: number) =>
-    rr < 0 || rr >= T || cc < 0 || cc >= T ? 0 : (grid[rr * T + cc] || 0);
+    rr < 0 || rr >= T || cc < 0 || cc >= T ? 0 : grid[rr * T + cc] || 0;
 
   // no three in a row (check every window of 3 containing idx)
-  for (const [dr, dc] of [[0, 1], [1, 0]] as const) {
+  for (const [dr, dc] of [
+    [0, 1],
+    [1, 0]
+  ] as const) {
     for (let off = -2; off <= 0; off++) {
       let same = 0;
       for (let k = 0; k < 3; k++) {
-        const rr = r + dr * (off + k), cc = c + dc * (off + k);
+        const rr = r + dr * (off + k),
+          cc = c + dc * (off + k);
         const val = rr === r && cc === c ? v : at(rr, cc);
         if (val === v) same++;
       }
@@ -33,7 +38,8 @@ export function tangoInvalid(grid: number[], idx: number, v: number): boolean {
   }
 
   // per-row / per-column cap of three
-  let rowN = 1, colN = 1;
+  let rowN = 1,
+    colN = 1;
   for (let k = 0; k < T; k++) {
     if (k !== c && grid[r * T + k] === v) rowN++;
     if (k !== r && grid[k * T + c] === v) colN++;

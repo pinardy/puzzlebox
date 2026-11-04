@@ -1,17 +1,11 @@
 import { useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult } from "../lib/storage";
+import { downAltColour, rank, stackPlace, suit } from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { Foundation, Pile, PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
 
-// Card id 0–51: suit = id % 4 (♠ ♥ ♦ ♣), rank = 1 (ace) … 13 (king).
-const SUITS = ["♠", "♥", "♦", "♣"];
-const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
-const rank = (id: number) => Math.floor(id / 4) + 1;
-const suit = (id: number) => id % 4;
-const isRed = (id: number) => suit(id) === 1 || suit(id) === 2;
-const label = (id: number) => `${RANKS[rank(id) - 1]}${SUITS[suit(id)]}`;
 const HELP =
   "Klondike's wilder cousin: there is no deck — everything is dealt. Move " +
   "ANY face-up card together with every card sitting on it, in any order, " +
@@ -48,17 +42,17 @@ function deal(seed: string): SavedState {
 type Sel = { pile: number; index: number } | null;
 
 export default function Yukon({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("yukon", (s) => deal(s));
+  const { seed, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>((s) =>
+    deal(s)
+  );
   const [sel, setSel] = useState<Sel>(null);
 
-  function finish(next: SavedState) {
+  function play(next: SavedState) {
     next.moves++;
     if (!next.done && next.foundations.every((f) => f === 13)) {
       next.done = true;
-      recordResult("yukon", true);
-    }
-    commit(next);
+      commit(next, { outcome: "won" });
+    } else commit(next);
     setSel(null);
   }
 
@@ -95,7 +89,7 @@ export default function Yukon({ onExit }: { onExit: () => void }) {
     const next = clone();
     takeSelection(next);
     next.foundations[suit(card)]++;
-    finish(next);
+    play(next);
   }
 
   function tap(pile: number, index: number | null) {
@@ -111,10 +105,7 @@ export default function Yukon({ onExit }: { onExit: () => void }) {
       }
       const moving = saved.tableau[sel.pile][sel.index];
       const top = cards.length ? cards[cards.length - 1] : null;
-      const fits =
-        top === null
-          ? rank(moving) === 13
-          : rank(moving) === rank(top) - 1 && isRed(moving) !== isRed(top);
+      const fits = top === null ? rank(moving) === 13 : downAltColour(moving, top);
       if (!fits) {
         setSel(null);
         return;
@@ -122,7 +113,7 @@ export default function Yukon({ onExit }: { onExit: () => void }) {
       const next = clone();
       const moved = takeSelection(next);
       next.tableau[pile].push(...moved);
-      finish(next);
+      play(next);
       return;
     }
 
@@ -150,47 +141,34 @@ export default function Yukon({ onExit }: { onExit: () => void }) {
       <div className="kl-top">
         <span className="kl-gap" />
         {saved.foundations.map((f, s) => (
-          <button
-            key={s}
-            className={`kl-card kl-found${f === 0 ? " kl-empty" : ""}${
-              f > 0 && (s === 1 || s === 2) ? " red" : ""
-            }`}
-            onClick={tryFoundation}
-            aria-label={`${SUITS[s]} foundation`}
-          >
-            {f === 0 ? SUITS[s] : `${RANKS[f - 1]}${SUITS[s]}`}
-          </button>
+          <Foundation key={s} suit={s} top={f} onClick={tryFoundation} />
         ))}
       </div>
 
       <div className="kl-tableau">
         {saved.tableau.map((pile, p) => (
-          <div
+          <Pile
             key={p}
-            className="kl-pile"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) tap(p, null);
-            }}
+            name={`Column ${p + 1}`}
+            empty={!pile.length}
+            onTap={() => tap(p, null)}
           >
             {pile.map((card, i) => {
               const up = i >= saved.faceDown[p];
               return (
-                <button
+                <PlayingCard
                   key={card}
-                  className={[
-                    "kl-card kl-stacked",
-                    up ? "" : "kl-back",
-                    up && isRed(card) ? "red" : "",
-                    isSelected(p, i) ? "selected" : ""
-                  ].join(" ")}
+                  card={card}
+                  faceDown={!up}
+                  selected={isSelected(p, i)}
+                  className="kl-stacked"
                   style={{ "--stack": i } as CSSProperties}
+                  place={stackPlace(`Column ${p + 1}`, i, pile.length)}
                   onClick={() => tap(p, up ? i : null)}
-                >
-                  {up ? label(card) : ""}
-                </button>
+                />
               );
             })}
-          </div>
+          </Pile>
         ))}
       </div>
 
@@ -201,10 +179,8 @@ export default function Yukon({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="yukon"
           won
           message={`Cleared in ${saved.moves} moves!`}
-          playMs={playMs}
           onNew={startNew}
           onExit={onExit}
         />

@@ -1,17 +1,12 @@
 import { useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult } from "../lib/storage";
+import { SUIT_NAMES, downInSuit, nCards, rank, stackPlace, suit } from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { Foundation, Pile, PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
 
-// Two packs: id 0–103, suit = id % 4, rank = ⌊id/4⌋ mod 13 + 1.
-const SUITS = ["♠", "♥", "♦", "♣"];
-const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
-const rank = (id: number) => (Math.floor(id / 4) % 13) + 1;
-const suit = (id: number) => id % 4;
-const isRed = (id: number) => suit(id) === 1 || suit(id) === 2;
-const label = (id: number) => `${RANKS[rank(id) - 1]}${SUITS[suit(id)]}`;
+// Two packs: id 0–103, the second pack being ids 52–103 (see lib/cards).
 const HELP =
   "Two packs, everything face up, and no second chances: the deck deals " +
   "one card at a time with no redeal. Columns build DOWN in the same suit " +
@@ -44,8 +39,9 @@ function deal(seed: string): SavedState {
 type Sel = { from: "waste" } | { from: "tableau"; pile: number } | null;
 
 export default function FortyThieves({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("forty", (s) => deal(s));
+  const { seed, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>((s) =>
+    deal(s)
+  );
   const [sel, setSel] = useState<Sel>(null);
 
   const selCard = (): number | null => {
@@ -66,13 +62,12 @@ export default function FortyThieves({ onExit }: { onExit: () => void }) {
     };
   }
 
-  function finish(next: SavedState) {
+  function play(next: SavedState) {
     next.moves++;
     if (!next.done && next.foundations.every((f) => f === 13)) {
       next.done = true;
-      recordResult("forty", true);
-    }
-    commit(next);
+      commit(next, { outcome: "won" });
+    } else commit(next);
     setSel(null);
   }
 
@@ -94,7 +89,7 @@ export default function FortyThieves({ onExit }: { onExit: () => void }) {
     const next = clone();
     take(next);
     next.foundations[f]++;
-    finish(next);
+    play(next);
   }
 
   function tapPile(pile: number) {
@@ -112,8 +107,7 @@ export default function FortyThieves({ onExit }: { onExit: () => void }) {
         return;
       }
       const top = cards.length ? cards[cards.length - 1] : null;
-      const fits =
-        top === null || (suit(card) === suit(top) && rank(card) === rank(top) - 1);
+      const fits = top === null || downInSuit(card, top);
       if (!fits) {
         setSel(null);
         return;
@@ -121,7 +115,7 @@ export default function FortyThieves({ onExit }: { onExit: () => void }) {
       const next = clone();
       const moved = take(next);
       next.tableau[pile].push(moved);
-      finish(next);
+      play(next);
       return;
     }
     if (cards.length) setSel({ from: "tableau", pile });
@@ -141,7 +135,7 @@ export default function FortyThieves({ onExit }: { onExit: () => void }) {
     if (saved.done || !saved.stock.length) return;
     const next = clone();
     next.waste.push(next.stock.pop()!);
-    finish(next);
+    play(next);
   }
 
   function startNew() {
@@ -160,79 +154,69 @@ export default function FortyThieves({ onExit }: { onExit: () => void }) {
       <GameTools help={HELP} onUndo={undo} canUndo={canUndo && !saved.done} />
 
       <div className="kl-top">
-        <button
-          className={`kl-card ${saved.stock.length ? "kl-back" : "kl-empty"}`}
+        <PlayingCard
+          card={null}
+          faceDown={saved.stock.length > 0}
           onClick={tapStock}
-          aria-label="Stock"
+          aria-label={
+            saved.stock.length ? `Stock, ${nCards(saved.stock.length)}` : "Stock, empty"
+          }
         >
           {saved.stock.length || "—"}
-        </button>
-        <button
-          className={[
-            "kl-card",
-            wasteTop === null ? "kl-empty" : "",
-            wasteTop !== null && isRed(wasteTop) ? "red" : "",
-            sel?.from === "waste" ? "selected" : ""
-          ].join(" ")}
+        </PlayingCard>
+        <PlayingCard
+          card={wasteTop}
+          selected={sel?.from === "waste"}
           onClick={tapWaste}
-          aria-label="Waste"
-        >
-          {wasteTop !== null ? label(wasteTop) : ""}
-        </button>
+          place={`Waste, ${nCards(saved.waste.length)}`}
+        />
         {saved.foundations.map((f, k) => (
-          <button
+          <Foundation
             key={k}
-            className={`kl-card kl-found${f === 0 ? " kl-empty" : ""}${
-              f > 0 && (k % 4 === 1 || k % 4 === 2) ? " red" : ""
-            }`}
+            suit={k % 4}
+            top={f}
             onClick={toFoundation}
-            aria-label={`${SUITS[k % 4]} foundation`}
-          >
-            {f === 0 ? SUITS[k % 4] : `${RANKS[f - 1]}${SUITS[k % 4]}`}
-          </button>
+            name={`${SUIT_NAMES[k % 4]} foundation ${Math.floor(k / 4) + 1}`}
+          />
         ))}
       </div>
 
       <div className="kl-tableau">
         {saved.tableau.map((pile, p) => (
-          <div
+          <Pile
             key={p}
-            className="kl-pile"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) tapPile(p);
-            }}
+            name={`Column ${p + 1}`}
+            empty={!pile.length}
+            onTap={() => tapPile(p)}
           >
             {pile.map((card, i) => (
-              <button
+              <PlayingCard
                 key={card}
-                className={[
-                  "kl-card kl-stacked",
-                  isRed(card) ? "red" : "",
+                card={card}
+                selected={
                   sel?.from === "tableau" && sel.pile === p && i === pile.length - 1
-                    ? "selected"
-                    : ""
-                ].join(" ")}
+                }
+                className="kl-stacked"
                 style={{ "--stack": i } as CSSProperties}
+                place={stackPlace(`Column ${p + 1}`, i, pile.length)}
                 onClick={() => tapPile(p)}
-              >
-                {label(card)}
-              </button>
+              />
             ))}
-          </div>
+          </Pile>
         ))}
       </div>
 
       <div className="lights-meta">
-        <span>Moves: {saved.moves} · stock {saved.stock.length}</span>
+        <span>
+          Moves: {saved.moves} · stock {saved.stock.length}
+        </span>
       </div>
 
       {saved.done && (
         <Result
           key={seed}
-          game="forty"
           won
           message={`All eight foundations in ${saved.moves} moves!`}
-          playMs={playMs}
           onNew={startNew}
           onExit={onExit}
         />

@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
 import { makeRng } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Farkle.css";
 
 const TURNS = 10;
 const TARGET: Record<Diff, number> = { easy: 2000, medium: 3500, hard: 5000 };
@@ -80,10 +81,7 @@ function fresh(seed: string): SavedState {
 }
 
 export default function Farkle({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, newPuzzle, playMs } = useGame<SavedState>(
-    "farkle",
-    (s) => fresh(s)
-  );
+  const { seed, diff, saved, commit, newPuzzle } = useGame<SavedState>((s) => fresh(s));
   const [picked, setPicked] = useState<boolean[]>([]);
   const target = TARGET[diff];
 
@@ -99,15 +97,19 @@ export default function Farkle({ onExit }: { onExit: () => void }) {
     setPicked(next);
   }
 
+  /** Commit the move to the next turn, recording the result if it ended
+   *  the game. */
+  function commitTurn(next: SavedState) {
+    commit(next, { outcome: next.done ? (next.won ? "won" : "lost") : undefined });
+  }
+
   function nextTurn(state: SavedState, banked: number): SavedState {
     const total = state.total + banked;
     const turn = state.turn + 1;
     if (total >= target) {
-      recordResult("farkle", true);
       return { ...state, total, done: true, won: true };
     }
     if (turn > TURNS) {
-      recordResult("farkle", false);
       return { ...state, total, turn: TURNS, done: true, won: false };
     }
     return {
@@ -143,14 +145,14 @@ export default function Farkle({ onExit }: { onExit: () => void }) {
     if (saved.done || busted) return;
     const extra = pickedScore ?? 0;
     if (saved.turnPoints + extra <= 0) return;
-    commit(nextTurn(saved, saved.turnPoints + extra));
+    commitTurn(nextTurn(saved, saved.turnPoints + extra));
     setPicked([]);
   }
 
   /** Acknowledge a busted roll and move on. */
   function acceptFarkle() {
     if (saved.done) return;
-    commit(nextTurn({ ...saved, turnPoints: 0 }, 0));
+    commitTurn(nextTurn({ ...saved, turnPoints: 0 }, 0));
     setPicked([]);
   }
 
@@ -188,6 +190,7 @@ export default function Farkle({ onExit }: { onExit: () => void }) {
             className={`yz-die${picked[i] ? " held" : ""}`}
             onClick={() => togglePick(i)}
             aria-pressed={!!picked[i]}
+            aria-label={`Die showing ${d}${picked[i] ? ", set aside" : ""}`}
           >
             {PIPS[d]}
           </button>
@@ -226,21 +229,19 @@ export default function Farkle({ onExit }: { onExit: () => void }) {
       </div>
 
       <p className="fk-legend">
-        1 = 100 · 5 = 50 · three of a kind = face×100 (1s = 1000), each extra
-        die doubles · straight or three pairs = 1500
+        1 = 100 · 5 = 50 · three of a kind = face×100 (1s = 1000), each extra die doubles
+        · straight or three pairs = 1500
       </p>
 
       {saved.done && (
         <Result
           key={seed}
-          game="farkle"
           won={saved.won}
           message={
             saved.won
               ? `${saved.total} points — target beaten!`
               : `${saved.total} of ${target} — out of turns`
           }
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

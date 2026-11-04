@@ -1,0 +1,170 @@
+/* Boggle: styles only this board uses. Loaded with its chunk. */
+
+.bg-board {
+  position: relative;
+  align-self: center;
+  width: min(100%, 380px);
+  aspect-ratio: 1;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  margin: 4px 0;
+}
+
+.bg-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  height: 100%;
+}
+
+.bg-cell {
+  position: relative;
+  border: 0.5px solid var(--grid-line);
+  background: var(--card);
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: clamp(17px, 6vw, 28px);
+  padding: 0;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: background 120ms ease;
+}
+
+.bg-cell.off {
+  color: var(--ink-soft);
+  opacity: 0.5;
+  cursor: default;
+}
+
+.bg-cell.on {
+  background: #dbe4fb;
+  color: var(--indigo);
+}
+
+.bg-cell.tip {
+  background: var(--indigo);
+  color: #fff;
+}
+
+/* Trace order, so the path reads without relying on the drawn line. */
+.bg-step {
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+.bg-path {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.bg-path polyline {
+  fill: none;
+  stroke: var(--indigo);
+  stroke-width: 0.11;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.55;
+}
+
+.bg-entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bg-word {
+  flex: 1;
+  font-family: var(--mono);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  min-height: 24px;
+  color: var(--ink);
+}
+
+.bg-enter {
+  background: var(--indigo);
+  border-color: var(--indigo);
+  color: #fff;
+}
+
+.bg-enter:disabled {
+  opacity: 0.4;
+}
+
+.bg-hint-word {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.bg-hint-word strong {
+  font-family: var(--mono);
+  color: var(--ink);
+}
+
+.bg-found {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-content: flex-start;
+  margin-top: auto;
+  padding-bottom: 4px;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.bg-empty {
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.bg-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 9px;
+  border: 1.5px solid var(--grid-line);
+  border-radius: 999px;
+  background: var(--card);
+}
+
+.bg-chip em {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--indigo);
+  font-weight: 700;
+}
+
+:root[data-theme="dark"] .bg-cell.on {
+  background: #2b3358;
+  color: #c3cdf5;
+}
+
+:root[data-theme="dark"] .bg-chip em {
+  color: #a9b6ef;
+}
+
+@media (min-width: 700px) {
+  .bg-board {
+    width: min(100%, 440px);
+  }
+  .bg-found,
+  .bg-entry {
+    align-self: center;
+    width: 100%;
+    max-width: 580px;
+  }
+}

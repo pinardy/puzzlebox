@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
-import { useGridKeys } from "../lib/keys";
+import { cellLabel, useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import { Numpad } from "./Numpad";
+import "./Sujiko.css";
 
 const GIVENS: Record<Diff, number> = { easy: 3, medium: 2, hard: 1 };
 const HELP =
@@ -77,9 +79,11 @@ interface SavedState {
   done: boolean;
 }
 
+const CORNER = ["top left", "top right", "bottom left", "bottom right"];
+
 export default function Sujiko({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("sujiko", () => ({ entries: Array(9).fill(0), done: false }));
+  const { seed, diff, saved, commit, commitHint, finish, undo, canUndo, newPuzzle } =
+    useGame<SavedState>(() => ({ entries: Array(9).fill(0), done: false }));
   const { sums, givens, solution } = useMemo(
     () => generateSujiko(`sujiko-${seed}`, GIVENS[diff]),
     [seed, diff]
@@ -101,24 +105,16 @@ export default function Sujiko({ onExit }: { onExit: () => void }) {
     [board, sums]
   );
 
+  const solved = board.every((v) => v !== 0) && quadState.every((s) => s === "ok");
   useEffect(() => {
-    if (
-      !saved.done &&
-      board.every((v) => v !== 0) &&
-      quadState.every((s) => s === "ok")
-    ) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("sujiko", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [board, quadState, saved]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   function setCell(idx: number, val: number) {
     if (saved.done || givens[idx] !== 0) return;
     const entries = saved.entries.slice();
     // Each digit is unique: placing one clears it from wherever it was.
-    if (val !== 0)
-      for (let i = 0; i < 9; i++) if (entries[i] === val) entries[i] = 0;
+    if (val !== 0) for (let i = 0; i < 9; i++) if (entries[i] === val) entries[i] = 0;
     entries[idx] = entries[idx] === val ? 0 : val;
     commit({ ...saved, entries });
   }
@@ -172,6 +168,14 @@ export default function Sujiko({ onExit }: { onExit: () => void }) {
               givens[i] !== 0 ? "given" : "",
               selected === i ? "selected" : ""
             ].join(" ")}
+            aria-label={cellLabel(
+              i,
+              3,
+              v,
+              givens[i] !== 0 && "given",
+              `feeds the ${QUADS.flatMap((q, k) => (q.includes(i) ? [CORNER[k]] : [])).join(", ")} circle`
+            )}
+            aria-selected={selected === i}
             onClick={() => setSelected(i)}
           >
             {v || ""}
@@ -181,6 +185,14 @@ export default function Sujiko({ onExit }: { onExit: () => void }) {
           <span
             key={k}
             className={`sj-sum ${quadState[k]}`}
+            role="gridcell"
+            aria-label={`${CORNER[k]} circle: ${s}${
+              quadState[k] === "ok"
+                ? ", correct"
+                : quadState[k] === "bad"
+                  ? ", wrong"
+                  : ""
+            }`}
             style={{
               left: `${(k % 2) * 33.33 + 33.33}%`,
               top: `${Math.floor(k / 2) * 33.33 + 33.33}%`
@@ -191,31 +203,17 @@ export default function Sujiko({ onExit }: { onExit: () => void }) {
         ))}
       </div>
 
-      <div className="numpad numpad-9">
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => (
-          <button
-            key={d}
-            className={`num-key${usedDigits.has(d) ? " dim" : ""}`}
-            onClick={() => selected !== null && setCell(selected, d)}
-          >
-            {d}
-          </button>
-        ))}
-        <button
-          className="num-key tool"
-          onClick={() => selected !== null && setCell(selected, 0)}
-        >
-          ⌫
-        </button>
-      </div>
+      <Numpad
+        max={9}
+        onDigit={(d) => selected !== null && setCell(selected, d)}
+        dim={(d) => usedDigits.has(d)}
+      />
 
       {saved.done && (
         <Result
           key={seed}
-          game="sujiko"
           won
           message="All four circles balance!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

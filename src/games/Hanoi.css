@@ -1,0 +1,85 @@
+/* Hanoi: styles only this board uses. Loaded with its chunk. */
+
+.hanoi-board {
+  display: flex;
+  gap: 10px;
+  align-self: center;
+  width: min(100%, 460px);
+  margin: auto 0;
+}
+
+.hanoi-peg {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  height: 220px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0 2px;
+}
+
+.hanoi-peg.picked {
+  outline: 3px solid var(--blue);
+  outline-offset: 2px;
+  border-radius: 10px;
+}
+
+.hanoi-pole {
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  transform: translateX(-50%);
+  width: 8px;
+  height: 190px;
+  background: var(--grid-line);
+  border: 1.5px solid var(--ink);
+  border-radius: 4px;
+}
+
+.hanoi-stack {
+  position: relative;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: 2px;
+  padding-bottom: 10px;
+}
+
+.hanoi-disk {
+  height: 20px;
+  border: 1.5px solid var(--ink);
+  border-radius: 8px;
+  background: var(--blue);
+  box-shadow: var(--shadow);
+}
+
+.hanoi-disk:nth-child(2n) {
+  background: var(--teal);
+}
+
+.hanoi-disk:nth-child(3n) {
+  background: var(--amber);
+}
+
+.hanoi-disk.lifted {
+  transform: translateY(-6px);
+}
+
+.hanoi-base {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 8px;
+  background: var(--ink);
+  border-radius: 4px;
+}
+
+@media (min-width: 700px) {
+  .hanoi-board {
+    width: min(100%, 560px);
+  }
+}

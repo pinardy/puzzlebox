@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { N, makeCodeword } from "../lib/codeword";
-import { recordResult, type Diff } from "../lib/storage";
+import { type Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import { useGridNav } from "../lib/gridnav";
+import "./Codeword.css";
 
 const GIVENS: Record<Diff, number> = { easy: 4, medium: 3, hard: 2 };
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
@@ -21,8 +23,8 @@ interface SavedState {
 }
 
 export default function Codeword({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("codeword", (s, d) => fresh(s, d));
+  const { seed, diff, saved, commit, commitHint, finish, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((s, d) => fresh(s, d));
   const puzzle = useMemo(() => makeCodeword(seed, GIVENS[diff]), [seed, diff]);
   const [sel, setSel] = useState<number | null>(null);
 
@@ -36,7 +38,7 @@ export default function Codeword({ onExit }: { onExit: () => void }) {
   const isGiven = (n: number) => puzzle.given.includes(n);
   const letterAt = (i: number) => {
     const n = puzzle.nums[i];
-    return n === null ? "" : saved.assign[n - 1] ?? "";
+    return n === null ? "" : (saved.assign[n - 1] ?? "");
   };
 
   // Which letters are already spoken for, for the tracker row.
@@ -46,13 +48,9 @@ export default function Codeword({ onExit }: { onExit: () => void }) {
   );
 
   useEffect(() => {
-    if (saved.done || !puzzle.key.length) return;
-    if (saved.assign.every((l, i) => l === puzzle.key[i])) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("codeword", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [saved, puzzle]);
+    if (!puzzle.key.length) return;
+    if (saved.assign.every((l, i) => l === puzzle.key[i])) finish();
+  }, [saved.assign, puzzle.key, finish]);
 
   /** Assign a letter to the selected cell's number, freeing it elsewhere. */
   function setLetter(letter: string) {
@@ -116,13 +114,13 @@ export default function Codeword({ onExit }: { onExit: () => void }) {
   }
 
   const selNum = sel === null ? null : puzzle.nums[sel];
+  // Arrows walk the squares; Enter / Space selects (the button's own click).
+  const nav = useGridNav();
 
   return (
     <div className="game game-codeword">
       <GameHeader title="Codeword" onExit={onExit} onNew={() => startNew()} />
-      <p className="game-hint">
-        Same number, same letter. Tap a square, then a letter.
-      </p>
+      <p className="game-hint">Same number, same letter. Tap a square, then a letter.</p>
       <GameTools
         diff={diff}
         onDiff={startNew}
@@ -136,6 +134,7 @@ export default function Codeword({ onExit }: { onExit: () => void }) {
         className="cw-grid"
         role="grid"
         aria-label="Codeword grid"
+        {...nav}
         style={{ "--n": N } as CSSProperties}
       >
         {puzzle.cells.map((ch, i) => {
@@ -147,6 +146,8 @@ export default function Codeword({ onExit }: { onExit: () => void }) {
             <button
               key={i}
               role="gridcell"
+              data-cell={i}
+              aria-selected={sel === i}
               className={[
                 "cw-cell",
                 sel === i ? "selected" : "",
@@ -154,7 +155,9 @@ export default function Codeword({ onExit }: { onExit: () => void }) {
                 isGiven(n) ? "cw-given" : ""
               ].join(" ")}
               onClick={() => setSel(i)}
-              aria-label={`Number ${n}${letter ? `, ${letter}` : ", blank"}`}
+              aria-label={`Row ${Math.floor(i / N) + 1}, column ${(i % N) + 1}, number ${n}${
+                letter ? `, ${letter}` : ", blank"
+              }${isGiven(n) ? ", given" : ""}`}
             >
               <span className="cw-letter">{letter}</span>
               <span className="cw-num">{n}</span>
@@ -182,10 +185,8 @@ export default function Codeword({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="codeword"
           won
           message="Code cracked!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

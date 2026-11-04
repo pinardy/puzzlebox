@@ -15,10 +15,12 @@ import {
   type BoggleBoard
 } from "../lib/boggle";
 import { isWord } from "../lib/dict";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result, Toast } from "./ui";
+import { useGridNav } from "../lib/gridnav";
+import "./Boggle.css";
 
 const SIZE: Record<Diff, number> = { easy: 4, medium: 4, hard: 5 };
 const SHARE: Record<Diff, number> = { easy: 0.25, medium: 0.3, hard: 0.32 };
@@ -37,12 +39,11 @@ interface SavedState {
 }
 
 /** Words in the order a hunter wants to read them back: longest first. */
-const byValue = (a: string, b: string) =>
-  b.length - a.length || a.localeCompare(b);
+const byValue = (a: string, b: string) => b.length - a.length || a.localeCompare(b);
 
 export default function Boggle({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("boggle", () => ({ found: [], done: false }));
+  const { seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>(() => ({ found: [], done: false }));
   const n = SIZE[diff];
   const board: BoggleBoard = useMemo(
     () => generateBoggle(`boggle-${seed}`, n, SHARE[diff]),
@@ -65,7 +66,7 @@ export default function Boggle({ onExit }: { onExit: () => void }) {
   const entry = trace.length ? traceWord : typed;
   // A typed word is shown on the board too, whenever it has a path there.
   const shown = useMemo(
-    () => (trace.length ? trace : typed ? findPath(board.cells, n, typed) ?? [] : []),
+    () => (trace.length ? trace : typed ? (findPath(board.cells, n, typed) ?? []) : []),
     [trace, typed, board, n]
   );
   const score = useMemo(
@@ -123,6 +124,8 @@ export default function Boggle({ onExit }: { onExit: () => void }) {
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
+      // A key the focused grid cell already handled (Enter / Space taps it).
+      if (e.defaultPrevented) return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (e.key === "Enter") submit();
       else if (e.key === "Backspace") {
@@ -139,12 +142,8 @@ export default function Boggle({ onExit }: { onExit: () => void }) {
   }, [submit, back, trace, traceWord]);
 
   useEffect(() => {
-    if (!saved.done && score >= board.target) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("boggle", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [score, board.target, saved]);
+    if (score >= board.target) finish();
+  }, [score, board.target, finish]);
 
   /** Name one word still out there — the shortest unfound one, so the hint
    *  is a real lead rather than a nine-letter needle. */
@@ -157,6 +156,10 @@ export default function Boggle({ onExit }: { onExit: () => void }) {
     setHint(pick);
     commitHint({ ...saved });
   }
+
+  // Arrows walk the grid; Enter / Space on a cell taps it (and only that —
+  // the window handler skips a handled key, so it doesn't also submit).
+  const nav = useGridNav((i) => tap(i));
 
   function startNew(d?: Diff) {
     newPuzzle(d);
@@ -173,8 +176,7 @@ export default function Boggle({ onExit }: { onExit: () => void }) {
     <div className="game game-boggle">
       <GameHeader title="Boggle" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
-        Tap neighbouring letters to spell a word, then Enter. Reach{" "}
-        {board.target} points.
+        Tap neighbouring letters to spell a word, then Enter. Reach {board.target} points.
       </p>
       <GameTools
         diff={diff}
@@ -190,19 +192,19 @@ export default function Boggle({ onExit }: { onExit: () => void }) {
           {score} / {board.target} pts
         </span>
         <span>
-          {saved.found.length} word{saved.found.length === 1 ? "" : "s"} · {pct}% of
-          board
+          {saved.found.length} word{saved.found.length === 1 ? "" : "s"} · {pct}% of board
         </span>
       </div>
 
       <div className="bg-board" style={{ "--n": n } as CSSProperties}>
-        <div className="bg-grid" role="grid" aria-label="Letter grid">
+        <div className="bg-grid" role="grid" aria-label="Letter grid" {...nav}>
           {board.cells.map((cell, i) => {
             const step = shown.indexOf(i);
             return (
               <button
                 key={i}
                 role="gridcell"
+                data-cell={i}
                 className={[
                   "bg-cell",
                   step >= 0 ? "on" : "",
@@ -269,10 +271,8 @@ export default function Boggle({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="boggle"
           won
           message={`Target reached — ${score} points!`}
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

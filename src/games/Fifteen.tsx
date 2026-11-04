@@ -1,9 +1,12 @@
 import { type CSSProperties } from "react";
 import { makeRng } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
+import { useGridNav } from "../lib/gridnav";
+import { cellLabel } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Fifteen.css";
 
 const SIZE: Record<Diff, number> = { easy: 3, medium: 4, hard: 5 };
 const HELP =
@@ -18,7 +21,8 @@ function scramble(seed: string, n: number): number[] {
   let blank = n * n - 1;
   let prev = -1;
   for (let k = 0; k < n * n * 12; k++) {
-    const r = Math.floor(blank / n), c = blank % n;
+    const r = Math.floor(blank / n),
+      c = blank % n;
     const opts = [
       r > 0 ? blank - n : -1,
       r < n - 1 ? blank + n : -1,
@@ -41,19 +45,22 @@ interface SavedState {
 }
 
 export default function Fifteen({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("fifteen", (s, d) => ({
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>(
+    (s, d) => ({
       cells: scramble(`fifteen-${s}`, SIZE[d]),
       moves: 0,
       done: false
-    }));
+    })
+  );
   const n = SIZE[diff];
 
   function tap(idx: number) {
     if (saved.done || saved.cells[idx] === 0) return;
     const blank = saved.cells.indexOf(0);
-    const rI = Math.floor(idx / n), cI = idx % n;
-    const rB = Math.floor(blank / n), cB = blank % n;
+    const rI = Math.floor(idx / n),
+      cI = idx % n;
+    const rB = Math.floor(blank / n),
+      cB = blank % n;
     if (rI !== rB && cI !== cB) return;
 
     // Slide the whole segment between the tapped tile and the blank.
@@ -63,16 +70,23 @@ export default function Fifteen({ onExit }: { onExit: () => void }) {
     cells[idx] = 0;
 
     const done = cells.every((v, i) => v === (i + 1) % (n * n));
-    commit({ cells, moves: saved.moves + 1, done });
-    if (done) recordResult("fifteen", true);
+    commit(
+      { cells, moves: saved.moves + 1, done },
+      done ? { outcome: "won" } : undefined
+    );
   }
+
+  // Arrows move between tiles; Enter / Space slides the focused one (its
+  // onClick), like a tap.
+  const nav = useGridNav();
+  const blank = saved.cells.indexOf(0);
+  const canSlide = (i: number) =>
+    i !== blank && (Math.floor(i / n) === Math.floor(blank / n) || i % n === blank % n);
 
   return (
     <div className="game game-fifteen">
       <GameHeader title="Fifteen" onExit={onExit} onNew={() => newPuzzle()} />
-      <p className="game-hint">
-        Slide tiles into the gap until they read 1–{n * n - 1}.
-      </p>
+      <p className="game-hint">Slide tiles into the gap until they read 1–{n * n - 1}.</p>
       <GameTools
         diff={diff}
         onDiff={newPuzzle}
@@ -90,11 +104,20 @@ export default function Fifteen({ onExit }: { onExit: () => void }) {
         style={{ "--n": n } as CSSProperties}
         role="grid"
         aria-label="Sliding puzzle"
+        {...nav}
       >
         {saved.cells.map((v, i) => (
           <button
             key={i}
+            data-cell={i}
             role="gridcell"
+            aria-label={cellLabel(
+              i,
+              n,
+              v ? `tile ${v}` : "gap",
+              v !== 0 && v === (i + 1) % (n * n) && "in place",
+              !saved.done && canSlide(i) && "can slide"
+            )}
             className={`fifteen-tile${v === 0 ? " blank" : ""}${
               v !== 0 && v === (i + 1) % (n * n) ? " home" : ""
             }`}
@@ -108,10 +131,8 @@ export default function Fifteen({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="fifteen"
           won
           message={`Solved in ${saved.moves} moves!`}
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { TEXT_GAMES, useGameShell } from "../lib/shell";
+import { useGameShell } from "../lib/shell";
+import { GAME_BY_ID } from "./registry";
 import { useTheme } from "../lib/theme";
 import { GameId, Diff, loadStats } from "../lib/storage";
 import { fmtTime } from "../lib/format";
@@ -112,7 +113,7 @@ export function GameHeader({
   );
 
   const armOrDeal = useCallback(() => {
-    if (!onNew) return;
+    if (!onNew || info.daily) return;
     if (!info.dirty || confirming) {
       if (timer.current !== null) clearTimeout(timer.current);
       setConfirming(false);
@@ -122,7 +123,7 @@ export function GameHeader({
     setConfirming(true);
     if (timer.current !== null) clearTimeout(timer.current);
     timer.current = window.setTimeout(() => setConfirming(false), 3000);
-  }, [onNew, info.dirty, confirming]);
+  }, [onNew, info.daily, info.dirty, confirming]);
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
@@ -133,7 +134,7 @@ export function GameHeader({
       }
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       // Word games read bare letters as guesses.
-      if (info.game && TEXT_GAMES.has(info.game)) return;
+      if (info.game && GAME_BY_ID[info.game].textInput) return;
       if (e.key === "n") {
         e.preventDefault();
         armOrDeal();
@@ -148,7 +149,10 @@ export function GameHeader({
       <button className="back-btn" onClick={onExit} aria-label="Back to games">
         ←
       </button>
-      <h2>{title}</h2>
+      <h2>
+        {title}
+        {info.daily && <span className="daily-tag">Today</span>}
+      </h2>
       {info.game && (
         <button
           className="stats-btn"
@@ -169,13 +173,12 @@ export function GameHeader({
       >
         {theme === "dark" ? "☾" : "☀"}
       </button>
-      {onNew ? (
+      {/* The puzzle of the day is one fixed board: nothing to re-deal. */}
+      {onNew && !info.daily ? (
         <button
           className={`new-btn${confirming ? " confirming" : ""}`}
           onClick={armOrDeal}
-          aria-label={
-            confirming ? "Tap again to discard this puzzle" : "New puzzle"
-          }
+          aria-label={confirming ? "Tap again to discard this puzzle" : "New puzzle"}
         >
           {confirming ? "Discard?" : "New"}
         </button>

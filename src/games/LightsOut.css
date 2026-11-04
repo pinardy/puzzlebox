@@ -1,0 +1,21 @@
+/* LightsOut: styles only this board uses. Loaded with its chunk. */
+
+.lights-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  gap: 8px;
+  align-self: center;
+  width: min(100%, 380px);
+  aspect-ratio: 1;
+  margin: 10px 0;
+}
+
+@media (min-width: 700px) {
+  .lights-grid {
+    width: min(100%, 460px);
+  }
+  .lights-grid {
+    margin-top: auto;
+    margin-bottom: auto;
+  }
+}

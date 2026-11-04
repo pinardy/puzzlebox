@@ -1,0 +1,18 @@
+/* Hangman: styles only this board uses. Loaded with its chunk. */
+
+.hangman-lives {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  font-size: 24px;
+  color: var(--rose);
+  margin-top: 8px;
+}
+
+.hangman-lives .lost {
+  color: var(--grid-line);
+}
+
+.hangman-word {
+  margin: auto 0;
+}

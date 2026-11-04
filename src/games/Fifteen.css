@@ -1,0 +1,52 @@
+/* Fifteen: styles only this board uses. Loaded with its chunk. */
+
+.fifteen-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  gap: 8px;
+  align-self: center;
+  width: min(100%, 380px);
+  aspect-ratio: 1;
+  margin: 8px 0;
+  padding: 8px;
+  background: var(--grid-line);
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+}
+
+.fifteen-tile {
+  border: 1.5px solid var(--ink);
+  border-radius: 8px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  font-family: var(--mono);
+  font-size: clamp(18px, 5.5vw, 28px);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.fifteen-tile:active {
+  transform: translateY(2px);
+  box-shadow: none;
+}
+
+.fifteen-tile.home {
+  color: var(--blue);
+}
+
+.fifteen-tile.blank {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  cursor: default;
+}
+
+@media (min-width: 700px) {
+  .fifteen-grid {
+    width: min(100%, 440px);
+  }
+  .fifteen-grid {
+    margin-top: auto;
+    margin-bottom: auto;
+  }
+}

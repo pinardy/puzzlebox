@@ -19,7 +19,6 @@ const HELP =
 export default function Fortress({ onExit }: { onExit: () => void }) {
   return (
     <PileGame
-      game="fortress"
       title="Fortress"
       hint="End cards only, same suit, one rank up or down."
       help={HELP}

@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useGridNav } from "../lib/gridnav";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./YinYang.css";
 
 const SIZE: Record<Diff, number> = { easy: 6, medium: 8, hard: 10 };
 const REVEAL: Record<Diff, number> = { easy: 0.4, medium: 0.32, hard: 0.26 };
@@ -15,7 +17,8 @@ const HELP =
 type Cell = 0 | 1 | 2; // empty | white | black
 
 function nbrs(i: number, n: number): number[] {
-  const r = Math.floor(i / n), c = i % n;
+  const r = Math.floor(i / n),
+    c = i % n;
   const out: number[] = [];
   if (r > 0) out.push(i - n);
   if (r < n - 1) out.push(i + n);
@@ -37,7 +40,8 @@ function blocks2x2(cells: Cell[], n: number): Set<number> {
 }
 
 function connected(cells: Cell[], n: number, col: Cell): boolean {
-  let start = -1, count = 0;
+  let start = -1,
+    count = 0;
   for (let i = 0; i < n * n; i++)
     if (cells[i] === col) {
       count++;
@@ -64,14 +68,19 @@ function connected(cells: Cell[], n: number, col: Cell): boolean {
  *  exactly one black cell, so black stays cycle-free (a 2×2 is a 4-cycle,
  *  so it can never form one) — while white must stay connected. Growth
  *  chases white's remaining 2×2 blocks until none are left. */
-function generateYinYang(seed: string, n: number, reveal: number): Cell[] {
+function generateYinYang(
+  seed: string,
+  n: number,
+  reveal: number
+): { givens: Cell[]; solution: Cell[] } {
   const rng = makeRng(seed);
   const total = n * n;
 
   const attemptOnce = (): Cell[] | null => {
     const black = Array(total).fill(false);
     const whiteConnectedWithout = (extra: number): boolean => {
-      let start = -1, count = 0;
+      let start = -1,
+        count = 0;
       for (let i = 0; i < total; i++)
         if (!black[i] && i !== extra) {
           count++;
@@ -94,13 +103,20 @@ function generateYinYang(seed: string, n: number, reveal: number): Cell[] {
       return reach === count;
     };
     const white2x2sAt = (i: number): number => {
-      const r = Math.floor(i / n), c = i % n;
+      const r = Math.floor(i / n),
+        c = i % n;
       let count = 0;
       for (let dr = -1; dr <= 0; dr++)
         for (let dc = -1; dc <= 0; dc++) {
-          const rr = r + dr, cc = c + dc;
+          const rr = r + dr,
+            cc = c + dc;
           if (rr < 0 || cc < 0 || rr + 1 >= n || cc + 1 >= n) continue;
-          const q = [rr * n + cc, rr * n + cc + 1, (rr + 1) * n + cc, (rr + 1) * n + cc + 1];
+          const q = [
+            rr * n + cc,
+            rr * n + cc + 1,
+            (rr + 1) * n + cc,
+            (rr + 1) * n + cc + 1
+          ];
           if (q.every((j) => !black[j])) count++;
         }
       return count;
@@ -109,8 +125,10 @@ function generateYinYang(seed: string, n: number, reveal: number): Cell[] {
       for (let r = 0; r + 1 < n; r++)
         for (let c = 0; c + 1 < n; c++)
           if (
-            !black[r * n + c] && !black[r * n + c + 1] &&
-            !black[(r + 1) * n + c] && !black[(r + 1) * n + c + 1]
+            !black[r * n + c] &&
+            !black[r * n + c + 1] &&
+            !black[(r + 1) * n + c] &&
+            !black[(r + 1) * n + c + 1]
           )
             return true;
       return false;
@@ -130,7 +148,8 @@ function generateYinYang(seed: string, n: number, reveal: number): Cell[] {
       let placed = false;
       let sum = cands.reduce((a, c) => a + c.w, 0);
       while (cands.length) {
-        let roll = rng() * sum, idx = 0;
+        let roll = rng() * sum,
+          idx = 0;
         for (let k = 0; k < cands.length; k++) {
           roll -= cands[k].w;
           if (roll <= 0) {
@@ -161,7 +180,7 @@ function generateYinYang(seed: string, n: number, reveal: number): Cell[] {
     // Guarantee both colours appear among the givens.
     if (!givens.includes(1)) givens[order.find((i) => solution[i] === 1)!] = 1;
     if (!givens.includes(2)) givens[order.find((i) => solution[i] === 2)!] = 2;
-    return givens;
+    return { givens, solution };
   }
 }
 
@@ -171,13 +190,13 @@ interface SavedState {
 }
 
 export default function YinYang({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("yinyang", (_s, d) => ({
+  const { seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
       cells: Array(SIZE[d] * SIZE[d]).fill(0) as Cell[],
       done: false
     }));
   const n = SIZE[diff];
-  const givens = useMemo(
+  const { givens, solution } = useMemo(
     () => generateYinYang(`yinyang-${seed}`, n, REVEAL[diff]),
     [seed, n, diff]
   );
@@ -193,21 +212,34 @@ export default function YinYang({ onExit }: { onExit: () => void }) {
   useEffect(() => {
     if (saved.done || board.some((v) => v === 0) || conflicts.size > 0) return;
     if (connected(board, n, 1) && connected(board, n, 2)) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("yinyang", true);
+      finish();
       setFlash(false);
     } else {
       setFlash(true); // full board, no 2×2, but a colour is split
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [board, conflicts, saved]);
+  }, [board, conflicts, saved.done, n, finish]);
 
-  function tap(i: number) {
+  /** white → black → empty (`back` runs the cycle the other way). */
+  function tap(i: number, back = false) {
     if (saved.done || givens[i] !== 0) return;
     const cells = saved.cells.slice() as Cell[];
-    cells[i] = ((cells[i] + 1) % 3) as Cell;
+    cells[i] = ((cells[i] + (back ? 2 : 1)) % 3) as Cell;
     setFlash(false);
     commit({ ...saved, cells });
+  }
+
+  const nav = useGridNav(tap);
+
+  /** Fill one empty or wrong cell from the generated colouring. */
+  function hint() {
+    if (saved.done) return;
+    const wrong = board.flatMap((v, i) => (v === solution[i] ? [] : [i]));
+    if (!wrong.length) return;
+    const i = wrong[Math.floor(Math.random() * wrong.length)];
+    const cells = saved.cells.slice() as Cell[];
+    cells[i] = solution[i];
+    setFlash(false);
+    commitHint({ ...saved, cells });
   }
 
   function startNew(d?: Diff) {
@@ -219,8 +251,7 @@ export default function YinYang({ onExit }: { onExit: () => void }) {
     <div className="game game-yinyang">
       <GameHeader title="Yin-Yang" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
-        One connected white group, one connected black group, no 2×2 of
-        either.
+        One connected white group, one connected black group, no 2×2 of either.
       </p>
       <GameTools
         diff={diff}
@@ -228,6 +259,7 @@ export default function YinYang({ onExit }: { onExit: () => void }) {
         help={HELP}
         onUndo={undo}
         canUndo={canUndo && !saved.done}
+        onHint={saved.done ? undefined : hint}
       />
 
       <div
@@ -235,18 +267,22 @@ export default function YinYang({ onExit }: { onExit: () => void }) {
         style={{ "--n": n } as CSSProperties}
         role="grid"
         aria-label="Yin-yang board"
+        {...nav}
       >
         {board.map((v, i) => (
           <button
             key={i}
             role="gridcell"
+            data-cell={i}
             className={[
               "yy-cell",
               givens[i] !== 0 ? "given" : "",
               conflicts.has(i) ? "conflict" : ""
             ].join(" ")}
             onClick={() => tap(i)}
-            aria-label={`Cell ${Math.floor(i / n) + 1},${(i % n) + 1}`}
+            aria-label={`Row ${Math.floor(i / n) + 1}, column ${(i % n) + 1}, ${
+              v === 1 ? "white" : v === 2 ? "black" : "empty"
+            }${givens[i] !== 0 ? ", given" : ""}${conflicts.has(i) ? ", conflict" : ""}`}
           >
             {v === 1 ? "○" : v === 2 ? "●" : ""}
           </button>
@@ -255,18 +291,16 @@ export default function YinYang({ onExit }: { onExit: () => void }) {
 
       {flash && !saved.done && (
         <p className="game-help">
-          Almost — every square is filled with no 2×2 blocks, but one of the
-          colours is split into separate groups.
+          Almost — every square is filled with no 2×2 blocks, but one of the colours is
+          split into separate groups.
         </p>
       )}
 
       {saved.done && (
         <Result
           key={seed}
-          game="yinyang"
           won
           message="Perfect balance!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

@@ -1,0 +1,13 @@
+/* Numpad: styles only this board uses. Loaded with its chunk. */
+
+.tools-gap {
+  flex: 1;
+}
+
+.numpad-9 {
+  grid-template-columns: repeat(5, 1fr);
+}
+
+.tools-gap {
+  display: none;
+}

@@ -22,7 +22,6 @@ const HELP =
 export default function Trefoil({ onExit }: { onExit: () => void }) {
   return (
     <PileGame
-      game="trefoil"
       title="Trefoil"
       hint="Aces are home already. Same suit, one rank down."
       help={HELP}

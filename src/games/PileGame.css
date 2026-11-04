@@ -1,0 +1,38 @@
+/* PileGame: styles only this board uses. Loaded with its chunk. */
+
+/* The fan/castle card metrics, which .bc-card and .bc-pile are sized from.
+   Must come before .game-fans, which tightens them for its many piles. */
+.game-piles {
+  --bc-w: clamp(30px, 8.4vw, 40px);
+  --bc-off: clamp(16px, 4.6vw, 24px);
+}
+
+/* Seventeen short fans stack into a grid rather than seventeen tall rows. */
+.game-fans {
+  --bc-w: clamp(26px, 7vw, 34px);
+  --bc-off: clamp(13px, 3.6vw, 18px);
+}
+
+.fan-tableau {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 6px;
+  align-self: center;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.game-piles .bc-founds {
+  justify-content: center;
+}
+
+@media (min-width: 700px) {
+  .game-piles {
+    --bc-w: 48px;
+    --bc-off: 30px;
+  }
+  .game-fans {
+    --bc-w: 38px;
+    --bc-off: 22px;
+  }
+}

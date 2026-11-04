@@ -1,0 +1,127 @@
+/* Waffle: styles only this board uses. Loaded with its chunk. */
+
+.wf-meta {
+  margin-top: 4px;
+}
+
+.wf-left {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.wf-left b {
+  font-family: var(--display);
+  font-size: 24px;
+  line-height: 1;
+}
+
+.wf-left.low b {
+  color: var(--rose);
+}
+
+.wf-grid {
+  align-self: center;
+  width: min(100%, 340px);
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  gap: 5px;
+  margin-top: 10px;
+}
+
+.wf-hole {
+  aspect-ratio: 1;
+}
+
+.wf-cell {
+  position: relative;
+  aspect-ratio: 1;
+  border: 2px solid var(--grid-line);
+  border-radius: 10px;
+  background: var(--card);
+  padding: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-size: clamp(17px, 5.6vw, 26px);
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    background 160ms,
+    border-color 160ms,
+    color 160ms,
+    transform 120ms;
+}
+
+/* Feedback fills use --ok/--near, so the colour-blind palette flag swaps
+   them for free. Both fills are theme-independent, which is why the letter
+   colour on them is a literal rather than a variable: white reads on the
+   green, dark ink on the much lighter amber, in either theme. */
+.wf-cell.is-misplaced {
+  background: var(--near);
+  border-color: var(--near);
+  color: #1b2733;
+}
+
+.wf-cell.is-absent {
+  background: var(--paper);
+  border-color: var(--grid-line);
+  color: var(--ink-soft);
+}
+
+/* Settled letters sit back a little, so the eye goes to the unsolved ones. */
+.wf-cell.is-correct {
+  background: var(--ok);
+  border-color: var(--ok);
+  color: #fff;
+  opacity: 0.82;
+}
+
+/* Corner marker: a solid dot for home, a ring for belongs-elsewhere, so
+   the state survives without colour. */
+.wf-cell.is-correct::after,
+.wf-cell.is-misplaced::after {
+  content: "";
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+}
+
+.wf-cell.is-correct::after {
+  background: currentColor;
+}
+
+.wf-cell.held {
+  outline: 3px solid var(--blue);
+  outline-offset: 2px;
+  transform: translateY(-3px);
+  opacity: 1;
+  z-index: 1;
+}
+
+.wf-cell:focus-visible {
+  outline: 3px solid var(--indigo);
+  outline-offset: 2px;
+}
+
+.wf-cell:active {
+  transform: translateY(1px);
+}
+
+.wf-answer {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: var(--ink-soft);
+  text-align: center;
+}
+
+.wf-answer b {
+  font-family: var(--mono);
+  color: var(--ink);
+  letter-spacing: 0.04em;
+}

@@ -8,23 +8,19 @@ import {
   GOAL,
   isWon,
   legalMoves,
-  rank,
   redeal,
   ROWS,
   runLength,
-  suit,
   type Board
 } from "../lib/gaps";
-import { recordResult } from "../lib/storage";
+import { RANKS, SUITS, rank, spoken, suit } from "../lib/cards";
+import { useGridNav } from "../lib/gridnav";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
+import "./Gaps.css";
 
-const SUITS = ["♠", "♥", "♦", "♣"];
-const NAMES = ["spades", "hearts", "diamonds", "clubs"];
-const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
-const isRed = (id: number) => suit(id) === 1 || suit(id) === 2;
-const name = (id: number) => `${RANKS[rank(id) - 1]} of ${NAMES[suit(id)]}`;
 const REDEALS = 2;
 const HELP =
   "The pack is dealt into four rows of thirteen and the four aces are " +
@@ -46,11 +42,15 @@ interface SavedState {
 type Sel = { kind: "card"; card: number } | { kind: "gap"; at: number } | null;
 
 export default function Gaps({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle, playMs } = useGame<SavedState>(
-    "gaps",
-    (s) => ({ board: deal(s), redeals: 0, moves: 0, done: false, won: false })
-  );
+  const { seed, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>((s) => ({
+    board: deal(s),
+    redeals: 0,
+    moves: 0,
+    done: false,
+    won: false
+  }));
   const [sel, setSel] = useState<Sel>(null);
+  const nav = useGridNav();
 
   const moves = useMemo(() => legalMoves(saved.board), [saved.board]);
   const movable = useMemo(() => new Set(moves.map((m) => m.card)), [moves]);
@@ -68,16 +68,17 @@ export default function Gaps({ onExit }: { onExit: () => void }) {
   const pickCards =
     sel?.kind === "gap" ? moves.filter((m) => m.gap === sel.at).map((m) => m.card) : [];
 
-  function judge(next: SavedState) {
+  /** Mark `next` finished if it is won or dead, returning the outcome for
+   *  the commit that ends the game. */
+  function judge(next: SavedState): "won" | "lost" | undefined {
     if (isWon(next.board)) {
       next.done = true;
       next.won = true;
-      recordResult("gaps", true);
-      return;
+      return "won";
     }
     if (next.redeals >= REDEALS && !legalMoves(next.board).length) {
       next.done = true;
-      recordResult("gaps", false);
+      return "lost";
     }
   }
 
@@ -89,8 +90,7 @@ export default function Gaps({ onExit }: { onExit: () => void }) {
       done: false,
       won: false
     };
-    judge(next);
-    commit(next);
+    commit(next, { outcome: judge(next) });
     setSel(null);
   }
 
@@ -103,8 +103,7 @@ export default function Gaps({ onExit }: { onExit: () => void }) {
       done: false,
       won: false
     };
-    judge(next);
-    commit(next);
+    commit(next, { outcome: judge(next) });
     setSel(null);
   }
 
@@ -150,28 +149,27 @@ export default function Gaps({ onExit }: { onExit: () => void }) {
       </div>
 
       <div className="gp-wrap">
-        <div className="gp-board" role="grid" aria-label="Gaps board">
+        <div className="gp-board" role="grid" aria-label="Gaps board" {...nav}>
           {Array.from({ length: ROWS }, (_, r) => (
             <div className="gp-row" role="row" key={r}>
               {Array.from({ length: COLS }, (_, c) => {
                 const i = r * COLS + c;
                 const card = saved.board[i];
-                const where = `Row ${r + 1} column ${c + 1}`;
+                const where = `Row ${r + 1}, column ${c + 1}`;
                 if (card === null) {
                   const want = fillers(saved.board, i);
                   const picked = sel?.kind === "card" && pickGaps.includes(i);
                   return (
-                    <button
+                    <PlayingCard
                       key={c}
+                      data-cell={i}
+                      card={null}
                       role="gridcell"
-                      className={[
-                        "kl-card kl-empty gp-cell",
-                        want.length ? "gp-target" : "",
-                        picked || (sel?.kind === "gap" && sel.at === i) ? "selected" : ""
-                      ].join(" ")}
+                      className={want.length ? "gp-cell gp-target" : "gp-cell"}
+                      selected={picked || (sel?.kind === "gap" && sel.at === i)}
                       aria-label={
                         want.length === 1
-                          ? `${where}, gap for the ${name(want[0])}`
+                          ? `${where}, gap for the ${spoken(want[0])}`
                           : want.length
                             ? `${where}, gap for any 2`
                             : `${where}, dead gap`
@@ -188,26 +186,27 @@ export default function Gaps({ onExit }: { onExit: () => void }) {
                       ) : (
                         want.length > 0 && <span className="gp-r gp-ghost">2</span>
                       )}
-                    </button>
+                    </PlayingCard>
                   );
                 }
                 const live = movable.has(card);
                 const settled = c < runs[r];
                 return (
-                  <button
+                  <PlayingCard
                     key={c}
+                    data-cell={i}
+                    card={card}
                     role="gridcell"
                     className={[
-                      "kl-card gp-cell",
-                      isRed(card) ? "red" : "",
+                      "gp-cell",
                       live ? "gp-live" : "",
-                      settled ? "gp-home" : "",
+                      settled ? "gp-home" : ""
+                    ].join(" ")}
+                    selected={
                       (sel?.kind === "card" && sel.card === card) ||
                       (sel?.kind === "gap" && pickCards.includes(card))
-                        ? "selected"
-                        : ""
-                    ].join(" ")}
-                    aria-label={`${where}, ${name(card)}${
+                    }
+                    aria-label={`${where}, ${spoken(card)}${
                       settled ? ", home" : live ? ", can move" : ""
                     }`}
                     onClick={() => tap(i)}
@@ -219,7 +218,7 @@ export default function Gaps({ onExit }: { onExit: () => void }) {
                         ▸
                       </small>
                     )}
-                  </button>
+                  </PlayingCard>
                 );
               })}
             </div>
@@ -230,14 +229,12 @@ export default function Gaps({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="gaps"
           won={saved.won}
           message={
             saved.won
               ? `Four clean suits in ${saved.moves} moves!`
               : `Out of moves with ${home} of ${GOAL} home`
           }
-          playMs={playMs}
           onNew={startNew}
           onExit={onExit}
         />

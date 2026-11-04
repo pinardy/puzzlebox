@@ -1,10 +1,20 @@
 import { useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { SUITS, isRed, label, rank, rankName, stepsAbove, suit } from "../lib/cards";
-import { recordResult } from "../lib/storage";
+import {
+  downSameColour,
+  nCards,
+  rank,
+  rankName,
+  spoken,
+  stackPlace,
+  stepsAbove,
+  suit
+} from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { Foundation, PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
+import "./Agnes.css";
 
 const HELP =
   "Seven columns, everything face-up, and the card dealt after them sets " +
@@ -49,14 +59,11 @@ function deal(seed: string): SavedState {
 }
 
 type Sel =
-  | { from: "col"; pile: number; index: number }
-  | { from: "res"; slot: number }
-  | null;
+  { from: "col"; pile: number; index: number } | { from: "res"; slot: number } | null;
 
 export default function Agnes({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle, playMs } = useGame<SavedState>(
-    "agnes",
-    (s) => deal(s)
+  const { seed, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>((s) =>
+    deal(s)
   );
   const [sel, setSel] = useState<Sel>(null);
 
@@ -80,8 +87,7 @@ export default function Agnes({ onExit }: { onExit: () => void }) {
   /** Runs move as a unit when they descend in one colour. */
   function validRun(cards: number[]): boolean {
     for (let i = 0; i + 1 < cards.length; i++)
-      if (rank(cards[i]) !== rank(cards[i + 1]) + 1 || isRed(cards[i]) !== isRed(cards[i + 1]))
-        return false;
+      if (!downSameColour(cards[i + 1], cards[i])) return false;
     return true;
   }
 
@@ -95,13 +101,12 @@ export default function Agnes({ onExit }: { onExit: () => void }) {
     };
   }
 
-  function finish(next: SavedState) {
+  function play(next: SavedState) {
     next.moves++;
     if (!next.done && next.foundations.every((f) => f === 13)) {
       next.done = true;
-      recordResult("agnes", true);
-    }
-    commit(next);
+      commit(next, { outcome: "won" });
+    } else commit(next);
     setSel(null);
   }
 
@@ -120,7 +125,7 @@ export default function Agnes({ onExit }: { onExit: () => void }) {
     const next = clone();
     const [card] = takeSelection(next);
     next.foundations[suit(card)]++;
-    finish(next);
+    play(next);
   }
 
   function tapCol(pile: number, index: number | null) {
@@ -140,10 +145,7 @@ export default function Agnes({ onExit }: { onExit: () => void }) {
         return;
       }
       const top = cards.length ? cards[cards.length - 1] : null;
-      const fits =
-        top === null
-          ? true
-          : rank(run[0]) === rank(top) - 1 && isRed(run[0]) === isRed(top);
+      const fits = top === null ? true : downSameColour(run[0], top);
       if (!fits) {
         setSel(null);
         return;
@@ -151,7 +153,7 @@ export default function Agnes({ onExit }: { onExit: () => void }) {
       const next = clone();
       const moved = takeSelection(next);
       next.cols[pile].push(...moved);
-      finish(next);
+      play(next);
       return;
     }
 
@@ -176,7 +178,7 @@ export default function Agnes({ onExit }: { onExit: () => void }) {
     const next = clone();
     for (let s = 0; s < 7 && next.stock.length; s++)
       next.reserve[s].push(next.stock.pop()!);
-    finish(next);
+    play(next);
   }
 
   function startNew() {
@@ -187,10 +189,10 @@ export default function Agnes({ onExit }: { onExit: () => void }) {
   const isSelected = (pile: number, index: number) =>
     sel?.from === "col" && sel.pile === pile && index >= sel.index;
 
-  const foundationLabel = (s: number, count: number) =>
-    count === 0
-      ? SUITS[s]
-      : `${rankName(((saved.base - 1 + count - 1) % 13) + 1)}${SUITS[s]}`;
+  /** The top rank on a foundation holding `count` cards counted up from
+   *  `base`, or 0 while it is empty. */
+  const foundationTop = (count: number) =>
+    count === 0 ? 0 : ((saved.base - 1 + count - 1) % 13) + 1;
 
   return (
     <div className="game game-agnes" style={{ "--cols": 7 } as CSSProperties}>
@@ -203,16 +205,7 @@ export default function Agnes({ onExit }: { onExit: () => void }) {
       <div className="kl-top">
         <span className="kl-gap" />
         {saved.foundations.map((f, s) => (
-          <button
-            key={s}
-            className={`kl-card kl-found${f === 0 ? " kl-empty" : ""}${
-              f > 0 && (s === 1 || s === 2) ? " red" : ""
-            }`}
-            onClick={tryFoundation}
-            aria-label={`${SUITS[s]} foundation`}
-          >
-            {foundationLabel(s, f)}
-          </button>
+          <Foundation key={s} suit={s} top={foundationTop(f)} onClick={tryFoundation} />
         ))}
       </div>
 
@@ -220,20 +213,19 @@ export default function Agnes({ onExit }: { onExit: () => void }) {
         {saved.reserve.map((slot, s) => {
           const top = slot.length ? slot[slot.length - 1] : null;
           return (
-            <button
+            <PlayingCard
               key={s}
-              className={`kl-card${top === null ? " kl-empty" : ""}${
-                top !== null && isRed(top) ? " red" : ""
-              }${sel?.from === "res" && sel.slot === s ? " selected" : ""}`}
+              card={top}
+              selected={sel?.from === "res" && sel.slot === s}
               onClick={() => tapReserve(s)}
               aria-label={
                 top === null
                   ? `Reserve ${s + 1}, empty`
-                  : `Reserve ${s + 1}, ${label(top)}, ${slot.length} deep`
+                  : `Reserve ${s + 1}, ${spoken(top)}, ${nCards(slot.length)}`
               }
             >
-              {top === null ? "·" : label(top)}
-            </button>
+              {top === null ? "·" : undefined}
+            </PlayingCard>
           );
         })}
       </div>
@@ -248,28 +240,26 @@ export default function Agnes({ onExit }: { onExit: () => void }) {
             }}
           >
             {pile.length === 0 && (
-              <button
-                className="kl-card kl-empty kl-stacked"
+              <PlayingCard
+                card={null}
+                className="kl-stacked"
                 style={{ "--stack": 0 } as CSSProperties}
                 onClick={() => tapCol(p, null)}
                 aria-label={`Column ${p + 1}, empty`}
               >
                 ·
-              </button>
+              </PlayingCard>
             )}
             {pile.map((card, i) => (
-              <button
+              <PlayingCard
                 key={card}
-                className={[
-                  "kl-card kl-stacked",
-                  isRed(card) ? "red" : "",
-                  isSelected(p, i) ? "selected" : ""
-                ].join(" ")}
+                card={card}
+                selected={isSelected(p, i)}
+                className="kl-stacked"
                 style={{ "--stack": i } as CSSProperties}
+                place={stackPlace(`Column ${p + 1}`, i, pile.length)}
                 onClick={() => tapCol(p, i)}
-              >
-                {label(card)}
-              </button>
+              />
             ))}
           </div>
         ))}
@@ -277,7 +267,12 @@ export default function Agnes({ onExit }: { onExit: () => void }) {
 
       <div className="lights-meta">
         <span>Moves: {saved.moves}</span>
-        <button className="mini-btn" onClick={dealRow} disabled={!saved.stock.length}>
+        <button
+          className="mini-btn"
+          onClick={dealRow}
+          disabled={!saved.stock.length}
+          aria-label={`Deal a row, stock ${nCards(saved.stock.length)}`}
+        >
           Deal ({saved.stock.length})
         </button>
       </div>
@@ -285,10 +280,8 @@ export default function Agnes({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="agnes"
           won
           message={`Agnes home in ${saved.moves} moves!`}
-          playMs={playMs}
           onNew={startNew}
           onExit={onExit}
         />

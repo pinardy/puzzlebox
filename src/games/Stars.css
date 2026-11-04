@@ -1,0 +1,7 @@
+/* Stars: styles only this board uses. Loaded with its chunk. */
+
+@media (min-width: 700px) {
+  .stars-grid {
+    width: min(100%, 500px);
+  }
+}

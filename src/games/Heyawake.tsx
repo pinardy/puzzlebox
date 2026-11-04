@@ -1,9 +1,11 @@
 import { useEffect, useMemo, type CSSProperties } from "react";
+import { useGridNav } from "../lib/gridnav";
 import { generateHeyawake } from "../lib/heyawake";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Heyawake.css";
 
 const SIZE: Record<Diff, number> = { easy: 6, medium: 7, hard: 8 };
 const CLUE_RATE: Record<Diff, number> = { easy: 0.75, medium: 0.6, hard: 0.5 };
@@ -19,8 +21,8 @@ interface SavedState {
 }
 
 export default function Heyawake({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("heyawake", (_s, d) => ({
+  const { seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
       shaded: Array(SIZE[d] * SIZE[d]).fill(false),
       done: false
     }));
@@ -44,7 +46,8 @@ export default function Heyawake({ onExit }: { onExit: () => void }) {
     const bad = new Set<number>();
     for (let i = 0; i < n * n; i++) {
       if (!saved.shaded[i]) continue;
-      const r = Math.floor(i / n), c = i % n;
+      const r = Math.floor(i / n),
+        c = i % n;
       if (c > 0 && saved.shaded[i - 1]) {
         bad.add(i);
         bad.add(i - 1);
@@ -69,7 +72,8 @@ export default function Heyawake({ onExit }: { onExit: () => void }) {
     const stack = [start];
     while (stack.length) {
       const j = stack.pop()!;
-      const r = Math.floor(j / n), c = j % n;
+      const r = Math.floor(j / n),
+        c = j % n;
       for (const k of [
         r > 0 ? j - n : -1,
         r < n - 1 ? j + n : -1,
@@ -102,20 +106,32 @@ export default function Heyawake({ onExit }: { onExit: () => void }) {
     return true;
   }, [saved.shaded, roomOf, n]);
 
+  const solved =
+    conflicts.size === 0 &&
+    globalsOk &&
+    clue.every((want, id) => want === null || counts[id] === want);
   useEffect(() => {
-    const cluesOk = clue.every((want, id) => want === null || counts[id] === want);
-    if (!saved.done && cluesOk && conflicts.size === 0 && globalsOk) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("heyawake", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [counts, conflicts, globalsOk, saved]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   function toggle(i: number) {
     if (saved.done) return;
     const shaded = saved.shaded.slice();
     shaded[i] = !shaded[i];
     commit({ ...saved, shaded });
+  }
+
+  const nav = useGridNav();
+
+  /** Fix one square that differs from the generated shading. */
+  function hint() {
+    if (saved.done) return;
+    const wrong = saved.shaded.flatMap((on, i) => (on === puzzle.solution[i] ? [] : [i]));
+    if (!wrong.length) return;
+    const i = wrong[Math.floor(Math.random() * wrong.length)];
+    const shaded = saved.shaded.slice();
+    shaded[i] = puzzle.solution[i];
+    commitHint({ ...saved, shaded });
   }
 
   // A room's number goes in its top-left cell.
@@ -131,8 +147,7 @@ export default function Heyawake({ onExit }: { onExit: () => void }) {
     <div className="game game-heyawake">
       <GameHeader title="Heyawake" onExit={onExit} onNew={() => newPuzzle()} />
       <p className="game-hint">
-        Numbers count shaded squares in their room; shaded squares never
-        touch.
+        Numbers count shaded squares in their room; shaded squares never touch.
       </p>
       <GameTools
         diff={diff}
@@ -140,6 +155,7 @@ export default function Heyawake({ onExit }: { onExit: () => void }) {
         help={HELP}
         onUndo={undo}
         canUndo={canUndo && !saved.done}
+        onHint={saved.done ? undefined : hint}
       />
 
       <div
@@ -147,15 +163,23 @@ export default function Heyawake({ onExit }: { onExit: () => void }) {
         style={{ "--n": n } as CSSProperties}
         role="grid"
         aria-label="Heyawake board"
+        {...nav}
       >
         {Array.from({ length: n * n }, (_, i) => {
-          const r = Math.floor(i / n), c = i % n;
+          const r = Math.floor(i / n),
+            c = i % n;
           const id = roomOf[i];
           const want = clue[id];
           return (
             <button
               key={i}
               role="gridcell"
+              data-cell={i}
+              aria-label={`Row ${r + 1}, column ${c + 1}${
+                labelAt.has(i) ? `, room needs ${labelAt.get(i)}` : ""
+              }, ${saved.shaded[i] ? "shaded" : "unshaded"}${
+                conflicts.has(i) ? ", conflict" : ""
+              }`}
               className={[
                 "hw-cell",
                 saved.shaded[i] ? "on" : "",
@@ -169,9 +193,7 @@ export default function Heyawake({ onExit }: { onExit: () => void }) {
               onClick={() => toggle(i)}
               aria-pressed={saved.shaded[i]}
             >
-              {labelAt.has(i) && (
-                <span className="hw-clue">{labelAt.get(i)}</span>
-              )}
+              {labelAt.has(i) && <span className="hw-clue">{labelAt.get(i)}</span>}
             </button>
           );
         })}
@@ -180,10 +202,8 @@ export default function Heyawake({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="heyawake"
           won
           message="Rooms balanced!"
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

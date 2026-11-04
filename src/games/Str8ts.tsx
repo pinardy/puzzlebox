@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
-import { useGridKeys } from "../lib/keys";
+import { cellLabel, useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import { Numpad } from "./Numpad";
+import "./Str8ts.css";
 
 const SIZE: Record<Diff, number> = { easy: 6, medium: 6, hard: 7 };
 const REVEAL: Record<Diff, number> = { easy: 0.42, medium: 0.32, hard: 0.28 };
@@ -41,7 +43,8 @@ function generateStr8ts(seed: string, n: number, reveal: number): Puzzle {
       black[i] = black[j] = true;
       placed += i === j ? 1 : 2;
       for (let r = 0; r < n; r++) {
-        let rc = 0, cc = 0;
+        let rc = 0,
+          cc = 0;
         for (let k = 0; k < n; k++) {
           if (black[r * n + k]) rc++;
           if (black[k * n + r]) cc++;
@@ -74,9 +77,17 @@ function generateStr8ts(seed: string, n: number, reveal: number): Puzzle {
       }
     };
     for (let r = 0; r < n; r++)
-      scan(Array.from({ length: n }, (_, c) => r * n + c), compRow, compOfRow);
+      scan(
+        Array.from({ length: n }, (_, c) => r * n + c),
+        compRow,
+        compOfRow
+      );
     for (let c = 0; c < n; c++)
-      scan(Array.from({ length: n }, (_, r) => r * n + c), compCol, compOfCol);
+      scan(
+        Array.from({ length: n }, (_, r) => r * n + c),
+        compCol,
+        compOfCol
+      );
 
     const grid = Array(n * n).fill(0);
     const whites = [...Array(n * n).keys()].filter((i) => !black[i]);
@@ -86,14 +97,16 @@ function generateStr8ts(seed: string, n: number, reveal: number): Puzzle {
       const cells = comps[id];
       const vals = cells.map((c) => grid[c]).filter((v) => v > 0);
       if (!vals.length) return true;
-      const mn = Math.min(...vals), mx = Math.max(...vals);
+      const mn = Math.min(...vals),
+        mx = Math.max(...vals);
       if (mx - mn >= cells.length) return false;
       const lo = Math.max(1, mx - cells.length + 1);
       const hi = Math.min(n, mn + cells.length - 1);
       return hi - lo + 1 >= cells.length;
     };
     const okAt = (i: number, v: number): boolean => {
-      const r = Math.floor(i / n), c = i % n;
+      const r = Math.floor(i / n),
+        c = i % n;
       for (let k = 0; k < n; k++) {
         if (k !== c && grid[r * n + k] === v) return false;
         if (k !== r && grid[k * n + c] === v) return false;
@@ -104,7 +117,10 @@ function generateStr8ts(seed: string, n: number, reveal: number): Puzzle {
       if (++nodes > 20000) return false;
       if (k === whites.length) return true;
       const i = whites[k];
-      for (const v of shuffled([...Array(n).keys()].map((x) => x + 1), rng)) {
+      for (const v of shuffled(
+        [...Array(n).keys()].map((x) => x + 1),
+        rng
+      )) {
         grid[i] = v;
         if (okAt(i, v) && fill(k + 1)) return true;
         grid[i] = 0;
@@ -117,7 +133,8 @@ function generateStr8ts(seed: string, n: number, reveal: number): Puzzle {
     const blackDigit = Array(n * n).fill(0);
     for (let i = 0; i < n * n; i++) {
       if (!black[i] || rng() > 0.45) continue;
-      const r = Math.floor(i / n), c = i % n;
+      const r = Math.floor(i / n),
+        c = i % n;
       const used = new Set<number>();
       for (let k = 0; k < n; k++) {
         used.add(grid[r * n + k]);
@@ -151,8 +168,8 @@ interface SavedState {
 }
 
 export default function Str8ts({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("str8ts", (_s, d) => ({
+  const { seed, diff, saved, commit, commitHint, finish, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
       entries: Array(SIZE[d] * SIZE[d]).fill(0),
       done: false
     }));
@@ -175,9 +192,11 @@ export default function Str8ts({ onExit }: { onExit: () => void }) {
     for (let i = 0; i < n * n; i++) {
       const v = at(i);
       if (v === 0 || puzzle.black[i]) continue;
-      const r = Math.floor(i / n), c = i % n;
+      const r = Math.floor(i / n),
+        c = i % n;
       for (let k = 0; k < n; k++) {
-        const row = r * n + k, col = k * n + c;
+        const row = r * n + k,
+          col = k * n + c;
         if (row !== i && at(row) === v) bad.add(i);
         if (col !== i && at(col) === v) bad.add(i);
       }
@@ -193,20 +212,19 @@ export default function Str8ts({ onExit }: { onExit: () => void }) {
     return bad;
   }, [board, puzzle, n]);
 
-  useEffect(() => {
-    if (saved.done || conflicts.size > 0) return;
+  const solved = useMemo(() => {
+    if (conflicts.size > 0) return false;
     const whitesFull = board.every((v, i) => puzzle.black[i] || v !== 0);
-    if (!whitesFull) return;
+    if (!whitesFull) return false;
     const straight = (cells: number[]) => {
       const vals = cells.map((c) => board[c]);
       return Math.max(...vals) - Math.min(...vals) === cells.length - 1;
     };
-    if (puzzle.compRow.every(straight) && puzzle.compCol.every(straight)) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("str8ts", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [board, conflicts, saved, puzzle]);
+    return puzzle.compRow.every(straight) && puzzle.compCol.every(straight);
+  }, [board, conflicts, puzzle]);
+  useEffect(() => {
+    if (solved) finish();
+  }, [solved, finish]);
 
   function setCell(idx: number, val: number) {
     if (saved.done || puzzle.black[idx] || puzzle.givens[idx] !== 0) return;
@@ -249,8 +267,8 @@ export default function Str8ts({ onExit }: { onExit: () => void }) {
     <div className="game game-str8ts">
       <GameHeader title="Str8ts" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
-        White runs must be consecutive numbers in any order; rows and columns
-        never repeat.
+        White runs must be consecutive numbers in any order; rows and columns never
+        repeat.
       </p>
       <GameTools
         diff={diff}
@@ -270,7 +288,17 @@ export default function Str8ts({ onExit }: { onExit: () => void }) {
         {board.map((v, i) => {
           if (puzzle.black[i])
             return (
-              <span key={i} className="st-black">
+              <span
+                key={i}
+                className="st-black"
+                role="gridcell"
+                aria-label={cellLabel(
+                  i,
+                  n,
+                  "black",
+                  puzzle.blackDigit[i] && `clue ${puzzle.blackDigit[i]}`
+                )}
+              >
                 {puzzle.blackDigit[i] || ""}
               </span>
             );
@@ -285,6 +313,14 @@ export default function Str8ts({ onExit }: { onExit: () => void }) {
                 selected === i ? "selected" : "",
                 conflicts.has(i) ? "conflict" : ""
               ].join(" ")}
+              aria-label={cellLabel(
+                i,
+                n,
+                v,
+                given && "given",
+                conflicts.has(i) && "conflict"
+              )}
+              aria-selected={selected === i}
               onClick={() => setSelected(i)}
             >
               {v || ""}
@@ -293,31 +329,13 @@ export default function Str8ts({ onExit }: { onExit: () => void }) {
         })}
       </div>
 
-      <div className="numpad numpad-5">
-        {Array.from({ length: n }, (_, d) => d + 1).map((d) => (
-          <button
-            key={d}
-            className="num-key"
-            onClick={() => selected !== null && setCell(selected, d)}
-          >
-            {d}
-          </button>
-        ))}
-        <button
-          className="num-key tool"
-          onClick={() => selected !== null && setCell(selected, 0)}
-        >
-          ⌫
-        </button>
-      </div>
+      <Numpad max={n} onDigit={(d) => selected !== null && setCell(selected, d)} />
 
       {saved.done && (
         <Result
           key={seed}
-          game="str8ts"
           won
           message="Every straight lines up!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

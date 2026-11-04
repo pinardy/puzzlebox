@@ -36,6 +36,14 @@ import { GameBoundary } from "./games/GameBoundary";
 import { soundEnabled, setSoundEnabled } from "./lib/sound";
 import { hapticsEnabled, setHapticsEnabled } from "./lib/haptics";
 import { useTheme } from "./lib/theme";
+import {
+  currentStreak,
+  dailyGame,
+  dailyProgress,
+  loadDaily,
+  today,
+  DAILY_SLOT
+} from "./lib/daily";
 const Stats = lazy(() => import("./Stats"));
 
 // Each game is its own chunk (the registry's `load` thunks are separate
@@ -45,13 +53,11 @@ const GAME_COMPONENT = Object.fromEntries(
   GAMES.map((g) => [g.id, lazy(g.load)])
 ) as Record<string, ComponentType<GameProps>>;
 
-type View = "hub" | "stats" | GameId;
+type View = "hub" | "stats" | "daily" | GameId;
 
 /** Narrow screens get a two-level hub: categories first, then games. */
 function useIsWide(): boolean {
-  const [wide, setWide] = useState(
-    () => window.matchMedia("(min-width: 700px)").matches
-  );
+  const [wide, setWide] = useState(() => window.matchMedia("(min-width: 700px)").matches);
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 700px)");
     const h = (e: MediaQueryListEvent) => setWide(e.matches);
@@ -60,7 +66,6 @@ function useIsWide(): boolean {
   }, []);
   return wide;
 }
-
 
 /** The view lives in location.hash (#/game/sudoku, #/cat/words), so the
  *  browser back button navigates in-app instead of leaving the PWA, and
@@ -74,6 +79,7 @@ function parseRoute(): Route {
   const [kind, id] = window.location.hash.replace(/^#\/?/, "").split("/");
   if (kind === "game" && GAME_IDS.has(id)) return { view: id as GameId, cat: null };
   if (kind === "stats") return { view: "stats", cat: null };
+  if (kind === "daily") return { view: "daily", cat: null };
   if (kind === "cat" && (CATEGORIES as string[]).includes(id))
     return { view: "hub", cat: id as Category };
   return { view: "hub", cat: null };
@@ -124,9 +130,7 @@ function Card({
         </span>
         <span className="card-meta">
           <span className="card-state">{STATE_LABEL[progress]}</span>
-          {stats.won > 0 && (
-            <span className="card-solved">✓ {stats.won} solved</span>
-          )}
+          {stats.won > 0 && <span className="card-solved">✓ {stats.won} solved</span>}
         </span>
       </button>
       {onFav && (
@@ -134,9 +138,7 @@ function Card({
           className={`fav-btn${fav ? " on" : ""}`}
           onClick={onFav}
           aria-pressed={fav}
-          aria-label={
-            fav ? `Unpin ${card.name}` : `Pin ${card.name} to favourites`
-          }
+          aria-label={fav ? `Unpin ${card.name}` : `Pin ${card.name} to favourites`}
         >
           {fav ? "★" : "☆"}
         </button>
@@ -145,14 +147,42 @@ function Card({
   );
 }
 
+const DAILY_LABEL = { fresh: "Play →", started: "Continue →", done: "Solved ✓" };
+
+/** The puzzle of the day, above everything else on the hub: same game and
+ *  board for everyone today, with the run of days solved in a row. */
+function DailyCard({ onOpen }: { onOpen: () => void }) {
+  const date = today();
+  const game = GAMES.find((g) => g.id === dailyGame(date))!;
+  const progress = dailyProgress(date);
+  const streak = currentStreak(loadDaily(), date);
+  return (
+    <button
+      className={`daily-card is-${progress}`}
+      style={{ "--accent": game.accent } as CSSProperties}
+      onClick={onOpen}
+    >
+      <span className="card-glyph" aria-hidden="true">
+        {game.glyph}
+      </span>
+      <span className="daily-body">
+        <span className="daily-kicker">Puzzle of the day</span>
+        <span className="card-name">{game.name}</span>
+        <span className="card-tag">
+          {streak > 0 ? `📅 ${streak}-day streak` : game.tagline}
+        </span>
+      </span>
+      <span className="card-state">{DAILY_LABEL[progress]}</span>
+    </button>
+  );
+}
+
 export default function App() {
   const [{ view, cat: openCat }, setRoute] = useState<Route>(parseRoute);
   const [online, setOnline] = useState(navigator.onLine);
   const [query, setQuery] = useState("");
   const [sound, setSound] = useState(soundEnabled);
-  const [colorblind, setColorblind] = useState(() =>
-    load("pref:colorblind", false)
-  );
+  const [colorblind, setColorblind] = useState(() => load("pref:colorblind", false));
   const { theme, toggle: toggleTheme } = useTheme();
   const [haptics, setHaptics] = useState(hapticsEnabled);
   const [showTimer, setShowTimer] = useState(() => load("pref:timer", false));
@@ -186,7 +216,7 @@ export default function App() {
 
   // Catches deep links and back/forward too, not just taps on a card.
   useEffect(() => {
-    if (view === "hub" || view === "stats") return;
+    if (view === "hub" || view === "stats" || view === "daily") return;
     setLastGame(view);
     setRecents(pushRecent(view));
   }, [view]);
@@ -296,13 +326,17 @@ export default function App() {
   }
 
   if (view !== "hub") {
-    const Game = GAME_COMPONENT[view];
-    const title = GAMES.find((g) => g.id === view)?.name ?? "Puzzle";
+    // The puzzle of the day is a regular game mounted with the date, which
+    // switches it to the fixed daily board in its own slot.
+    const date = view === "daily" ? today() : null;
+    const id = date ? dailyGame(date) : (view as GameId);
+    const Game = GAME_COMPONENT[id];
+    const title = GAMES.find((g) => g.id === id)?.name ?? "Puzzle";
     return (
-      <GameShell>
+      <GameShell game={id} daily={date} key={view}>
         {/* A board that can't be opened — an old save, a generator that
             throws — offers a way out instead of a blank screen. */}
-        <GameBoundary game={view} title={title} onExit={exit}>
+        <GameBoundary game={id} slot={date ? DAILY_SLOT : id} title={title} onExit={exit}>
           <Suspense fallback={<div className="game" />}>
             <Game onExit={exit} />
           </Suspense>
@@ -344,10 +378,7 @@ export default function App() {
 
   const favCards = GAMES.filter((c) => favorites.includes(c.id));
   // Anything already pinned or mid-game is shown above; don't list it twice.
-  const shownAbove = new Set<GameId>([
-    ...favorites,
-    ...inProgress.map((c) => c.id)
-  ]);
+  const shownAbove = new Set<GameId>([...favorites, ...inProgress.map((c) => c.id)]);
   const recentCards = recents
     .filter((id) => !shownAbove.has(id))
     .map((id) => GAMES.find((c) => c.id === id))
@@ -384,11 +415,7 @@ export default function App() {
     return (
       <div className="hub">
         <header className="cat-head">
-          <button
-            className="back-btn"
-            onClick={exit}
-            aria-label="Back to categories"
-          >
+          <button className="back-btn" onClick={exit} aria-label="Back to categories">
             ←
           </button>
           <h2>{CATEGORY_LABEL[openCat]}</h2>
@@ -442,9 +469,7 @@ export default function App() {
             className="icon-btn"
             onClick={toggleTheme}
             aria-label={
-              theme === "dark"
-                ? "Switch to the light theme"
-                : "Switch to the dark theme"
+              theme === "dark" ? "Switch to the light theme" : "Switch to the dark theme"
             }
             aria-pressed={theme === "dark"}
           >
@@ -470,11 +495,7 @@ export default function App() {
           >
             {sound ? "🔊" : "🔇"}
           </button>
-          <button
-            className="icon-btn"
-            onClick={surprise}
-            aria-label="Open a random game"
-          >
+          <button className="icon-btn" onClick={surprise} aria-label="Open a random game">
             ⚄
           </button>
         </div>
@@ -507,6 +528,8 @@ export default function App() {
         }}
         aria-label="Search games"
       />
+
+      <DailyCard onOpen={() => navigate("/daily")} />
 
       <button className="stats-strip" onClick={() => navigate("/stats")}>
         <span className="stats-strip-main">
@@ -583,7 +606,9 @@ export default function App() {
                 {CATEGORIES.map((cat) => {
                   const meta = CATEGORY_META[cat];
                   const games = GAMES.filter((c) => c.cat === cat);
-                  const started = games.filter((c) => progressOf(c.id) === "started").length;
+                  const started = games.filter(
+                    (c) => progressOf(c.id) === "started"
+                  ).length;
                   return (
                     <button
                       key={cat}
@@ -599,9 +624,7 @@ export default function App() {
                         <span className="card-tag">{meta.tagline}</span>
                       </span>
                       <span className="card-meta">
-                        <span className="card-state">
-                          {games.length} games →
-                        </span>
+                        <span className="card-state">{games.length} games →</span>
                         {started > 0 && (
                           <span className="card-solved">{started} in progress</span>
                         )}

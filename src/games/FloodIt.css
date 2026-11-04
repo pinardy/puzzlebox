@@ -1,0 +1,86 @@
+/* FloodIt: styles only this board uses. Loaded with its chunk. */
+
+.fl-status {
+  display: flex;
+  justify-content: space-between;
+  align-self: center;
+  width: min(100%, 420px);
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+.fl-status b {
+  color: var(--ink);
+  font-family: var(--mono);
+}
+
+.fl-grid {
+  align-self: center;
+  width: min(100%, 420px);
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  overflow: hidden;
+  aspect-ratio: 1;
+}
+
+.fl-cell {
+  aspect-ratio: 1;
+}
+
+.fl-cell.owned {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45);
+}
+
+.fl-palette {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.fl-pick {
+  width: 46px;
+  height: 46px;
+  border: 1.5px solid var(--ink);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  padding: 0;
+}
+
+.fl-pick:active {
+  transform: translateY(2px);
+  box-shadow: none;
+}
+
+.fl-pick.current {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+  opacity: 0.5;
+}
+
+.fl-c0 {
+  background: #3b6fe0;
+}
+
+.fl-c1 {
+  background: #c9407a;
+}
+
+.fl-c2 {
+  background: #2e9e6b;
+}
+
+.fl-c3 {
+  background: #e0a23b;
+}
+
+.fl-c4 {
+  background: #7857c9;
+}
+
+.fl-c5 {
+  background: #2a9d8f;
+}

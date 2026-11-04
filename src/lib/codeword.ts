@@ -55,7 +55,9 @@ export function makeCodeword(seed: string, givens: number): Codeword {
       const bucket = BY_CROSSING.get(`${across[0][c]}${across[1][c]}${across[2][c]}`);
       if (!bucket) break;
       // Don't reuse an across word as a down word — it reads oddly.
-      const choice = shuffled(bucket, rng).find((w) => !across.includes(w) && !downs.includes(w));
+      const choice = shuffled(bucket, rng).find(
+        (w) => !across.includes(w) && !downs.includes(w)
+      );
       if (!choice) break;
       downs.push(choice);
     }

@@ -1,0 +1,51 @@
+/* WordSearch: styles only this board uses. Loaded with its chunk. */
+
+.ws-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--card);
+  align-self: center;
+  width: min(100%, 440px);
+  aspect-ratio: 1;
+  margin: 6px 0;
+}
+
+.ws-cell {
+  border: 0.5px solid var(--grid-line);
+  background: var(--card);
+  font-family: var(--mono);
+  font-weight: 600;
+  font-size: clamp(13px, 3.8vw, 19px);
+  padding: 0;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.ws-cell.anchor {
+  background: var(--teal);
+  color: #fff;
+}
+
+.ws-cell.found {
+  background: #d7efe9;
+  color: var(--teal);
+  font-weight: 700;
+}
+
+@media (min-width: 700px) {
+  .ws-grid {
+    width: min(100%, 560px);
+  }
+  .ws-grid {
+    margin-top: auto;
+    margin-bottom: auto;
+  }
+}
+
+:root[data-theme="dark"] .ws-cell.found {
+  background: #1e3a34;
+}

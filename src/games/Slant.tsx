@@ -8,10 +8,12 @@ import {
   FWD,
   BACK
 } from "../lib/slant";
-import { recordResult, Diff } from "../lib/storage";
+import { useGridNav } from "../lib/gridnav";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Slant.css";
 
 const SIZE: Record<Diff, number> = { easy: 5, medium: 7, hard: 9 };
 const REVEAL: Record<Diff, number> = { easy: 0.62, medium: 0.45, hard: 0.32 };
@@ -29,8 +31,8 @@ interface SavedState {
 }
 
 export default function Slant({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("slant", (_s, d) => ({
+  const { seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
       cells: Array(SIZE[d] * SIZE[d]).fill(EMPTY),
       done: false
     }));
@@ -45,13 +47,13 @@ export default function Slant({ onExit }: { onExit: () => void }) {
   const degrees = useMemo(() => cornerDegrees(saved.cells, n), [saved.cells, n]);
   const loops = useMemo(() => loopCells(saved.cells, n), [saved.cells, n]);
 
+  const solved = useMemo(
+    () => slantSolved(saved.cells, clues, n),
+    [saved.cells, clues, n]
+  );
   useEffect(() => {
-    if (!saved.done && slantSolved(saved.cells, clues, n)) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("slant", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [saved, clues, n]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   function cycle(i: number, back: boolean) {
     if (saved.done) return;
@@ -60,10 +62,11 @@ export default function Slant({ onExit }: { onExit: () => void }) {
     commit({ ...saved, cells });
   }
 
+  // Enter cycles a square forward, Shift+Enter back (the long-press).
+  const nav = useGridNav(cycle);
+
   function hint() {
-    const wrong = [...Array(n * n).keys()].filter(
-      (i) => saved.cells[i] !== solution[i]
-    );
+    const wrong = [...Array(n * n).keys()].filter((i) => saved.cells[i] !== solution[i]);
     if (!wrong.length) return;
     const cells = saved.cells.slice();
     const i = wrong[Math.floor(Math.random() * wrong.length)];
@@ -98,21 +101,25 @@ export default function Slant({ onExit }: { onExit: () => void }) {
       </div>
 
       <div className="sl-wrap" style={{ "--n": n } as CSSProperties}>
-        <div className="sl-grid" role="grid" aria-label="Slant board">
+        <div className="sl-grid" role="grid" aria-label="Slant board" {...nav}>
           {saved.cells.map((v, i) => {
-            const r = Math.floor(i / n), c = i % n;
+            const r = Math.floor(i / n),
+              c = i % n;
             const glyph =
               v === FWD ? "forward slash" : v === BACK ? "backslash" : "blank";
             return (
               <button
                 key={i}
                 role="gridcell"
+                data-cell={i}
                 className={[
                   "sl-cell",
                   v === FWD ? "fwd" : v === BACK ? "back" : "",
                   loops.has(i) ? "loop" : ""
                 ].join(" ")}
-                aria-label={`Row ${r + 1} column ${c + 1}, ${glyph}`}
+                aria-label={`Row ${r + 1}, column ${c + 1}, ${glyph}${
+                  loops.has(i) ? ", in a loop" : ""
+                }`}
                 onClick={() => {
                   if (!longPressed.current) cycle(i, false);
                 }}
@@ -142,8 +149,10 @@ export default function Slant({ onExit }: { onExit: () => void }) {
         <div className="sl-clues">
           {clues.map((k, p) => {
             if (k === -1) return null;
-            const r = Math.floor(p / (n + 1)), c = p % (n + 1);
-            const over = degrees[p] > k, done = degrees[p] === k;
+            const r = Math.floor(p / (n + 1)),
+              c = p % (n + 1);
+            const over = degrees[p] > k,
+              done = degrees[p] === k;
             const note = over ? "too many" : done ? "done" : `${degrees[p]} so far`;
             return (
               <span
@@ -157,8 +166,7 @@ export default function Slant({ onExit }: { onExit: () => void }) {
                   } as CSSProperties
                 }
                 aria-label={
-                  `Corner row ${r + 1} column ${c + 1}: ` +
-                  `${k} diagonals, ${note}`
+                  `Corner row ${r + 1} column ${c + 1}: ` + `${k} diagonals, ${note}`
                 }
               >
                 {k}
@@ -171,10 +179,8 @@ export default function Slant({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="slant"
           won
           message="Every corner counted!"
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

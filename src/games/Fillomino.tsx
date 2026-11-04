@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
-import { useGridKeys } from "../lib/keys";
+import { cellLabel, useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import { Numpad } from "./Numpad";
+import "./Fillomino.css";
 
 const SIZE: Record<Diff, number> = { easy: 6, medium: 7, hard: 8 };
 const REVEAL: Record<Diff, number> = { easy: 0.55, medium: 0.48, hard: 0.42 };
@@ -32,7 +34,8 @@ function groups(values: number[], n: number): { id: number[]; size: number[] } {
     while (stack.length) {
       const j = stack.pop()!;
       count++;
-      const r = Math.floor(j / n), c = j % n;
+      const r = Math.floor(j / n),
+        c = j % n;
       for (const k of [
         r > 0 ? j - n : -1,
         r < n - 1 ? j + n : -1,
@@ -66,7 +69,8 @@ function generateFillomino(seed: string, n: number, reveal: number): Puzzle {
       const want = 1 + Math.floor(rng() * 5); // 1–5
       while (cells.length < want) {
         const frontier = cells.flatMap((i) => {
-          const r = Math.floor(i / n), c = i % n;
+          const r = Math.floor(i / n),
+            c = i % n;
           const out: number[] = [];
           if (r > 0 && regionOf[i - n] === -1) out.push(i - n);
           if (r < n - 1 && regionOf[i + n] === -1) out.push(i + n);
@@ -86,10 +90,12 @@ function generateFillomino(seed: string, n: number, reveal: number): Puzzle {
     for (;;) {
       let merged = false;
       outer: for (let i = 0; i < n * n; i++) {
-        const r = Math.floor(i / n), c = i % n;
+        const r = Math.floor(i / n),
+          c = i % n;
         for (const j of [r < n - 1 ? i + n : -1, c < n - 1 ? i + 1 : -1]) {
           if (j === -1) continue;
-          const a = regionOf[i], b = regionOf[j];
+          const a = regionOf[i],
+            b = regionOf[j];
           if (a === b || regions[a].length !== regions[b].length) continue;
           if (regions[a].length + regions[b].length > 9) continue attempt;
           for (const cell of regions[b]) regionOf[cell] = a;
@@ -129,8 +135,8 @@ interface SavedState {
 }
 
 export default function Fillomino({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("fillomino", (_s, d) => ({
+  const { seed, diff, saved, commit, commitHint, finish, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
       entries: Array(SIZE[d] * SIZE[d]).fill(0),
       done: false
     }));
@@ -154,7 +160,8 @@ export default function Fillomino({ onExit }: { onExit: () => void }) {
     const sealed = Array(size.length).fill(true);
     for (let i = 0; i < n * n; i++) {
       if (board[i] !== 0) continue;
-      const r = Math.floor(i / n), c = i % n;
+      const r = Math.floor(i / n),
+        c = i % n;
       for (const j of [
         r > 0 ? i - n : -1,
         r < n - 1 ? i + n : -1,
@@ -171,15 +178,14 @@ export default function Fillomino({ onExit }: { onExit: () => void }) {
     return bad;
   }, [board, n]);
 
-  useEffect(() => {
-    if (saved.done || board.some((v) => v === 0)) return;
+  const solved = useMemo(() => {
+    if (board.some((v) => v === 0)) return false;
     const { id, size } = groups(board, n);
-    if (board.every((v, i) => size[id[i]] === v)) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("fillomino", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [board, saved]);
+    return board.every((v, i) => size[id[i]] === v);
+  }, [board, n]);
+  useEffect(() => {
+    if (solved) finish();
+  }, [solved, finish]);
 
   function setCell(idx: number, val: number) {
     if (saved.done || givens[idx] !== 0) return;
@@ -231,7 +237,8 @@ export default function Fillomino({ onExit }: { onExit: () => void }) {
         aria-label="Fillomino board"
       >
         {board.map((v, i) => {
-          const r = Math.floor(i / n), c = i % n;
+          const r = Math.floor(i / n),
+            c = i % n;
           const given = givens[i] !== 0;
           // Draw borders between different filled numbers, so completed
           // regions read at a glance.
@@ -249,6 +256,14 @@ export default function Fillomino({ onExit }: { onExit: () => void }) {
                 edgeT ? "cage-t" : "",
                 edgeL ? "cage-l" : ""
               ].join(" ")}
+              aria-label={cellLabel(
+                i,
+                n,
+                v,
+                given && "given",
+                conflicts.has(i) && "conflict"
+              )}
+              aria-selected={selected === i}
               onClick={() => setSelected(i)}
             >
               <span className="kenken-val">{v || ""}</span>
@@ -257,31 +272,13 @@ export default function Fillomino({ onExit }: { onExit: () => void }) {
         })}
       </div>
 
-      <div className="numpad numpad-9">
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => (
-          <button
-            key={d}
-            className="num-key"
-            onClick={() => selected !== null && setCell(selected, d)}
-          >
-            {d}
-          </button>
-        ))}
-        <button
-          className="num-key tool"
-          onClick={() => selected !== null && setCell(selected, 0)}
-        >
-          ⌫
-        </button>
-      </div>
+      <Numpad max={9} onDigit={(d) => selected !== null && setCell(selected, d)} />
 
       {saved.done && (
         <Result
           key={seed}
-          game="fillomino"
           won
           message="Every group fits!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

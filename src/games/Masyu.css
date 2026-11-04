@@ -1,0 +1,42 @@
+/* Masyu: styles only this board uses. Loaded with its chunk. */
+
+.masyu-grid {
+  display: grid;
+  gap: 0;
+  align-self: center;
+  width: min(100%, 420px);
+  aspect-ratio: 1;
+  margin: 6px 0;
+}
+
+.masyu-cell {
+  display: grid;
+  place-items: center;
+  font-size: clamp(18px, 5.4vw, 28px);
+  color: var(--grid-line);
+}
+
+.masyu-cell.pearl-black {
+  color: var(--ink);
+}
+
+.masyu-cell.pearl-white {
+  color: var(--ink);
+}
+
+@media (min-width: 700px) {
+  .masyu-grid {
+    width: min(100%, 500px);
+  }
+  .masyu-grid {
+    margin-top: auto;
+    margin-bottom: auto;
+  }
+}
+
+/* Thin edges: draw the keyboard ring around the edge, above its
+   neighbours, rather than inset where it would vanish. */
+.game-masyu .slither-edge:focus-visible {
+  outline-offset: 0;
+  z-index: 2;
+}

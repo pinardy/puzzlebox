@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import {
   colorBoard,
@@ -11,6 +11,7 @@ import {
 } from "../lib/waffle";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Waffle.css";
 
 const DEPTH: Record<Diff, number> = { easy: 8, medium: 11, hard: 13 };
 const BUDGET = 15;
@@ -43,8 +44,8 @@ interface SavedState {
 const key = (seed: string) => `waffle-${seed}`;
 
 export default function Waffle({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("waffle", (s, d) => ({
+  const { seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((s, d) => ({
       letters: generateWaffle(key(s), DEPTH[d]).start,
       swaps: 0,
       done: false,
@@ -58,23 +59,19 @@ export default function Waffle({ onExit }: { onExit: () => void }) {
   const [cursor, setCursor] = useState(0);
   const tiles = useRef<(HTMLButtonElement | null)[]>([]);
 
-  const marks = useMemo(() => colorBoard(saved.letters, solution), [saved.letters, solution]);
+  const marks = useMemo(
+    () => colorBoard(saved.letters, solution),
+    [saved.letters, solution]
+  );
   const placed = LETTER_CELLS.filter((c) => saved.letters[c] === solution[c]).length;
   const solved = placed === LETTER_CELLS.length;
   const left = BUDGET - saved.swaps;
 
   useEffect(() => {
-    if (saved.done) return;
     // Solved wins even on the very last swap, so check that first.
-    if (solved) {
-      commit({ ...saved, done: true, won: true }, { undoable: false });
-      recordResult("waffle", true);
-    } else if (saved.swaps >= BUDGET) {
-      commit({ ...saved, done: true, won: false }, { undoable: false });
-      recordResult("waffle", false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [solved, saved]);
+    if (solved) finish(true, { won: true });
+    else if (saved.swaps >= BUDGET) finish(false, { won: false });
+  }, [solved, saved.swaps, finish]);
 
   function tap(i: number) {
     if (saved.done) return;
@@ -203,14 +200,12 @@ export default function Waffle({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="waffle"
           won={saved.won}
           message={
             saved.won
               ? `Solved in ${saved.swaps} swap${saved.swaps === 1 ? "" : "s"}!`
               : "Out of swaps"
           }
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

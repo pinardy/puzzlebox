@@ -1,15 +1,11 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useGridKeys } from "../lib/keys";
-import {
-  generateRipple,
-  rippleConflicts,
-  rippleSolved,
-  MAX_ROOM
-} from "../lib/ripple";
-import { recordResult, Diff } from "../lib/storage";
+import { generateRipple, rippleConflicts, rippleSolved, MAX_ROOM } from "../lib/ripple";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Ripple.css";
 
 const SIZE: Record<Diff, number> = { easy: 5, medium: 6, hard: 7 };
 const GIVEN_RATE: Record<Diff, number> = { easy: 0.5, medium: 0.34, hard: 0.24 };
@@ -26,8 +22,8 @@ interface SavedState {
 }
 
 export default function Ripple({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("ripple", (_s, d) => ({
+  const { seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
       entries: Array(SIZE[d] * SIZE[d]).fill(0),
       done: false
     }));
@@ -49,13 +45,13 @@ export default function Ripple({ onExit }: { onExit: () => void }) {
     [n, roomOf, rooms, board]
   );
 
+  const solved = useMemo(
+    () => rippleSolved(n, roomOf, rooms, board),
+    [n, roomOf, rooms, board]
+  );
   useEffect(() => {
-    if (!saved.done && rippleSolved(n, roomOf, rooms, board)) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("ripple", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [board, saved]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   /** Values too big for the room are refused rather than shown as errors —
    *  the tray greys them out, and the keyboard should agree. */
@@ -101,8 +97,7 @@ export default function Ripple({ onExit }: { onExit: () => void }) {
     <div className="game game-ripple">
       <GameHeader title="Ripple Effect" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
-        1 to k in every k-cell room; a repeated number keeps that many
-        cells clear.
+        1 to k in every k-cell room; a repeated number keeps that many cells clear.
       </p>
       <GameTools
         diff={diff}
@@ -127,7 +122,8 @@ export default function Ripple({ onExit }: { onExit: () => void }) {
         aria-label="Ripple Effect board"
       >
         {board.map((v, i) => {
-          const r = Math.floor(i / n), c = i % n;
+          const r = Math.floor(i / n),
+            c = i % n;
           const id = roomOf[i];
           const given = givens[i] !== 0;
           return (
@@ -148,9 +144,9 @@ export default function Ripple({ onExit }: { onExit: () => void }) {
                 if (!given && saved.entries[i] !== 0 && selected === i) setCell(i, v);
                 else setSelected(i);
               }}
-              aria-label={`Row ${r + 1} column ${c + 1}, room of ${roomSize[i]}, ${
+              aria-label={`Row ${r + 1}, column ${c + 1}, room of ${roomSize[i]}, ${
                 v === 0 ? "empty" : v
-              }${conflicts.has(i) ? ", clashing" : ""}`}
+              }${given ? ", given" : ""}${conflicts.has(i) ? ", clashing" : ""}`}
             >
               {v || ""}
             </button>
@@ -186,10 +182,8 @@ export default function Ripple({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="ripple"
           won
           message="Every ripple settled!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

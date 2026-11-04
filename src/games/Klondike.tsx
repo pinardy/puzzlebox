@@ -1,17 +1,13 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import type { Diff } from "../lib/storage";
+import { downAltColour, nCards, rank, stackPlace, suit } from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { Foundation, Pile, PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
+import "./Klondike.css";
 
-// Card id 0–51: suit = id % 4 (♠ ♥ ♦ ♣), rank = 1 (ace) … 13 (king).
-const SUITS = ["♠", "♥", "♦", "♣"];
-const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
-const rank = (id: number) => Math.floor(id / 4) + 1;
-const suit = (id: number) => id % 4;
-const isRed = (id: number) => suit(id) === 1 || suit(id) === 2;
-const label = (id: number) => `${RANKS[rank(id) - 1]}${SUITS[suit(id)]}`;
 const DRAW: Record<Diff, number> = { easy: 1, medium: 3, hard: 3 };
 // Hard is Vegas-style: three passes through the deck in total.
 const REDEALS: Record<Diff, number> = { easy: -1, medium: -1, hard: 2 };
@@ -54,14 +50,12 @@ function deal(seed: string, diff: Diff): SavedState {
   };
 }
 
-type Sel =
-  | { from: "waste" }
-  | { from: "tableau"; pile: number; index: number }
-  | null;
+type Sel = { from: "waste" } | { from: "tableau"; pile: number; index: number } | null;
 
 export default function Klondike({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("klondike", (s, d) => deal(s, d));
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>(
+    (s, d) => deal(s, d)
+  );
   const [sel, setSel] = useState<Sel>(null);
   // Saves from before draw modes lack the redeal counter.
   const redeals = saved.redeals ?? -1;
@@ -81,13 +75,12 @@ export default function Klondike({ onExit }: { onExit: () => void }) {
     return saved.tableau[sel.pile].slice(sel.index);
   }, [sel, saved]);
 
-  function finish(next: SavedState) {
+  function play(next: SavedState) {
     next.moves++;
     if (!next.done && next.foundations.every((f) => f === 13)) {
       next.done = true;
-      recordResult("klondike", true);
-    }
-    commit(next);
+      commit(next, { outcome: "won" });
+    } else commit(next);
     setSel(null);
   }
 
@@ -125,7 +118,7 @@ export default function Klondike({ onExit }: { onExit: () => void }) {
       next.waste = [];
       if (redeals > 0) next.redeals = redeals - 1;
     } else return;
-    finish(next);
+    play(next);
   }
 
   function tryFoundation() {
@@ -138,7 +131,7 @@ export default function Klondike({ onExit }: { onExit: () => void }) {
     const next = clone();
     takeSelection(next);
     next.foundations[suit(card)]++;
-    finish(next);
+    play(next);
   }
 
   function tapTableau(pile: number, index: number | null) {
@@ -147,26 +140,30 @@ export default function Klondike({ onExit }: { onExit: () => void }) {
 
     if (sel) {
       const run = selCards;
-      if (!run.length) { setSel(null); return; }
+      if (!run.length) {
+        setSel(null);
+        return;
+      }
       const first = run[0];
       const top = cards.length ? cards[cards.length - 1] : null;
       const fits =
         top === null
           ? rank(first) === 13
-          : cards.length > saved.faceDown[pile] &&
-            rank(first) === rank(top) - 1 &&
-            isRed(first) !== isRed(top);
+          : cards.length > saved.faceDown[pile] && downAltColour(first, top);
       const sameSpot = sel.from === "tableau" && sel.pile === pile;
       if (sameSpot) {
         setSel(null);
         if (run.length === 1) tryFoundation();
         return;
       }
-      if (!fits) { setSel(null); return; }
+      if (!fits) {
+        setSel(null);
+        return;
+      }
       const next = clone();
       const moved = takeSelection(next);
       next.tableau[pile].push(...moved);
-      finish(next);
+      play(next);
       return;
     }
 
@@ -207,7 +204,7 @@ export default function Klondike({ onExit }: { onExit: () => void }) {
       }
     }
     if (!moved) return;
-    finish(next);
+    play(next);
   }
 
   const autoRunning = useRef(false);
@@ -247,72 +244,67 @@ export default function Klondike({ onExit }: { onExit: () => void }) {
       />
 
       <div className="kl-top">
-        <button className="kl-card kl-back" onClick={tapStock} aria-label="Stock">
+        <PlayingCard
+          card={null}
+          faceDown
+          onClick={tapStock}
+          aria-label={
+            saved.stock.length
+              ? `Stock, ${nCards(saved.stock.length)}`
+              : redeals !== 0
+                ? "Stock, empty, turn the waste over"
+                : "Stock, empty"
+          }
+        >
           {saved.stock.length ? saved.stock.length : redeals !== 0 ? "↻" : "—"}
-        </button>
+        </PlayingCard>
         <span className="kl-fan">
           {(saved.waste.length ? saved.waste.slice(-DRAW[diff]) : [null]).map(
             (card, i, fan) => {
               const isTop = i === fan.length - 1;
               return (
-                <button
+                <PlayingCard
                   key={card ?? "empty"}
-                  className={`kl-card${card === null ? " kl-empty" : ""}${
-                    isTop && sel?.from === "waste" ? " selected" : ""
-                  }${card !== null && isRed(card) ? " red" : ""}`}
+                  card={card}
+                  selected={isTop && sel?.from === "waste"}
                   onClick={isTop ? tapWaste : undefined}
                   tabIndex={isTop ? 0 : -1}
-                  aria-label={isTop ? "Waste" : undefined}
-                >
-                  {card !== null ? label(card) : ""}
-                </button>
+                  place={isTop ? `Waste, ${nCards(saved.waste.length)}` : "Waste"}
+                />
               );
             }
           )}
         </span>
         <span className="kl-gap" />
         {saved.foundations.map((f, s) => (
-          <button
-            key={s}
-            className={`kl-card kl-found${f === 0 ? " kl-empty" : ""}${
-              f > 0 && (s === 1 || s === 2) ? " red" : ""
-            }`}
-            onClick={tryFoundation}
-            aria-label={`${SUITS[s]} foundation`}
-          >
-            {f === 0 ? SUITS[s] : `${RANKS[f - 1]}${SUITS[s]}`}
-          </button>
+          <Foundation key={s} suit={s} top={f} onClick={tryFoundation} />
         ))}
       </div>
 
       <div className="kl-tableau">
         {saved.tableau.map((pile, p) => (
-          <div
+          <Pile
             key={p}
-            className="kl-pile"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) tapTableau(p, null);
-            }}
+            name={`Column ${p + 1}`}
+            empty={!pile.length}
+            onTap={() => tapTableau(p, null)}
           >
             {pile.map((card, i) => {
               const up = i >= saved.faceDown[p];
               return (
-                <button
+                <PlayingCard
                   key={card}
-                  className={[
-                    "kl-card kl-stacked",
-                    up ? "" : "kl-back",
-                    up && isRed(card) ? "red" : "",
-                    isSelected(p, i) ? "selected" : ""
-                  ].join(" ")}
+                  card={card}
+                  faceDown={!up}
+                  selected={isSelected(p, i)}
+                  className="kl-stacked"
                   style={{ "--stack": i } as CSSProperties}
+                  place={stackPlace(`Column ${p + 1}`, i, pile.length)}
                   onClick={() => tapTableau(p, up ? i : null)}
-                >
-                  {up ? label(card) : ""}
-                </button>
+                />
               );
             })}
-          </div>
+          </Pile>
         ))}
       </div>
 
@@ -328,10 +320,8 @@ export default function Klondike({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="klondike"
           won
           message={`Cleared in ${saved.moves} moves!`}
-          playMs={playMs}
           onNew={startNew}
           onExit={onExit}
         />

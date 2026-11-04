@@ -1,0 +1,108 @@
+/* Magnets: styles only this board uses. Loaded with its chunk. */
+
+.mg-grid {
+  align-self: center;
+  width: min(100%, 420px);
+  display: grid;
+  grid-template-columns: repeat(var(--gn), 1fr);
+  aspect-ratio: 1;
+  margin: 6px 0;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.mg-clue {
+  font-size: clamp(10px, 2.8vw, 15px);
+}
+
+.mg-clue.mg-hidden {
+  color: var(--grid-line);
+}
+
+.mg-legend {
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-size: clamp(11px, 3vw, 16px);
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.mg-cell {
+  aspect-ratio: 1;
+  border: 0.5px solid var(--grid-line);
+  background: var(--card);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  font-family: var(--mono);
+  font-size: clamp(14px, 4vw, 22px);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.mg-cell.plus {
+  background: #fbe8e3;
+  color: var(--coral);
+}
+
+.mg-cell.minus {
+  background: #e5edfb;
+  color: var(--blue);
+}
+
+/* Half-filled or double-poled slab: an inset ring rather than a background
+   swap, so the + / − already sitting in the cell stays legible. */
+.mg-cell.broken {
+  box-shadow: inset 0 0 0 2px var(--amber);
+}
+
+.mg-cell.clash {
+  background: #f7dbe5;
+  color: var(--rose);
+}
+
+.mg-cell.reg-t {
+  border-top: 2px solid var(--ink);
+}
+
+.mg-cell.reg-l {
+  border-left: 2px solid var(--ink);
+}
+
+.mg-cell.reg-b {
+  border-bottom: 2px solid var(--ink);
+}
+
+.mg-cell.reg-r {
+  border-right: 2px solid var(--ink);
+}
+
+/* The accent inks are tuned for paper, so the poles get brighter tints of
+   themselves once they sit on a dark cell. */
+:root[data-theme="dark"] .mg-cell.plus {
+  background: #3a2320;
+  color: #f2917a;
+}
+
+:root[data-theme="dark"] .mg-cell.minus {
+  background: #1d2740;
+  color: #90b2f5;
+}
+
+:root[data-theme="dark"] .mg-cell.clash {
+  background: #45222f;
+  color: #f090b4;
+}
+
+:root[data-theme="dark"] .mg-clue.mg-hidden {
+  color: #2f3946;
+}
+
+@media (min-width: 700px) {
+  .mg-grid {
+    width: min(100%, 500px);
+  }
+}

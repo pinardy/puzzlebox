@@ -1,0 +1,15 @@
+/* Agnes: styles only this board uses. Loaded with its chunk. */
+
+/* Agnes's seven reserve slots sit in one row above the tableau. */
+.ag-reserve {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  align-self: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.ag-reserve {
+  margin-bottom: 2px;
+}

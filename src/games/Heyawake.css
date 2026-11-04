@@ -1,0 +1,62 @@
+/* Heyawake: styles only this board uses. Loaded with its chunk. */
+
+.hw-grid {
+  align-self: center;
+  width: min(100%, 420px);
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  aspect-ratio: 1;
+  background: var(--card);
+}
+
+.hw-cell {
+  position: relative;
+  aspect-ratio: 1;
+  border: 0.5px solid var(--grid-line);
+  background: var(--card);
+  padding: 0;
+  cursor: pointer;
+}
+
+.hw-cell.on {
+  background: var(--ink);
+}
+
+.hw-cell.conflict {
+  background: var(--rose);
+}
+
+.hw-clue {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-size: clamp(11px, 3vw, 15px);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.hw-cell.on .hw-clue {
+  color: var(--paper);
+}
+
+.hw-cell.settled .hw-clue {
+  color: var(--green);
+}
+
+.hw-cell.room-t {
+  border-top: 2px solid var(--ink);
+}
+
+.hw-cell.room-l {
+  border-left: 2px solid var(--ink);
+}
+
+.hw-cell.room-b {
+  border-bottom: 2px solid var(--ink);
+}
+
+.hw-cell.room-r {
+  border-right: 2px solid var(--ink);
+}

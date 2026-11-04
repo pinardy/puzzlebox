@@ -1,14 +1,16 @@
 import { useMemo, useRef, useState, type CSSProperties } from "react";
 import { makeRng } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Unblock.css";
 
 const N = 6;
 const HELP =
   "Slide the red car out through the gap on the right. Other cars only " +
-  "move along their own axis. Drag any car to slide it. Par is the " +
+  "move along their own axis. Drag any car to slide it — or Tab to a " +
+  "car and slide it with the arrow keys. Par is the " +
   "fewest moves possible for this board — beat the puzzle in as few " +
   "moves as you can.";
 
@@ -51,7 +53,12 @@ function occupancy(cars: Car[], pos: number[]): Int8Array {
 
 /** Minimum moves to free the red car (one move = one car sliding any
  *  distance), or null if unsolvable / the search cap is hit. */
-function solve(cars: Car[], startPos: number[], moveCap: number, stateCap: number): number | null {
+function solve(
+  cars: Car[],
+  startPos: number[],
+  moveCap: number,
+  stateCap: number
+): number | null {
   const key = (p: number[]) => p.join(",");
   const seen = new Set([key(startPos)]);
   let frontier = [startPos];
@@ -164,7 +171,10 @@ function generateUnblock(seed: string, diff: Diff): Layout {
   if (best) return best;
   // Vanishingly unlikely; a trivial fallback keeps the type honest.
   return {
-    cars: [{ h: true, len: 2, fix: 2 }, { h: false, len: 3, fix: 4 }],
+    cars: [
+      { h: true, len: 2, fix: 2 },
+      { h: false, len: 3, fix: 4 }
+    ],
     start: [0, 0],
     par: 2
   };
@@ -177,12 +187,13 @@ interface SavedState {
 }
 
 export default function Unblock({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("unblock", (s, d) => ({
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>(
+    (s, d) => ({
       pos: generateUnblock(s, d).start,
       moves: 0,
       done: false
-    }));
+    })
+  );
   const layout = useMemo(() => generateUnblock(seed, diff), [seed, diff]);
   const { cars, par } = layout;
 
@@ -197,7 +208,8 @@ export default function Unblock({ onExit }: { onExit: () => void }) {
   function slideRange(k: number): [number, number] {
     const grid = occupancy(cars, pos);
     const car = cars[k];
-    let min = pos[k], max = pos[k];
+    let min = pos[k],
+      max = pos[k];
     while (min > 0) {
       const probe = min - 1;
       const r = car.h ? car.fix : probe;
@@ -215,8 +227,34 @@ export default function Unblock({ onExit }: { onExit: () => void }) {
     return [min, max];
   }
 
+  /** The car a run of arrow-key slides belongs to: consecutive slides of
+   *  one focused car count as a single move, the same as one drag. */
+  const keyRun = useRef<number | null>(null);
+
+  function keySlide(k: number, dir: -1 | 1) {
+    if (saved.done || drag.current) return;
+    const [min, max] = slideRange(k);
+    const to = pos[k] + dir;
+    if (to < min || to > max) return;
+    const next = pos.slice();
+    next[k] = to;
+    const done = k === 0 && to === N - cars[0].len;
+    const cont = keyRun.current === k;
+    keyRun.current = k;
+    commit(
+      { pos: next, moves: saved.moves + (cont ? 0 : 1), done },
+      { undoable: !cont, outcome: done ? "won" : undefined }
+    );
+  }
+
+  function doUndo() {
+    keyRun.current = null;
+    undo();
+  }
+
   function onPointerDown(e: React.PointerEvent, k: number) {
     if (saved.done) return;
+    keyRun.current = null;
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     drag.current = {
       k,
@@ -246,8 +284,7 @@ export default function Unblock({ onExit }: { onExit: () => void }) {
     next[k] = to;
     const done = k === 0 && to === N - cars[0].len;
     const state: SavedState = { pos: next, moves: saved.moves + 1, done };
-    commit(state);
-    if (done) recordResult("unblock", true);
+    commit(state, { outcome: done ? "won" : undefined });
   }
 
   return (
@@ -260,7 +297,7 @@ export default function Unblock({ onExit }: { onExit: () => void }) {
         diff={diff}
         onDiff={newPuzzle}
         help={HELP}
-        onUndo={undo}
+        onUndo={doUndo}
         canUndo={canUndo && !saved.done}
       />
 
@@ -271,7 +308,12 @@ export default function Unblock({ onExit }: { onExit: () => void }) {
         <span>Par {par}</span>
       </div>
 
-      <div className="ub-board drag-paint" ref={boardRef} role="group" aria-label="Unblock board">
+      <div
+        className="ub-board drag-paint"
+        ref={boardRef}
+        role="group"
+        aria-label="Unblock board"
+      >
         <span className="ub-exit" aria-hidden="true">
           ➜
         </span>
@@ -297,6 +339,28 @@ export default function Unblock({ onExit }: { onExit: () => void }) {
               onPointerMove={onPointerMove}
               onPointerUp={onPointerUp}
               onPointerCancel={onPointerUp}
+              tabIndex={saved.done ? -1 : 0}
+              role="button"
+              aria-label={`${k === 0 ? "Red car" : `Car ${k}`}, ${
+                car.h ? "horizontal" : "vertical"
+              }, ${car.len} long, ${
+                car.h
+                  ? `row ${car.fix + 1}, columns ${v + 1} to ${v + car.len}`
+                  : `column ${car.fix + 1}, rows ${v + 1} to ${v + car.len}`
+              }`}
+              aria-keyshortcuts={car.h ? "ArrowLeft ArrowRight" : "ArrowUp ArrowDown"}
+              onFocus={() => {
+                keyRun.current = null;
+              }}
+              onKeyDown={(e) => {
+                const dir = (
+                  car.h ? { ArrowLeft: -1, ArrowRight: 1 } : { ArrowUp: -1, ArrowDown: 1 }
+                ) as Record<string, -1 | 1>;
+                const d = dir[e.key];
+                if (d === undefined) return;
+                e.preventDefault();
+                keySlide(k, d);
+              }}
             />
           );
         })}
@@ -305,14 +369,12 @@ export default function Unblock({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="unblock"
           won
           message={
             saved.moves <= par
               ? `Freed in ${saved.moves} — perfect!`
               : `Freed in ${saved.moves} moves (par ${par})`
           }
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

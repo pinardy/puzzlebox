@@ -1,0 +1,34 @@
+/* Untangle: styles only this board uses. Loaded with its chunk. */
+
+.ut-board {
+  align-self: center;
+  width: min(100%, 440px);
+  aspect-ratio: 1;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--shadow);
+  touch-action: none;
+}
+
+.ut-edge {
+  stroke: var(--ink-soft);
+  stroke-width: 0.8;
+}
+
+.ut-edge.bad {
+  stroke: var(--rose);
+  stroke-width: 1.2;
+}
+
+.ut-node {
+  fill: var(--blue);
+  stroke: var(--ink);
+  stroke-width: 0.8;
+  cursor: grab;
+}
+
+.ut-node:active {
+  cursor: grabbing;
+  fill: var(--amber);
+}

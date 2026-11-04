@@ -1,0 +1,20 @@
+/* AcesUp: styles only this board uses. Loaded with its chunk. */
+
+.au-row {
+  display: flex;
+  gap: 8px;
+  align-self: center;
+  width: min(100%, 340px);
+  margin-top: 8px;
+}
+
+.au-pile {
+  min-height: 190px;
+}
+
+.au-slot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+}

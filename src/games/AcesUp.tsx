@@ -1,18 +1,14 @@
 import { useMemo, useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult } from "../lib/storage";
+import { rank, stackPlace, suit } from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
+import "./AcesUp.css";
 
-const SUITS = ["♠", "♥", "♦", "♣"];
-const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
-const rank = (id: number) => Math.floor(id / 4) + 1;
 // Aces are the highest card here, which is why they are the survivors.
 const value = (id: number) => (rank(id) === 1 ? 14 : rank(id));
-const suit = (id: number) => id % 4;
-const isRed = (id: number) => suit(id) === 1 || suit(id) === 2;
-const label = (id: number) => `${RANKS[rank(id) - 1]}${SUITS[suit(id)]}`;
 const HELP =
   "Deal four cards at a time, one to each pile. If two top cards share a " +
   "suit, the lower one is discarded — aces are high, so they never lose. " +
@@ -41,8 +37,9 @@ function deal(seed: string): SavedState {
 const top = (p: number[]) => (p.length ? p[p.length - 1] : null);
 
 export default function AcesUp({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("acesup", (s) => deal(s));
+  const { seed, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>((s) =>
+    deal(s)
+  );
   const [sel, setSel] = useState<number | null>(null);
 
   /** A top card dies if another pile shows a higher card of its suit. */
@@ -57,13 +54,14 @@ export default function AcesUp({ onExit }: { onExit: () => void }) {
     );
   }, [saved.piles]);
 
-  function judge(next: SavedState) {
+  /** Mark `next` finished if it is won or stuck, returning the outcome for
+   *  the commit that ends the game. */
+  function judge(next: SavedState): "won" | "lost" | undefined {
     const cards = next.piles.reduce((a, p) => a + p.length, 0);
     if (!next.stock.length && cards === 4 && next.piles.every((p) => p.length === 1)) {
       next.done = true;
       next.won = true;
-      recordResult("acesup", true);
-      return;
+      return "won";
     }
     if (next.stock.length) return;
     // Out of deck: stuck once nothing can be discarded or relocated.
@@ -76,16 +74,19 @@ export default function AcesUp({ onExit }: { onExit: () => void }) {
         )
     );
     const canMove =
-      next.piles.some((p) => p.length === 0) &&
-      next.piles.some((p) => p.length > 1);
+      next.piles.some((p) => p.length === 0) && next.piles.some((p) => p.length > 1);
     if (!canKill && !canMove) {
       next.done = true;
-      recordResult("acesup", false);
+      return "lost";
     }
   }
 
   function clone(): SavedState {
-    return { ...saved, piles: saved.piles.map((p) => p.slice()), stock: saved.stock.slice() };
+    return {
+      ...saved,
+      piles: saved.piles.map((p) => p.slice()),
+      stock: saved.stock.slice()
+    };
   }
 
   function tapPile(i: number) {
@@ -96,8 +97,7 @@ export default function AcesUp({ onExit }: { onExit: () => void }) {
       const next = clone();
       const moved = next.piles[sel].pop();
       if (moved !== undefined) next.piles[i].push(moved);
-      judge(next);
-      commit(next);
+      commit(next, { outcome: judge(next) });
       setSel(null);
       return;
     }
@@ -109,8 +109,7 @@ export default function AcesUp({ onExit }: { onExit: () => void }) {
       const next = clone();
       next.piles[i].pop();
       next.discarded++;
-      judge(next);
-      commit(next);
+      commit(next, { outcome: judge(next) });
       setSel(null);
       return;
     }
@@ -124,8 +123,7 @@ export default function AcesUp({ onExit }: { onExit: () => void }) {
       const c = next.stock.pop();
       if (c !== undefined) next.piles[i].push(c);
     }
-    judge(next);
-    commit(next);
+    commit(next, { outcome: judge(next) });
     setSel(null);
   }
 
@@ -143,13 +141,18 @@ export default function AcesUp({ onExit }: { onExit: () => void }) {
       <GameTools help={HELP} onUndo={undo} canUndo={canUndo && !saved.done} />
 
       <div className="kl-top">
-        <button
-          className={`kl-card ${saved.stock.length ? "kl-back" : "kl-empty"}`}
+        <PlayingCard
+          card={null}
+          faceDown={saved.stock.length > 0}
           onClick={tapStock}
-          aria-label="Deal four"
+          aria-label={
+            saved.stock.length
+              ? `Stock, ${saved.stock.length} cards, deal four`
+              : "Stock, empty"
+          }
         >
           {saved.stock.length || "—"}
-        </button>
+        </PlayingCard>
         <span className="kl-gap" />
         <span className="tp-left">{saved.discarded} discarded</span>
       </div>
@@ -164,26 +167,27 @@ export default function AcesUp({ onExit }: { onExit: () => void }) {
             }}
           >
             {pile.length === 0 ? (
-              <button
-                className="kl-card kl-empty au-slot"
+              <PlayingCard
+                card={null}
+                className="au-slot"
                 onClick={() => tapPile(i)}
-                aria-label="Empty pile"
+                aria-label={`Pile ${i + 1}, empty`}
               />
             ) : (
               pile.map((card, k) => (
-                <button
+                <PlayingCard
                   key={card}
-                  className={[
-                    "kl-card kl-stacked",
-                    isRed(card) ? "red" : "",
-                    k === pile.length - 1 && doomed[i] ? "tp-hot" : "",
-                    sel === i && k === pile.length - 1 ? "selected" : ""
-                  ].join(" ")}
+                  card={card}
+                  selected={sel === i && k === pile.length - 1}
+                  className={
+                    k === pile.length - 1 && doomed[i]
+                      ? "kl-stacked tp-hot"
+                      : "kl-stacked"
+                  }
                   style={{ "--stack": k } as CSSProperties}
+                  place={stackPlace(`Pile ${i + 1}`, k, pile.length)}
                   onClick={() => tapPile(i)}
-                >
-                  {label(card)}
-                </button>
+                />
               ))
             )}
           </div>
@@ -193,14 +197,12 @@ export default function AcesUp({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="acesup"
           won={saved.won}
           message={
             saved.won
               ? "Four aces left standing!"
               : `Stuck — ${saved.piles.reduce((a, p) => a + p.length, 0)} cards remain`
           }
-          playMs={playMs}
           onNew={startNew}
           onExit={onExit}
         />

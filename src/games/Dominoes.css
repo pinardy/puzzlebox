@@ -1,0 +1,97 @@
+/* Dominoes: styles only this board uses. Loaded with its chunk. */
+
+.dom-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), 1fr);
+  align-self: center;
+  width: min(100%, 440px);
+  aspect-ratio: calc(var(--cols) / var(--rows));
+  margin: 6px 0;
+  gap: 4px;
+}
+
+.dom-cell {
+  border: 1.5px dashed var(--ink-soft);
+  border-radius: 8px;
+  background: var(--card);
+  font-family: var(--mono);
+  font-size: clamp(15px, 4.4vw, 22px);
+  font-weight: 700;
+  color: var(--ink);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  cursor: pointer;
+}
+
+.dom-cell.anchor {
+  outline: 2.5px solid var(--teal);
+  outline-offset: -2.5px;
+}
+
+.dom-cell.paired {
+  border-style: solid;
+  border-color: var(--ink);
+  background: #eaf4f1;
+}
+
+.dom-cell.paired.conflict {
+  background: #fbe6ef;
+  border-color: var(--rose);
+}
+
+.dom-cell.join-r {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  border-right: none;
+  margin-right: -2px;
+}
+
+.dom-cell.join-l {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-left: none;
+  margin-left: -2px;
+}
+
+.dom-cell.join-d {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-bottom: none;
+  margin-bottom: -2px;
+}
+
+.dom-cell.join-u {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  border-top: none;
+  margin-top: -2px;
+}
+
+.dom-tray {
+  margin-top: 6px;
+}
+
+.ws-word.dup {
+  background: var(--rose);
+  border-color: var(--rose);
+  color: #fff;
+}
+
+@media (min-width: 700px) {
+  .dom-grid {
+    width: min(100%, 500px);
+  }
+  .dom-grid {
+    margin-top: auto;
+    margin-bottom: auto;
+  }
+}
+
+:root[data-theme="dark"] .dom-cell.paired {
+  background: #1e3230;
+}
+
+:root[data-theme="dark"] .dom-cell.paired.conflict {
+  background: #45222f;
+}

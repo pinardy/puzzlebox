@@ -1,9 +1,11 @@
 import { useMemo, type CSSProperties } from "react";
 import { makeRng } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import { useGridNav } from "../lib/gridnav";
+import "./SameGame.css";
 
 const CONF: Record<Diff, { w: number; h: number; colors: number }> = {
   easy: { w: 8, h: 8, colors: 4 },
@@ -11,6 +13,7 @@ const CONF: Record<Diff, { w: number; h: number; colors: number }> = {
   hard: { w: 12, h: 12, colors: 5 }
 };
 const COLORS = ["#e05252", "#3b6fe0", "#2e9e6b", "#e0a23b", "#7857c9"];
+const COLOR_NAMES = ["red", "blue", "green", "amber", "purple"];
 const HELP =
   "Tap any group of two or more touching tiles of one colour to pop it. " +
   "Tiles fall, empty columns close up. Bigger groups score far more — " +
@@ -39,16 +42,28 @@ function deal(seed: string, diff: Diff): SavedState {
   };
 }
 
-function groupAt(cells: (number | null)[], w: number, h: number, start: number): number[] {
+function groupAt(
+  cells: (number | null)[],
+  w: number,
+  h: number,
+  start: number
+): number[] {
   const color = cells[start];
   if (color === null) return [];
   const seen = new Set([start]);
   const stack = [start];
   while (stack.length) {
     const i = stack.pop()!;
-    const r = Math.floor(i / w), c = i % w;
-    for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-      const rr = r + dr, cc = c + dc;
+    const r = Math.floor(i / w),
+      c = i % w;
+    for (const [dr, dc] of [
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1]
+    ]) {
+      const rr = r + dr,
+        cc = c + dc;
       const j = rr * w + cc;
       if (rr >= 0 && rr < h && cc >= 0 && cc < w && cells[j] === color && !seen.has(j)) {
         seen.add(j);
@@ -62,7 +77,8 @@ function groupAt(cells: (number | null)[], w: number, h: number, start: number):
 function anyGroup(cells: (number | null)[], w: number, h: number): boolean {
   for (let i = 0; i < w * h; i++) {
     if (cells[i] === null) continue;
-    const r = Math.floor(i / w), c = i % w;
+    const r = Math.floor(i / w),
+      c = i % w;
     if (c < w - 1 && cells[i + 1] === cells[i]) return true;
     if (r < h - 1 && cells[i + w] === cells[i]) return true;
   }
@@ -88,8 +104,9 @@ function settle(cells: (number | null)[], w: number, h: number): (number | null)
 }
 
 export default function SameGame({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("samegame", (s, d) => deal(s, d));
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>(
+    (s, d) => deal(s, d)
+  );
   const { w, h } = saved;
 
   const remaining = useMemo(
@@ -109,16 +126,19 @@ export default function SameGame({ onExit }: { onExit: () => void }) {
     const stuck = !cleared && !anyGroup(cells, w, h);
     if (cleared) score += 1000;
     const done = cleared || stuck;
-    commit({ ...saved, cells, score, done, won: cleared });
-    if (done) recordResult("samegame", cleared);
+    commit(
+      { ...saved, cells, score, done, won: cleared },
+      { outcome: done ? (cleared ? "won" : "lost") : undefined }
+    );
   }
+
+  // Arrows walk the board; Enter / Space pops (the button's own click).
+  const nav = useGridNav();
 
   return (
     <div className="game game-samegame">
       <GameHeader title="SameGame" onExit={onExit} onNew={() => newPuzzle()} />
-      <p className="game-hint">
-        Pop groups of two or more. Big groups score (n−2)².
-      </p>
+      <p className="game-hint">Pop groups of two or more. Big groups score (n−2)².</p>
       <GameTools
         diff={diff}
         onDiff={newPuzzle}
@@ -128,7 +148,9 @@ export default function SameGame({ onExit }: { onExit: () => void }) {
       />
 
       <div className="lights-meta">
-        <span>Score: {saved.score} · {remaining} tiles</span>
+        <span>
+          Score: {saved.score} · {remaining} tiles
+        </span>
       </div>
 
       <div
@@ -136,15 +158,19 @@ export default function SameGame({ onExit }: { onExit: () => void }) {
         style={{ "--w": w, "--h": h } as CSSProperties}
         role="grid"
         aria-label="SameGame board"
+        {...nav}
       >
         {saved.cells.map((v, i) => (
           <button
             key={i}
             role="gridcell"
+            data-cell={i}
+            aria-label={`Row ${Math.floor(i / w) + 1}, column ${(i % w) + 1}, ${
+              v === null ? "empty" : COLOR_NAMES[v]
+            }`}
             className={`sg-cell${v === null ? " empty" : ""}`}
             style={v !== null ? ({ "--tile": COLORS[v] } as CSSProperties) : undefined}
             onClick={() => tap(i)}
-            tabIndex={-1}
           />
         ))}
       </div>
@@ -152,14 +178,12 @@ export default function SameGame({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="samegame"
           won={saved.won}
           message={
             saved.won
               ? `Board cleared — ${saved.score} points!`
               : `No moves left — ${saved.score} points, ${remaining} tiles stuck`
           }
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

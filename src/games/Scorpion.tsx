@@ -1,17 +1,11 @@
 import { useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult } from "../lib/storage";
+import { SUITS, downInSuit, nCards, rank, stackPlace, suit } from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { Pile, PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
 
-// Card id 0–51: suit = id % 4 (♠ ♥ ♦ ♣), rank = 1 (ace) … 13 (king).
-const SUITS = ["♠", "♥", "♦", "♣"];
-const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
-const rank = (id: number) => Math.floor(id / 4) + 1;
-const suit = (id: number) => id % 4;
-const isRed = (id: number) => suit(id) === 1 || suit(id) === 2;
-const label = (id: number) => `${RANKS[rank(id) - 1]}${SUITS[suit(id)]}`;
 const HELP =
   "Spider with teeth: cards go only on the next-higher card of the SAME " +
   "suit, but you may pick up ANY face-up card with everything on top of " +
@@ -50,9 +44,7 @@ function clearRuns(next: SavedState): void {
     const pile = next.cols[p];
     if (pile.length < 13) continue;
     const tail = pile.slice(-13);
-    const isRun = tail.every(
-      (c, i) => rank(c) === 13 - i && suit(c) === suit(tail[0])
-    );
+    const isRun = tail.every((c, i) => rank(c) === 13 - i && suit(c) === suit(tail[0]));
     const allUp = pile.length - 13 >= next.faceDown[p];
     if (isRun && allUp) {
       pile.splice(-13);
@@ -65,18 +57,18 @@ function clearRuns(next: SavedState): void {
 type Sel = { pile: number; index: number } | null;
 
 export default function Scorpion({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("scorpion", (s) => deal(s));
+  const { seed, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>((s) =>
+    deal(s)
+  );
   const [sel, setSel] = useState<Sel>(null);
 
-  function finish(next: SavedState) {
+  function play(next: SavedState) {
     next.moves++;
     clearRuns(next);
     if (!next.done && next.completed === 4) {
       next.done = true;
-      recordResult("scorpion", true);
-    }
-    commit(next);
+      commit(next, { outcome: "won" });
+    } else commit(next);
     setSel(null);
   }
 
@@ -94,7 +86,7 @@ export default function Scorpion({ onExit }: { onExit: () => void }) {
     const next = clone();
     next.reserve.forEach((card, i) => next.cols[i].push(card));
     next.reserve = [];
-    finish(next);
+    play(next);
   }
 
   function tap(pile: number, index: number | null) {
@@ -108,10 +100,7 @@ export default function Scorpion({ onExit }: { onExit: () => void }) {
       }
       const moving = saved.cols[sel.pile][sel.index];
       const top = cards.length ? cards[cards.length - 1] : null;
-      const fits =
-        top === null
-          ? rank(moving) === 13
-          : rank(moving) === rank(top) - 1 && suit(moving) === suit(top);
+      const fits = top === null ? rank(moving) === 13 : downInSuit(moving, top);
       if (!fits) {
         setSel(null);
         return;
@@ -122,7 +111,7 @@ export default function Scorpion({ onExit }: { onExit: () => void }) {
       if (src.length > 0 && src.length === next.faceDown[sel.pile])
         next.faceDown[sel.pile]--;
       next.cols[pile].push(...moved);
-      finish(next);
+      play(next);
       return;
     }
 
@@ -148,15 +137,24 @@ export default function Scorpion({ onExit }: { onExit: () => void }) {
       <GameTools help={HELP} onUndo={undo} canUndo={canUndo && !saved.done} />
 
       <div className="kl-top">
-        <button
-          className={`kl-card ${saved.reserve.length ? "kl-back" : "kl-empty"}`}
+        <PlayingCard
+          card={null}
+          faceDown={saved.reserve.length > 0}
           onClick={tapReserve}
-          aria-label="Reserve"
+          aria-label={
+            saved.reserve.length
+              ? `Reserve, ${nCards(saved.reserve.length)}, deal onto the first columns`
+              : "Reserve, empty"
+          }
         >
           {saved.reserve.length || "—"}
-        </button>
+        </PlayingCard>
         <span className="kl-gap" />
-        <span className="spider-done">
+        <span
+          className="spider-done"
+          role="img"
+          aria-label={`${saved.completed} of 4 runs complete`}
+        >
           {Array.from({ length: 4 }).map((_, i) => (
             <span key={i} className={i < saved.completed ? "run-done" : "run-todo"}>
               {SUITS[i]}
@@ -167,46 +165,42 @@ export default function Scorpion({ onExit }: { onExit: () => void }) {
 
       <div className="kl-tableau">
         {saved.cols.map((pile, p) => (
-          <div
+          <Pile
             key={p}
-            className="kl-pile"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) tap(p, null);
-            }}
+            name={`Column ${p + 1}`}
+            empty={!pile.length}
+            onTap={() => tap(p, null)}
           >
             {pile.map((card, i) => {
               const up = i >= saved.faceDown[p];
               return (
-                <button
+                <PlayingCard
                   key={card}
-                  className={[
-                    "kl-card kl-stacked",
-                    up ? "" : "kl-back",
-                    up && isRed(card) ? "red" : "",
-                    isSelected(p, i) ? "selected" : ""
-                  ].join(" ")}
+                  card={card}
+                  faceDown={!up}
+                  selected={isSelected(p, i)}
+                  className="kl-stacked"
                   style={{ "--stack": i } as CSSProperties}
+                  place={stackPlace(`Column ${p + 1}`, i, pile.length)}
                   onClick={() => tap(p, up ? i : null)}
-                >
-                  {up ? label(card) : ""}
-                </button>
+                />
               );
             })}
-          </div>
+          </Pile>
         ))}
       </div>
 
       <div className="lights-meta">
-        <span>Moves: {saved.moves} · runs {saved.completed}/4</span>
+        <span>
+          Moves: {saved.moves} · runs {saved.completed}/4
+        </span>
       </div>
 
       {saved.done && (
         <Result
           key={seed}
-          game="scorpion"
           won
           message={`All four suits in ${saved.moves} moves!`}
-          playMs={playMs}
           onNew={startNew}
           onExit={onExit}
         />

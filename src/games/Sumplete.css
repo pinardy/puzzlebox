@@ -1,0 +1,89 @@
+/* Sumplete: styles only this board uses. Loaded with its chunk. */
+
+.sp-grid {
+  align-self: center;
+  width: min(100%, 420px);
+  display: grid;
+  /* The target strip is the last column / last row of the same grid, so
+     an 8x8 board plus its totals still fits a narrow phone. */
+  grid-template-columns: repeat(var(--n), 1fr) auto;
+  gap: 3px;
+  margin-bottom: 10px;
+}
+
+.sp-cell {
+  aspect-ratio: 1;
+  border: 1.5px solid var(--grid-line);
+  border-radius: 5px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  padding: 0;
+  font-family: var(--mono);
+  font-size: clamp(13px, 4vw, 19px);
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.sp-cell.out {
+  background: var(--grid-line);
+  border-color: var(--grid-line);
+  box-shadow: none;
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+  color: var(--ink-soft);
+  opacity: 0.55;
+}
+
+.sp-target {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  font-family: var(--mono);
+  font-size: clamp(11px, 3.2vw, 15px);
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.sp-target.row {
+  padding: 0 4px 0 7px;
+}
+
+.sp-target.col {
+  padding: 7px 0 0;
+}
+
+.sp-target.ok {
+  color: var(--ok);
+}
+
+.sp-target.over {
+  color: var(--rose);
+}
+
+/* Never colour alone: a tick for a matched line, a bang for an overshot
+   one (which can only be fixed by crossing more out). */
+.sp-target.ok::after {
+  content: "✓";
+  font-size: 0.8em;
+}
+
+.sp-target.over::after {
+  content: "!";
+  font-size: 0.9em;
+}
+
+.sp-corner {
+  display: grid;
+  place-items: center;
+  padding: 7px 0 0 7px;
+  font-family: var(--display);
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+:root[data-theme="dark"] .sp-cell.out {
+  background: #202b39;
+  border-color: #202b39;
+}

@@ -1,9 +1,11 @@
-import { useMemo, useRef, type CSSProperties } from "react";
+import { useEffect, useMemo, type CSSProperties } from "react";
+import { useCellDrag } from "../lib/drag";
 import { generateZip, areAdjacent } from "../lib/zip";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Zip.css";
 
 const SIZE: Record<Diff, number> = { easy: 5, medium: 6, hard: 7 };
 const HELP =
@@ -17,37 +19,42 @@ interface SavedState {
 }
 
 export default function Zip({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, newPuzzle, playMs } = useGame<SavedState>(
-    "zip",
-    (s, d) => {
+  const { seed, diff, saved, commit, commitHint, finish, newPuzzle } =
+    useGame<SavedState>((s, d) => {
       const n = SIZE[d];
       const p = generateZip(`zip-${s}`, n, n + 1);
       return { path: [p.start], done: false };
-    }
-  );
+    });
   const n = SIZE[diff];
-  const { checkpoints, start, last } = useMemo(
-    () => generateZip(`zip-${seed}`, n, n + 1),
-    [seed, n]
-  );
-  const dragging = useRef(false);
+  const {
+    checkpoints,
+    start,
+    last,
+    path: answer
+  } = useMemo(() => generateZip(`zip-${seed}`, n, n + 1), [seed, n]);
 
   const onPath = useMemo(() => new Set(saved.path), [saved.path]);
   const head = saved.path[saved.path.length - 1];
 
   const nextCheckpoint = useMemo(() => {
     let expect = 1;
-    for (const cell of saved.path)
-      if (checkpoints.get(cell) === expect) expect++;
+    for (const cell of saved.path) if (checkpoints.get(cell) === expect) expect++;
     return expect;
   }, [saved.path, checkpoints]);
 
-  function apply(path: number[]) {
+  function isDone(path: number[]) {
     let expect = 1;
     for (const cell of path) if (checkpoints.get(cell) === expect) expect++;
-    const done = path.length === n * n && expect > last;
-    commit({ path, done }, { undoable: false }); // drawing has its own rewind
-    if (done && !saved.done) recordResult("zip", true);
+    return path.length === n * n && expect > last;
+  }
+
+  function apply(path: number[]) {
+    const done = isDone(path);
+    // Drawing has its own rewind, so moves aren't undoable.
+    commit(
+      { path, done },
+      { undoable: false, outcome: done && !saved.done ? "won" : undefined }
+    );
   }
 
   /** Try to move the path head onto `idx` (extend, backtrack, or rewind). */
@@ -69,11 +76,31 @@ export default function Zip({ onExit }: { onExit: () => void }) {
     apply([...path, idx]);
   }
 
-  function cellFromPoint(x: number, y: number): number | null {
-    const el = document.elementFromPoint(x, y)?.closest("[data-zip-idx]");
-    const v = el instanceof HTMLElement ? el.dataset.zipIdx : undefined;
-    return v === undefined ? null : Number(v);
+  const drag = useCellDrag({
+    onStart: step,
+    onEnter(i) {
+      if (i !== head) step(i);
+    },
+    // Enter on a focused square steps the line there: extend from the
+    // head, or rewind to an earlier square.
+    onKey: (i) => step(i)
+  });
+
+  /** Rewind to where the line last agreed with the generated route, then
+   *  draw one more square of it. */
+  function hint() {
+    if (saved.done) return;
+    let k = 0;
+    while (k < saved.path.length && saved.path[k] === answer[k]) k++;
+    if (k >= answer.length) return;
+    commitHint({ path: answer.slice(0, k + 1), done: false });
   }
+
+  // A hint can draw the last square; finish the way a drawn move would.
+  const doneNow = useMemo(() => isDone(saved.path), [saved.path]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (doneNow) finish();
+  }, [doneNow, finish]);
 
   return (
     <div className="game game-zip">
@@ -81,26 +108,19 @@ export default function Zip({ onExit }: { onExit: () => void }) {
       <p className="game-hint">
         Draw one line through every square, hitting the numbers in order.
       </p>
-      <GameTools diff={diff} onDiff={newPuzzle} help={HELP} />
+      <GameTools
+        diff={diff}
+        onDiff={newPuzzle}
+        help={HELP}
+        onHint={saved.done ? undefined : hint}
+      />
 
       <div
         className="zip-grid"
         style={{ "--n": n } as CSSProperties}
         role="grid"
         aria-label="Zip board"
-        onPointerDown={(e) => {
-          dragging.current = true;
-          (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-          const idx = cellFromPoint(e.clientX, e.clientY);
-          if (idx !== null) step(idx);
-        }}
-        onPointerMove={(e) => {
-          if (!dragging.current) return;
-          const idx = cellFromPoint(e.clientX, e.clientY);
-          if (idx !== null && idx !== head) step(idx);
-        }}
-        onPointerUp={() => { dragging.current = false; }}
-        onPointerCancel={() => { dragging.current = false; }}
+        {...drag}
       >
         {Array.from({ length: n * n }).map((_, i) => {
           const cp = checkpoints.get(i);
@@ -108,7 +128,10 @@ export default function Zip({ onExit }: { onExit: () => void }) {
             <div
               key={i}
               role="gridcell"
-              data-zip-idx={i}
+              data-cell={i}
+              aria-label={`Row ${Math.floor(i / n) + 1}, column ${(i % n) + 1}${
+                cp !== undefined ? `, checkpoint ${cp}` : ""
+              }, ${i === head ? "line end" : onPath.has(i) ? "on the line" : "empty"}`}
               className={[
                 "zip-cell",
                 onPath.has(i) ? "on" : "",
@@ -124,7 +147,10 @@ export default function Zip({ onExit }: { onExit: () => void }) {
       </div>
 
       <div className="lights-meta">
-        <span>{saved.path.length} / {n * n} squares · next: {nextCheckpoint > last ? "—" : nextCheckpoint}</span>
+        <span>
+          {saved.path.length} / {n * n} squares · next:{" "}
+          {nextCheckpoint > last ? "—" : nextCheckpoint}
+        </span>
         <button className="mini-btn" onClick={() => apply([start])}>
           Clear
         </button>
@@ -133,10 +159,8 @@ export default function Zip({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="zip"
           won
           message="Zipped!"
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />
