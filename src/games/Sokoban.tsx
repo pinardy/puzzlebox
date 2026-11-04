@@ -148,7 +148,7 @@ export default function Sokoban({ onExit }: { onExit: () => void }) {
         canUndo={canUndo && !saved.done}
       />
 
-      <div className="lights-meta">
+      <div className="lights-meta" aria-live="polite">
         <span>
           Moves: {saved.moves} · 📦{" "}
           {saved.boxes.filter((b) => goalSet.has(b)).length}/{saved.boxes.length}
@@ -179,6 +179,21 @@ export default function Sokoban({ onExit }: { onExit: () => void }) {
               ].join(" ")}
               onClick={() => tapCell(i)}
               tabIndex={-1}
+              aria-label={`Row ${Math.floor(i / n) + 1}, column ${(i % n) + 1}, ${
+                wall
+                  ? "wall"
+                  : box
+                    ? goal
+                      ? "crate on goal"
+                      : "crate"
+                    : player
+                      ? goal
+                        ? "worker on goal"
+                        : "worker"
+                      : goal
+                        ? "goal"
+                        : "floor"
+              }`}
             >
               {wall ? "" : box ? "📦" : player ? "🧍" : goal ? "◎" : ""}
             </button>

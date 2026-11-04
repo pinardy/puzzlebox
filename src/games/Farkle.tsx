@@ -191,6 +191,7 @@ export default function Farkle({ onExit }: { onExit: () => void }) {
             className={`yz-die${picked[i] ? " held" : ""}`}
             onClick={() => togglePick(i)}
             aria-pressed={!!picked[i]}
+            aria-label={`Die showing ${d}${picked[i] ? ", set aside" : ""}`}
           >
             {PIPS[d]}
           </button>

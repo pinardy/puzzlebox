@@ -119,6 +119,32 @@ export default function Ladder({ onExit }: { onExit: () => void }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slot, saved]);
 
+  // Hint: take the next rung of a shortest ladder from the current word.
+  function hint() {
+    if (saved.done) return;
+    const prev = new Map<string, string>([[current, current]]);
+    const queue = [current];
+    while (queue.length && !prev.has(target)) {
+      const w = queue.shift()!;
+      for (const v of neighbours(w))
+        if (!prev.has(v)) {
+          prev.set(v, w);
+          queue.push(v);
+        }
+    }
+    if (!prev.has(target)) return;
+    let next = target;
+    while (prev.get(next) !== current) next = prev.get(next)!;
+    const chain = [...saved.chain, next];
+    const won = next === target;
+    const done = won || chain.length - 1 >= budget;
+    setSlot(null);
+    commit(
+      { chain, done, won },
+      { hint: true, outcome: done ? (won ? "won" : "lost") : undefined }
+    );
+  }
+
   function startNew(d?: Diff) {
     newPuzzle(d);
     setSlot(null);
@@ -137,6 +163,7 @@ export default function Ladder({ onExit }: { onExit: () => void }) {
         help={HELP}
         onUndo={undo}
         canUndo={canUndo && !saved.done}
+        onHint={saved.done ? undefined : hint}
       />
 
       <div className="ld-status">
@@ -159,6 +186,10 @@ export default function Ladder({ onExit }: { onExit: () => void }) {
                   <button
                     key={c}
                     role="gridcell"
+                    aria-label={`Step ${r}, letter ${c + 1}, ${ch.toUpperCase()}${
+                      good ? ", matches target" : ""
+                    }${isCurrent && slot === c ? ", selected" : ""}`}
+                    aria-selected={isCurrent && slot === c}
                     className={[
                       "word-cell filled ld-cell",
                       good ? "is-correct" : "",
@@ -181,7 +212,7 @@ export default function Ladder({ onExit }: { onExit: () => void }) {
         <p className="game-hint">Tap the letter you want to change.</p>
       )}
 
-      <div className="keyboard">
+      <div className="keyboard" role="group" aria-label="Keyboard">
         {KEY_ROWS.map((row) => (
           <div className="key-row" key={row}>
             {row.split("").map((k) => (

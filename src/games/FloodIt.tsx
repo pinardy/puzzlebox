@@ -4,11 +4,13 @@ import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import { useGridNav } from "../lib/gridnav";
 import "./FloodIt.css";
 
 const SIZE: Record<Diff, number> = { easy: 10, medium: 12, hard: 14 };
 const COLORS: Record<Diff, number> = { easy: 5, medium: 6, hard: 6 };
 const SLACK: Record<Diff, number> = { easy: 4, medium: 2, hard: 1 };
+const COLOR_NAMES = ["blue", "pink", "green", "amber", "purple", "teal"];
 const HELP =
   "The patch in the top-left corner is yours. Pick a colour and the patch " +
   "repaints itself, swallowing any touching squares of that colour. Swallow " +
@@ -46,23 +48,28 @@ function flood(cells: number[], n: number, color: number): number[] {
   return next;
 }
 
+/** The colour that swallows the most right now. */
+function greedyPick(cells: number[], n: number, colors: number): number {
+  let best = -1;
+  let bestGain = -1;
+  for (let c = 0; c < colors; c++) {
+    if (c === cells[0]) continue;
+    const gain = region(flood(cells, n, c), n).length;
+    if (gain > bestGain) {
+      bestGain = gain;
+      best = c;
+    }
+  }
+  return best;
+}
+
 /** Always take the colour that swallows the most — a decent strategy, and
  *  the yardstick the move budget is set from. */
 function greedyMoves(start: number[], n: number, colors: number): number {
   let cells = start.slice();
   let moves = 0;
   while (region(cells, n).length < n * n && moves < n * n * 2) {
-    let best = -1;
-    let bestGain = -1;
-    for (let c = 0; c < colors; c++) {
-      if (c === cells[0]) continue;
-      const gain = region(flood(cells, n, c), n).length;
-      if (gain > bestGain) {
-        bestGain = gain;
-        best = c;
-      }
-    }
-    cells = flood(cells, n, best);
+    cells = flood(cells, n, greedyPick(cells, n, colors));
     moves++;
   }
   return moves;
@@ -91,7 +98,7 @@ function deal(seed: string, diff: Diff): SavedState {
 }
 
 export default function FloodIt({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, finish, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, commitHint, finish, undo, canUndo, newPuzzle } =
     useGame<SavedState>((s, d) => deal(s, d));
   const n = SIZE[diff];
   const colors = COLORS[diff];
@@ -112,6 +119,32 @@ export default function FloodIt({ onExit }: { onExit: () => void }) {
     });
   }
 
+  /** Hint: play the greedy colour, the strategy the budget was set from.
+   *  It is still a move and counts against the budget. */
+  function hint() {
+    if (saved.done) return;
+    const color = greedyPick(saved.cells, n, colors);
+    if (color < 0) return;
+    commitHint({
+      ...saved,
+      cells: flood(saved.cells, n, color),
+      moves: saved.moves + 1
+    });
+  }
+
+  // Keyboard: arrows read the board, Enter / Space plays the focused
+  // square's colour; digits 1–6 pick from the palette.
+  const nav = useGridNav((i) => pick(saved.cells[i]));
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const d = Number(e.key);
+      if (Number.isInteger(d) && d >= 1 && d <= colors) pick(d - 1);
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  });
+
   const left = saved.budget - saved.moves;
 
   return (
@@ -126,6 +159,7 @@ export default function FloodIt({ onExit }: { onExit: () => void }) {
         help={HELP}
         onUndo={undo}
         canUndo={canUndo && !saved.done}
+        onHint={saved.done ? undefined : hint}
       />
 
       <div className="fl-status">
@@ -142,10 +176,16 @@ export default function FloodIt({ onExit }: { onExit: () => void }) {
         style={{ "--n": n } as CSSProperties}
         role="grid"
         aria-label="Flood It board"
+        {...nav}
       >
         {saved.cells.map((c, i) => (
           <span
             key={i}
+            data-cell={i}
+            role="gridcell"
+            aria-label={`Row ${Math.floor(i / n) + 1}, column ${(i % n) + 1}, ${COLOR_NAMES[c]}${
+              owned.has(i) ? ", flooded" : ""
+            }`}
             className={`fl-cell fl-c${c}${owned.has(i) ? " owned" : ""}`}
           />
         ))}
@@ -158,7 +198,7 @@ export default function FloodIt({ onExit }: { onExit: () => void }) {
             className={`fl-pick fl-c${c}${c === saved.cells[0] ? " current" : ""}`}
             onClick={() => pick(c)}
             disabled={saved.done || c === saved.cells[0]}
-            aria-label={`Colour ${c + 1}`}
+            aria-label={`Colour ${c + 1}, ${COLOR_NAMES[c]}${c === saved.cells[0] ? ", current" : ""}`}
           />
         ))}
       </div>

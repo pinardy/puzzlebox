@@ -26,7 +26,7 @@ interface SavedState {
 export default function Typeshift({ onExit }: { onExit: () => void }) {
   const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
     useGame<SavedState>((s, d) => fresh(s, d));
-  const { cols } = useMemo(() => makeShift(seed, COUNT[diff]), [seed, diff]);
+  const { cols, source } = useMemo(() => makeShift(seed, COUNT[diff]), [seed, diff]);
   const [toast, setToast] = useState<string | null>(null);
 
   function fresh(s: string, d: Diff): SavedState {
@@ -87,6 +87,28 @@ export default function Typeshift({ onExit }: { onExit: () => void }) {
     commit(next, { outcome: left === 0 ? "won" : undefined });
   }
 
+  // Hint: bank one of the hidden source words that still covers an unused
+  // letter (the source words between them use every letter).
+  function hint() {
+    if (saved.done) return;
+    const fresh = (w: string) =>
+      [...w].filter((ch, c) => !saved.used[c].includes(cols[c].indexOf(ch))).length;
+    const pick = source
+      .filter((w) => !saved.found.includes(w) && fresh(w) > 0)
+      .sort((a, b) => fresh(b) - fresh(a))[0];
+    if (!pick) return;
+    const at = [...pick].map((ch, c) => cols[c].indexOf(ch));
+    const next: SavedState = {
+      ...saved,
+      at,
+      found: [...saved.found, pick],
+      used: saved.used.map((u, c) => (u.includes(at[c]) ? u : [...u, at[c]]))
+    };
+    const left = cols.reduce((n, col, c) => n + col.length - next.used[c].length, 0);
+    if (left === 0) next.done = true;
+    commit(next, { hint: true, outcome: left === 0 ? "won" : undefined });
+  }
+
   function startNew(d?: Diff) {
     newPuzzle(d);
     setToast(null);
@@ -104,11 +126,12 @@ export default function Typeshift({ onExit }: { onExit: () => void }) {
         help={HELP}
         onUndo={undo}
         canUndo={canUndo && !saved.done}
+        onHint={saved.done ? undefined : hint}
       />
 
       <div className="ts-strips" role="group" aria-label="Letter strips">
         {cols.map((col, c) => (
-          <div key={c} className="ts-strip">
+          <div key={c} className="ts-strip" role="group" aria-label={`Strip ${c + 1}`}>
             <button
               className="ts-arrow"
               onClick={() => slide(c, -1)}
@@ -126,7 +149,9 @@ export default function Typeshift({ onExit }: { onExit: () => void }) {
                     saved.used[c].includes(i) ? "ts-used" : ""
                   ].join(" ")}
                   onClick={() => pick(c, i)}
-                  aria-label={`${ch}${saved.used[c].includes(i) ? ", used" : ""}`}
+                  aria-label={`Strip ${c + 1}, letter ${ch}${
+                    i === saved.at[c] ? ", chosen" : ""
+                  }${saved.used[c].includes(i) ? ", used" : ""}`}
                   aria-pressed={i === saved.at[c]}
                 >
                   {ch}
@@ -145,7 +170,9 @@ export default function Typeshift({ onExit }: { onExit: () => void }) {
       </div>
 
       <div className="ts-current">
-        <span className="ts-word">{word}</span>
+        <span className="ts-word" aria-live="polite">
+          {word}
+        </span>
         <button className="mini-btn" onClick={bank} disabled={word.length < LEN}>
           Bank ↵
         </button>

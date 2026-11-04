@@ -9,7 +9,8 @@ import "./Unblock.css";
 const N = 6;
 const HELP =
   "Slide the red car out through the gap on the right. Other cars only " +
-  "move along their own axis. Drag any car to slide it. Par is the " +
+  "move along their own axis. Drag any car to slide it — or Tab to a " +
+  "car and slide it with the arrow keys. Par is the " +
   "fewest moves possible for this board — beat the puzzle in as few " +
   "moves as you can.";
 
@@ -216,8 +217,34 @@ export default function Unblock({ onExit }: { onExit: () => void }) {
     return [min, max];
   }
 
+  /** The car a run of arrow-key slides belongs to: consecutive slides of
+   *  one focused car count as a single move, the same as one drag. */
+  const keyRun = useRef<number | null>(null);
+
+  function keySlide(k: number, dir: -1 | 1) {
+    if (saved.done || drag.current) return;
+    const [min, max] = slideRange(k);
+    const to = pos[k] + dir;
+    if (to < min || to > max) return;
+    const next = pos.slice();
+    next[k] = to;
+    const done = k === 0 && to === N - cars[0].len;
+    const cont = keyRun.current === k;
+    keyRun.current = k;
+    commit(
+      { pos: next, moves: saved.moves + (cont ? 0 : 1), done },
+      { undoable: !cont, outcome: done ? "won" : undefined }
+    );
+  }
+
+  function doUndo() {
+    keyRun.current = null;
+    undo();
+  }
+
   function onPointerDown(e: React.PointerEvent, k: number) {
     if (saved.done) return;
+    keyRun.current = null;
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     drag.current = {
       k,
@@ -260,7 +287,7 @@ export default function Unblock({ onExit }: { onExit: () => void }) {
         diff={diff}
         onDiff={newPuzzle}
         help={HELP}
-        onUndo={undo}
+        onUndo={doUndo}
         canUndo={canUndo && !saved.done}
       />
 
@@ -297,6 +324,30 @@ export default function Unblock({ onExit }: { onExit: () => void }) {
               onPointerMove={onPointerMove}
               onPointerUp={onPointerUp}
               onPointerCancel={onPointerUp}
+              tabIndex={saved.done ? -1 : 0}
+              role="button"
+              aria-label={`${k === 0 ? "Red car" : `Car ${k}`}, ${
+                car.h ? "horizontal" : "vertical"
+              }, ${car.len} long, ${
+                car.h
+                  ? `row ${car.fix + 1}, columns ${v + 1} to ${v + car.len}`
+                  : `column ${car.fix + 1}, rows ${v + 1} to ${v + car.len}`
+              }`}
+              aria-keyshortcuts={car.h ? "ArrowLeft ArrowRight" : "ArrowUp ArrowDown"}
+              onFocus={() => {
+                keyRun.current = null;
+              }}
+              onKeyDown={(e) => {
+                const dir = (
+                  car.h
+                    ? { ArrowLeft: -1, ArrowRight: 1 }
+                    : { ArrowUp: -1, ArrowDown: 1 }
+                ) as Record<string, -1 | 1>;
+                const d = dir[e.key];
+                if (d === undefined) return;
+                e.preventDefault();
+                keySlide(k, d);
+              }}
             />
           );
         })}

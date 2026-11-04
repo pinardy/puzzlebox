@@ -166,6 +166,7 @@ export default function Yahtzee({ onExit }: { onExit: () => void }) {
               }`}
               disabled={scored !== null || saved.done}
               onClick={() => scoreCat(cat)}
+              aria-label={`${name}, ${scored !== null ? `scored ${scored}` : `would score ${pot}`}`}
             >
               <span>{name}</span>
               <b>{scored !== null ? scored : pot}</b>

@@ -4,6 +4,7 @@ import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import { useGridNav } from "../lib/gridnav";
 import "./Memory.css";
 
 const SYMBOLS = ["🍎", "🌙", "⭐", "🐟", "🎈", "🍀", "🔔", "🦋", "🍄", "⚡"];
@@ -70,6 +71,8 @@ export default function Memory({ onExit }: { onExit: () => void }) {
   }
 
   const rows = (pairs * 2) / COLS;
+  // Arrows walk the cards; Enter / Space flips (the button's own click).
+  const nav = useGridNav();
 
   return (
     <div className="game game-memory">
@@ -86,6 +89,7 @@ export default function Memory({ onExit }: { onExit: () => void }) {
         style={{ "--n": COLS, aspectRatio: `${COLS} / ${rows}` } as CSSProperties}
         role="grid"
         aria-label="Card grid"
+        {...nav}
       >
         {cards.map((sym, i) => {
           const up = saved.matched[i] || open.includes(i);
@@ -93,9 +97,12 @@ export default function Memory({ onExit }: { onExit: () => void }) {
             <button
               key={i}
               role="gridcell"
+              data-cell={i}
               className={`memory-card${up ? " up" : ""}${saved.matched[i] ? " matched" : ""}`}
               onClick={() => tap(i)}
-              aria-label={up ? sym : "Face-down card"}
+              aria-label={`Row ${Math.floor(i / COLS) + 1}, column ${(i % COLS) + 1}, ${
+                up ? `${sym}${saved.matched[i] ? ", matched" : ", face up"}` : "face down"
+              }`}
             >
               {up ? sym : ""}
             </button>

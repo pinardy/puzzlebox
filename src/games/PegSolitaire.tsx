@@ -3,6 +3,7 @@ import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import { useGridNav } from "../lib/gridnav";
 import "./PegSolitaire.css";
 
 const HELP =
@@ -141,6 +142,9 @@ export default function PegSolitaire({ onExit }: { onExit: () => void }) {
     return out;
   }, [board]);
 
+  // Arrows walk the holes; Enter / Space picks or jumps (the button's click).
+  const nav = useGridNav();
+
   return (
     <div className="game game-pegs">
       <GameHeader title="Peg Solitaire" onExit={onExit} onNew={() => startNew()} />
@@ -174,6 +178,7 @@ export default function PegSolitaire({ onExit }: { onExit: () => void }) {
         style={{ "--n": board.rows } as CSSProperties}
         role="grid"
         aria-label="Peg solitaire board"
+        {...nav}
       >
         {rows.map((row, r) => (
           <div key={r} className="pegs-row" role="row">
@@ -181,6 +186,7 @@ export default function PegSolitaire({ onExit }: { onExit: () => void }) {
               <button
                 key={i}
                 role="gridcell"
+                data-cell={i}
                 className={[
                   "peg-hole",
                   pegs[i] ? "peg" : "",
@@ -189,7 +195,11 @@ export default function PegSolitaire({ onExit }: { onExit: () => void }) {
                   i === board.center && board.winCenter ? "center" : ""
                 ].join(" ")}
                 onClick={() => tap(i)}
-                aria-label={pegs[i] ? "Peg" : "Empty hole"}
+                aria-label={`Row ${r + 1}, hole ${row.indexOf(i) + 1}, ${
+                  pegs[i] ? (picked === i ? "peg, picked up" : "peg") : "empty"
+                }${targets.has(i) ? ", can jump here" : ""}${
+                  i === board.center && board.winCenter ? ", centre" : ""
+                }`}
               />
             ))}
           </div>

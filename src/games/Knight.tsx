@@ -4,6 +4,7 @@ import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import { useGridNav } from "../lib/gridnav";
 import "./Knight.css";
 
 const SIZE: Record<Diff, number> = { easy: 5, medium: 6, hard: 8 };
@@ -109,6 +110,9 @@ export default function Knight({ onExit }: { onExit: () => void }) {
     commitHint({ ...saved });
   }
 
+  // Arrows walk the board; Enter / Space hops (the button's own click).
+  const nav = useGridNav();
+
   function startNew(d?: Diff) {
     newPuzzle(d);
     setSuggested(null);
@@ -135,6 +139,7 @@ export default function Knight({ onExit }: { onExit: () => void }) {
         style={{ "--n": n } as CSSProperties}
         role="grid"
         aria-label="Knight's tour board"
+        {...nav}
       >
         {Array.from({ length: n * n }, (_, i) => {
           const order = saved.path.indexOf(i);
@@ -143,6 +148,7 @@ export default function Knight({ onExit }: { onExit: () => void }) {
             <button
               key={i}
               role="gridcell"
+              data-cell={i}
               className={[
                 "kt-cell",
                 dark ? "dark" : "",
@@ -152,7 +158,15 @@ export default function Knight({ onExit }: { onExit: () => void }) {
                 suggested === i ? "suggested" : ""
               ].join(" ")}
               onClick={() => hop(i)}
-              aria-label={`Square ${Math.floor(i / n) + 1},${(i % n) + 1}`}
+              aria-label={`Row ${Math.floor(i / n) + 1}, column ${(i % n) + 1}, ${
+                i === cur
+                  ? "knight here"
+                  : order !== -1
+                    ? `visited, step ${order + 1}`
+                    : legal.has(i)
+                      ? "legal move"
+                      : "unvisited"
+              }${suggested === i ? ", suggested" : ""}`}
             >
               {i === cur ? "♞" : order !== -1 ? order + 1 : ""}
             </button>
