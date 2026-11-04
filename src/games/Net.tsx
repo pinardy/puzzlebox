@@ -1,4 +1,5 @@
-import { useMemo, type CSSProperties } from "react";
+import { useEffect, useMemo, type CSSProperties } from "react";
+import { useGridNav } from "../lib/gridnav";
 import { makeRng } from "../lib/rng";
 import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
@@ -98,7 +99,7 @@ interface SavedState {
 }
 
 export default function Net({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, commitHint, finish, undo, canUndo, newPuzzle } =
     useGame<SavedState>((s, d) => ({
       rots: scramble(`net-${s}`, SIZE[d]),
       taps: 0,
@@ -113,6 +114,25 @@ export default function Net({ onExit }: { onExit: () => void }) {
   );
 
   const lit = useMemo(() => reachable(masks, n), [masks, n]);
+
+  // A hint can seal the network; finish the way a tap would.
+  const solvedNow = useMemo(() => solved(masks, n), [masks, n]);
+  useEffect(() => {
+    if (solvedNow) finish();
+  }, [solvedNow, finish]);
+
+  /** Turn one misrotated tile back to its generated orientation. */
+  function hint() {
+    if (saved.done) return;
+    const wrong = masks.flatMap((m, i) => (m === base[i] ? [] : [i]));
+    if (!wrong.length) return;
+    const i = wrong[Math.floor(Math.random() * wrong.length)];
+    const rots = saved.rots.slice();
+    rots[i] = 0;
+    commitHint({ ...saved, rots });
+  }
+
+  const nav = useGridNav();
 
   function tap(i: number) {
     if (saved.done) return;
@@ -135,6 +155,7 @@ export default function Net({ onExit }: { onExit: () => void }) {
         help={HELP}
         onUndo={undo}
         canUndo={canUndo && !saved.done}
+        onHint={saved.done ? undefined : hint}
       />
 
       <div className="lights-meta">
@@ -148,6 +169,7 @@ export default function Net({ onExit }: { onExit: () => void }) {
         style={{ "--n": n } as CSSProperties}
         role="grid"
         aria-label="Pipes board"
+        {...nav}
       >
         {masks.map((m, i) => {
           const arms: string[] = [];
@@ -161,6 +183,12 @@ export default function Net({ onExit }: { onExit: () => void }) {
             <button
               key={i}
               role="gridcell"
+              data-cell={i}
+              aria-label={`Row ${Math.floor(i / n) + 1}, column ${(i % n) + 1}${
+                centre ? ", centre" : ""
+              }, pipe ${arms
+                .map((a) => ({ u: "up", r: "right", d: "down", l: "left" })[a])
+                .join(" ")}, ${lit.has(i) ? "connected" : "not connected"}`}
               className={[
                 "net-cell",
                 lit.has(i) ? "lit" : "",

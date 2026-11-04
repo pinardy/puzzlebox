@@ -1,4 +1,5 @@
 import { useEffect, useMemo, type CSSProperties } from "react";
+import { useGridNav } from "../lib/gridnav";
 import { generateHeyawake } from "../lib/heyawake";
 import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
@@ -20,7 +21,7 @@ interface SavedState {
 }
 
 export default function Heyawake({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, finish, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle } =
     useGame<SavedState>((_s, d) => ({
       shaded: Array(SIZE[d] * SIZE[d]).fill(false),
       done: false
@@ -118,6 +119,19 @@ export default function Heyawake({ onExit }: { onExit: () => void }) {
     commit({ ...saved, shaded });
   }
 
+  const nav = useGridNav();
+
+  /** Fix one square that differs from the generated shading. */
+  function hint() {
+    if (saved.done) return;
+    const wrong = saved.shaded.flatMap((on, i) => (on === puzzle.solution[i] ? [] : [i]));
+    if (!wrong.length) return;
+    const i = wrong[Math.floor(Math.random() * wrong.length)];
+    const shaded = saved.shaded.slice();
+    shaded[i] = puzzle.solution[i];
+    commitHint({ ...saved, shaded });
+  }
+
   // A room's number goes in its top-left cell.
   const labelAt = useMemo(() => {
     const m = new Map<number, number>();
@@ -140,6 +154,7 @@ export default function Heyawake({ onExit }: { onExit: () => void }) {
         help={HELP}
         onUndo={undo}
         canUndo={canUndo && !saved.done}
+        onHint={saved.done ? undefined : hint}
       />
 
       <div
@@ -147,6 +162,7 @@ export default function Heyawake({ onExit }: { onExit: () => void }) {
         style={{ "--n": n } as CSSProperties}
         role="grid"
         aria-label="Heyawake board"
+        {...nav}
       >
         {Array.from({ length: n * n }, (_, i) => {
           const r = Math.floor(i / n), c = i % n;
@@ -156,6 +172,12 @@ export default function Heyawake({ onExit }: { onExit: () => void }) {
             <button
               key={i}
               role="gridcell"
+              data-cell={i}
+              aria-label={`Row ${r + 1}, column ${c + 1}${
+                labelAt.has(i) ? `, room needs ${labelAt.get(i)}` : ""
+              }, ${saved.shaded[i] ? "shaded" : "unshaded"}${
+                conflicts.has(i) ? ", conflict" : ""
+              }`}
               className={[
                 "hw-cell",
                 saved.shaded[i] ? "on" : "",

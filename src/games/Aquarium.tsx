@@ -18,6 +18,8 @@ interface Puzzle {
   regionOf: number[];
   rows: number[];
   cols: number[];
+  /** The flooding the clues were read from (one valid answer). */
+  wet: boolean[];
 }
 
 /** Grow tanks, pick a water level for each, read off the counts. */
@@ -51,6 +53,7 @@ function generateAquarium(seed: string, n: number): Puzzle {
   }
 
   const rows = Array(n).fill(0), cols = Array(n).fill(0);
+  const wetCells: boolean[] = Array(n * n).fill(false);
   for (const cells of regions) {
     const regionRows = [...new Set(cells.map((i) => Math.floor(i / n)))].sort(
       (a, b) => a - b
@@ -59,11 +62,12 @@ function generateAquarium(seed: string, n: number): Puzzle {
     const wet = new Set(regionRows.slice(regionRows.length - level));
     for (const i of cells)
       if (wet.has(Math.floor(i / n))) {
+        wetCells[i] = true;
         rows[Math.floor(i / n)]++;
         cols[i % n]++;
       }
   }
-  return { regionOf, rows, cols };
+  return { regionOf, rows, cols, wet: wetCells };
 }
 
 type Mark = 0 | 1 | 2; // empty | water | ✕
@@ -74,7 +78,7 @@ interface SavedState {
 }
 
 export default function Aquarium({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, finish, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle } =
     useGame<SavedState>((_s, d) => ({
       marks: Array(SIZE[d] * SIZE[d]).fill(0) as Mark[],
       done: false
@@ -141,6 +145,18 @@ export default function Aquarium({ onExit }: { onExit: () => void }) {
     write: (marks, undoable) => commit({ ...saved, marks }, { undoable })
   });
 
+  /** Set one wrong or unmarked cell from the generated flooding. */
+  function hint() {
+    if (saved.done) return;
+    const want = (i: number): Mark => (puzzle.wet[i] ? 1 : 2);
+    const wrong = saved.marks.flatMap((m, i) => (m === want(i) ? [] : [i]));
+    if (!wrong.length) return;
+    const i = wrong[Math.floor(Math.random() * wrong.length)];
+    const marks = saved.marks.slice();
+    marks[i] = want(i);
+    commitHint({ ...saved, marks });
+  }
+
   const G = n + 1;
   const countClass = (got: number, want: number) =>
     `edge-count${got === want ? " ok" : got > want ? " bad" : ""}`;
@@ -157,6 +173,7 @@ export default function Aquarium({ onExit }: { onExit: () => void }) {
         help={HELP}
         onUndo={undo}
         canUndo={canUndo && !saved.done}
+        onHint={saved.done ? undefined : hint}
       />
 
       <div
@@ -171,13 +188,21 @@ export default function Aquarium({ onExit }: { onExit: () => void }) {
           if (gr === 0 && gc === 0) return <span key={k} />;
           if (gr === 0)
             return (
-              <span key={k} className={countClass(counts.cols[gc - 1], puzzle.cols[gc - 1])}>
+              <span
+                key={k}
+                className={countClass(counts.cols[gc - 1], puzzle.cols[gc - 1])}
+                aria-label={`Column ${gc}: ${puzzle.cols[gc - 1]} water`}
+              >
                 {puzzle.cols[gc - 1]}
               </span>
             );
           if (gc === 0)
             return (
-              <span key={k} className={countClass(counts.rows[gr - 1], puzzle.rows[gr - 1])}>
+              <span
+                key={k}
+                className={countClass(counts.rows[gr - 1], puzzle.rows[gr - 1])}
+                aria-label={`Row ${gr}: ${puzzle.rows[gr - 1]} water`}
+              >
                 {puzzle.rows[gr - 1]}
               </span>
             );
@@ -189,6 +214,9 @@ export default function Aquarium({ onExit }: { onExit: () => void }) {
               key={k}
               data-cell={i}
               role="gridcell"
+              aria-label={`Row ${r + 1}, column ${c + 1}, ${
+                m === 1 ? "water" : m === 2 ? "dry" : "empty"
+              }${conflicts.has(i) ? ", conflict" : ""}`}
               className={[
                 "aq-cell",
                 m === 1 ? "water" : m === 2 ? "dry" : "",

@@ -11,6 +11,7 @@ import {
   SOUTH,
   WEST
 } from "../lib/tracks";
+import { useGridNav } from "../lib/gridnav";
 import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
@@ -85,6 +86,10 @@ export default function TrainTracks({ onExit }: { onExit: () => void }) {
     commit({ ...saved, cells });
   }
 
+  // Enter steps a cell to the next piece, Shift+Enter to the previous one
+  // (the long-press).
+  const nav = useGridNav((i, back) => cycle(i, back ? -1 : 1));
+
   function hint() {
     const wrong = [...board.keys()].filter(
       (i) => !givens[i] && board[i] !== solution[i]
@@ -126,6 +131,7 @@ export default function TrainTracks({ onExit }: { onExit: () => void }) {
         style={{ "--n": n + 1 } as CSSProperties}
         role="grid"
         aria-label="Train Tracks board"
+        {...nav}
       >
         <span className="tt-corner" />
         {colCounts.map((want, c) => (
@@ -155,6 +161,7 @@ export default function TrainTracks({ onExit }: { onExit: () => void }) {
               <button
                 key={i}
                 role="gridcell"
+                data-cell={i}
                 className={[
                   "tt-cell",
                   givens[i] ? "given" : "",
@@ -181,7 +188,7 @@ export default function TrainTracks({ onExit }: { onExit: () => void }) {
                   if (pressTimer.current !== null) clearTimeout(pressTimer.current);
                 }}
                 aria-label={
-                  `Row ${r + 1} column ${c + 1}, ` +
+                  `Row ${r + 1}, column ${c + 1}, ` +
                   (board[i] ? PIECE_NAME[board[i]] : "empty") +
                   (givens[i] ? ", fixed" : "") +
                   (end ? (end === entry ? ", entrance" : ", exit") : "")

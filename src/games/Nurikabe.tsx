@@ -22,7 +22,7 @@ interface SavedState {
 }
 
 export default function Nurikabe({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, finish, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle } =
     useGame<SavedState>((_s, d) => ({
       marks: Array(SIZE[d] * SIZE[d]).fill(0) as Mark[],
       done: false
@@ -49,6 +49,20 @@ export default function Nurikabe({ onExit }: { onExit: () => void }) {
     locked: (i) => puzzle.clues.has(i)
   });
 
+  /** Set one wrong or unmarked cell from the board's own solution. */
+  function hint() {
+    if (saved.done) return;
+    const want = (i: number): Mark => (puzzle.sea[i] ? 1 : 2);
+    const wrong = saved.marks.flatMap((m, i) =>
+      puzzle.clues.has(i) || m === want(i) ? [] : [i]
+    );
+    if (!wrong.length) return;
+    const i = wrong[Math.floor(Math.random() * wrong.length)];
+    const marks = saved.marks.slice();
+    marks[i] = want(i);
+    commitHint({ ...saved, marks });
+  }
+
   return (
     <div className="game game-nurikabe">
       <GameHeader title="Nurikabe" onExit={onExit} onNew={() => newPuzzle()} />
@@ -61,6 +75,7 @@ export default function Nurikabe({ onExit }: { onExit: () => void }) {
         help={HELP}
         onUndo={undo}
         canUndo={canUndo && !saved.done}
+        onHint={saved.done ? undefined : hint}
       />
 
       <div
@@ -77,6 +92,15 @@ export default function Nurikabe({ onExit }: { onExit: () => void }) {
               key={i}
               data-cell={i}
               role="gridcell"
+              aria-label={`Row ${Math.floor(i / n) + 1}, column ${(i % n) + 1}, ${
+                clue !== undefined
+                  ? `clue ${clue}`
+                  : m === 1
+                    ? "sea"
+                    : m === 2
+                      ? "island"
+                      : "unknown"
+              }`}
               className={[
                 "nuri-cell",
                 clue !== undefined ? "clue" : "",

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, type CSSProperties } from "react";
+import { useGridNav } from "../lib/gridnav";
 import { makeRng, shuffled } from "../lib/rng";
 import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
@@ -16,6 +17,8 @@ interface Puzzle {
   n: number;
   walls: boolean[];
   numbers: Map<number, number>; // wall cell → adjacent-bulb count
+  /** The bulbs the numbers were read from (one valid answer). */
+  bulbs: Set<number>;
 }
 
 /** Cells a bulb at `i` shines on (until walls), excluding itself. */
@@ -65,7 +68,7 @@ function generateAkari(seed: string, n: number): Puzzle {
     }
     if (rng() < 0.6) numbers.set(i, count);
   }
-  return { n, walls, numbers };
+  return { n, walls, numbers, bulbs };
 }
 
 type Mark = 0 | 1 | 2; // empty | bulb | dot
@@ -76,7 +79,7 @@ interface SavedState {
 }
 
 export default function Akari({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, finish, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle } =
     useGame<SavedState>((_s, d) => ({
       marks: Array(SIZE[d] * SIZE[d]).fill(0) as Mark[],
       done: false
@@ -128,11 +131,28 @@ export default function Akari({ onExit }: { onExit: () => void }) {
     if (solved) finish();
   }, [solved, finish]);
 
-  function tap(i: number) {
+  /** Cycle bulb → dot → clear (`back` runs the cycle the other way). */
+  function tap(i: number, back = false) {
     if (saved.done || puzzle.walls[i]) return;
     const marks = saved.marks.slice() as Mark[];
-    marks[i] = ((marks[i] + 1) % 3) as Mark;
+    marks[i] = ((marks[i] + (back ? 2 : 1)) % 3) as Mark;
     commit({ ...saved, marks });
+  }
+
+  const nav = useGridNav(tap);
+
+  /** Place or dot one wrong or unmarked cell from the generated bulbs. */
+  function hint() {
+    if (saved.done) return;
+    const want = (i: number): Mark => (puzzle.bulbs.has(i) ? 1 : 2);
+    const wrong = saved.marks.flatMap((m, i) =>
+      puzzle.walls[i] || m === want(i) ? [] : [i]
+    );
+    if (!wrong.length) return;
+    const i = wrong[Math.floor(Math.random() * wrong.length)];
+    const marks = saved.marks.slice();
+    marks[i] = want(i);
+    commitHint({ ...saved, marks });
   }
 
   return (
@@ -148,6 +168,7 @@ export default function Akari({ onExit }: { onExit: () => void }) {
         help={HELP}
         onUndo={undo}
         canUndo={canUndo && !saved.done}
+        onHint={saved.done ? undefined : hint}
       />
 
       <div
@@ -155,12 +176,20 @@ export default function Akari({ onExit }: { onExit: () => void }) {
         style={{ "--n": n } as CSSProperties}
         role="grid"
         aria-label="Light Up board"
+        {...nav}
       >
         {saved.marks.map((m, i) => {
           if (puzzle.walls[i]) {
             const num = puzzle.numbers.get(i);
             return (
-              <span key={i} className="akari-wall">
+              <span
+                key={i}
+                className="akari-wall"
+                role="gridcell"
+                aria-label={`Row ${Math.floor(i / n) + 1}, column ${(i % n) + 1}, wall${
+                  num !== undefined ? ` ${num}` : ""
+                }`}
+              >
                 {num ?? ""}
               </span>
             );
@@ -169,6 +198,10 @@ export default function Akari({ onExit }: { onExit: () => void }) {
             <button
               key={i}
               role="gridcell"
+              data-cell={i}
+              aria-label={`Row ${Math.floor(i / n) + 1}, column ${(i % n) + 1}, ${
+                m === 1 ? "bulb" : m === 2 ? "dot" : "empty"
+              }${lit.has(i) ? ", lit" : ""}${conflicts.has(i) ? ", conflict" : ""}`}
               className={[
                 "akari-cell",
                 lit.has(i) ? "lit" : "",

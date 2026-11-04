@@ -20,6 +20,8 @@ interface Puzzle {
   trees: number[];
   rows: number[];
   cols: number[];
+  /** Where the generator pitched the tents (one valid answer). */
+  tents: number[];
 }
 
 /** Place tents (never touching, even diagonally), then a tree beside each,
@@ -64,7 +66,7 @@ function generateTents(seed: string, n: number, tentCount: number): Puzzle {
     if (tents.length < tentCount) continue;
     const rows = Array(n).fill(0), cols = Array(n).fill(0);
     for (const t of tents) { rows[Math.floor(t / n)]++; cols[t % n]++; }
-    return { n, trees, rows, cols };
+    return { n, trees, rows, cols, tents };
   }
 }
 
@@ -107,7 +109,7 @@ interface SavedState {
 }
 
 export default function Tents({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, finish, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle } =
     useGame<SavedState>((_s, d) => ({
       marks: Array(SIZE[d] * SIZE[d]).fill(0) as Mark[],
       done: false
@@ -168,6 +170,21 @@ export default function Tents({ onExit }: { onExit: () => void }) {
     locked: (i) => treeSet.has(i)
   });
 
+  /** Pitch or grass one wrong or unmarked square from the generated camp. */
+  function hint() {
+    if (saved.done) return;
+    const tentAt = new Set(puzzle.tents);
+    const want = (i: number): Mark => (tentAt.has(i) ? 1 : 2);
+    const wrong = saved.marks.flatMap((m, i) =>
+      treeSet.has(i) || m === want(i) ? [] : [i]
+    );
+    if (!wrong.length) return;
+    const i = wrong[Math.floor(Math.random() * wrong.length)];
+    const marks = saved.marks.slice();
+    marks[i] = want(i);
+    commitHint({ ...saved, marks });
+  }
+
   const G = n + 1;
 
   return (
@@ -182,6 +199,7 @@ export default function Tents({ onExit }: { onExit: () => void }) {
         help={HELP}
         onUndo={undo}
         canUndo={canUndo && !saved.done}
+        onHint={saved.done ? undefined : hint}
       />
 
       <div
@@ -195,9 +213,25 @@ export default function Tents({ onExit }: { onExit: () => void }) {
           const gr = Math.floor(k / G), gc = k % G;
           if (gr === 0 && gc === 0) return <span key={k} />;
           if (gr === 0)
-            return <span key={k} className="edge-count">{puzzle.cols[gc - 1]}</span>;
+            return (
+              <span
+                key={k}
+                className="edge-count"
+                aria-label={`Column ${gc}: ${puzzle.cols[gc - 1]} tents`}
+              >
+                {puzzle.cols[gc - 1]}
+              </span>
+            );
           if (gc === 0)
-            return <span key={k} className="edge-count">{puzzle.rows[gr - 1]}</span>;
+            return (
+              <span
+                key={k}
+                className="edge-count"
+                aria-label={`Row ${gr}: ${puzzle.rows[gr - 1]} tents`}
+              >
+                {puzzle.rows[gr - 1]}
+              </span>
+            );
           const i = (gr - 1) * n + (gc - 1);
           const tree = treeSet.has(i);
           const m = saved.marks[i];
@@ -206,6 +240,9 @@ export default function Tents({ onExit }: { onExit: () => void }) {
               key={k}
               data-cell={i}
               role="gridcell"
+              aria-label={`Row ${gr}, column ${gc}, ${
+                tree ? "tree" : m === 1 ? "tent" : m === 2 ? "grass" : "empty"
+              }${conflicts.has(i) ? ", conflict" : ""}`}
               className={[
                 "tents-cell",
                 tree ? "tree" : "",

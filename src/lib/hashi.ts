@@ -4,6 +4,8 @@ export interface HashiPuzzle {
   n: number;
   /** island cell index → required bridge count (degree) */
   islands: Map<number, number>;
+  /** The bridges the degrees were read from (one valid answer). */
+  bridges: Edges;
 }
 
 export type Edges = Record<string, number>; // "a-b" (a < b) → 1 | 2
@@ -32,6 +34,7 @@ export function generateHashi(seed: string, n: number, targetIslands: number): H
   const bridgeCell = Array(n * n).fill(false);
   const degree = new Map<number, number>();
   const linked = new Set<string>();
+  const bridges: Edges = {};
 
   const first = Math.floor(rng() * n * n);
   isIsland[first] = true;
@@ -79,11 +82,12 @@ export function generateHashi(seed: string, n: number, targetIslands: number): H
     }
     for (const i of between) bridgeCell[i] = true;
     linked.add(key);
+    bridges[key] = count;
     degree.set(from, (degree.get(from) ?? 0) + count);
     degree.set(to, (degree.get(to) ?? 0) + count);
   }
 
-  return { n, islands: degree };
+  return { n, islands: degree, bridges };
 }
 
 /** Do the player's bridges solve the puzzle? Crossings and blocked

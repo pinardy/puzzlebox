@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useGridNav } from "../lib/gridnav";
 import { makeRng, shuffled } from "../lib/rng";
 import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
@@ -19,6 +20,8 @@ interface Puzzle {
   cols: number;
   values: number[];
   maxPip: number;
+  /** The tiling the pairs were dealt onto (one valid answer). */
+  tiles: [number, number][];
 }
 
 /** Tile the grid with dominoes by randomized backtracking, then deal the
@@ -58,7 +61,7 @@ function generateDominoes(seed: string, maxPip: number): Puzzle {
     if (rng() < 0.5) { values[a] = x; values[b] = y; }
     else { values[a] = y; values[b] = x; }
   });
-  return { rows, cols, values, maxPip };
+  return { rows, cols, values, maxPip, tiles };
 }
 
 type Placed = [number, number]; // two adjacent cell indices
@@ -69,7 +72,7 @@ interface SavedState {
 }
 
 export default function Dominoes({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, finish, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle } =
     useGame<SavedState>(() => ({ placed: [], done: false }));
   const maxPip = MAX_PIP[diff];
   const puzzle = useMemo(
@@ -132,6 +135,23 @@ export default function Dominoes({ onExit }: { onExit: () => void }) {
     commit({ ...saved, placed: [...saved.placed, [anchor, i]] });
   }
 
+  const nav = useGridNav();
+
+  /** Place one domino of the generated tiling, splitting any in its way. */
+  function hint() {
+    if (saved.done) return;
+    const has = (a: number, b: number) =>
+      saved.placed.some(([x, y]) => (x === a && y === b) || (x === b && y === a));
+    const missing = puzzle.tiles.filter(([a, b]) => !has(a, b));
+    if (!missing.length) return;
+    const [a, b] = missing[Math.floor(Math.random() * missing.length)];
+    const placed = saved.placed.filter(
+      ([x, y]) => x !== a && x !== b && y !== a && y !== b
+    );
+    setAnchor(null);
+    commitHint({ ...saved, placed: [...placed, [a, b]] });
+  }
+
   function startNew(d?: Diff) {
     newPuzzle(d);
     setAnchor(null);
@@ -150,6 +170,7 @@ export default function Dominoes({ onExit }: { onExit: () => void }) {
         help={HELP}
         onUndo={undo}
         canUndo={canUndo && !saved.done}
+        onHint={saved.done ? undefined : hint}
       />
 
       <div
@@ -157,6 +178,7 @@ export default function Dominoes({ onExit }: { onExit: () => void }) {
         style={{ "--cols": cols, "--rows": rows } as CSSProperties}
         role="grid"
         aria-label="Dominoes board"
+        {...nav}
       >
         {values.map((v, i) => {
           const k = placedAt.get(i);
@@ -175,6 +197,22 @@ export default function Dominoes({ onExit }: { onExit: () => void }) {
             <button
               key={i}
               role="gridcell"
+              data-cell={i}
+              aria-label={`Row ${Math.floor(i / cols) + 1}, column ${(i % cols) + 1}, ${v}, ${
+                mate === null
+                  ? anchor === i
+                    ? "selected"
+                    : "unpaired"
+                  : `paired with the ${
+                      mate === i + 1
+                        ? "right"
+                        : mate === i - 1
+                          ? "left"
+                          : mate === i + cols
+                            ? "cell below"
+                            : "cell above"
+                    }`
+              }${dup ? ", duplicate pair" : ""}`}
               className={[
                 "dom-cell",
                 k !== undefined ? "paired" : "",

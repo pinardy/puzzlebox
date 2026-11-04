@@ -1,4 +1,5 @@
 import { useEffect, useMemo, type CSSProperties } from "react";
+import { useGridNav } from "../lib/gridnav";
 import { analyseLits, generateLits } from "../lib/lits";
 import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
@@ -22,7 +23,7 @@ interface SavedState {
 }
 
 export default function Lits({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, finish, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle } =
     useGame<SavedState>((_s, d) => ({
       shaded: Array(SIZE[d] * SIZE[d]).fill(false),
       done: false
@@ -41,6 +42,22 @@ export default function Lits({ onExit }: { onExit: () => void }) {
     const shaded = saved.shaded.slice();
     shaded[i] = !shaded[i];
     commit({ ...saved, shaded });
+  }
+
+  const nav = useGridNav();
+
+  /** Fix one square that differs from the tetrominoes the board was
+   *  seeded with. */
+  function hint() {
+    if (saved.done) return;
+    const want = Array(n * n).fill(false);
+    for (const p of puzzle.pieces) for (const i of p.cells) want[i] = true;
+    const wrong = saved.shaded.flatMap((on, i) => (on === want[i] ? [] : [i]));
+    if (!wrong.length) return;
+    const i = wrong[Math.floor(Math.random() * wrong.length)];
+    const shaded = saved.shaded.slice();
+    shaded[i] = want[i];
+    commitHint({ ...saved, shaded });
   }
 
   const settled = view.letters.filter((l) => l !== null).length;
@@ -67,6 +84,7 @@ export default function Lits({ onExit }: { onExit: () => void }) {
         help={HELP}
         onUndo={undo}
         canUndo={canUndo && !saved.done}
+        onHint={saved.done ? undefined : hint}
       />
 
       <div className="lights-meta">
@@ -83,6 +101,7 @@ export default function Lits({ onExit }: { onExit: () => void }) {
         style={{ "--n": n } as CSSProperties}
         role="grid"
         aria-label="LITS board"
+        {...nav}
       >
         {Array.from({ length: n * n }, (_, i) => {
           const r = Math.floor(i / n), c = i % n;
@@ -95,6 +114,7 @@ export default function Lits({ onExit }: { onExit: () => void }) {
             <button
               key={i}
               role="gridcell"
+              data-cell={i}
               className={[
                 "lt-cell",
                 on ? "on" : "",
@@ -110,8 +130,8 @@ export default function Lits({ onExit }: { onExit: () => void }) {
               onClick={() => toggle(i)}
               aria-pressed={on}
               aria-label={
-                `Row ${r + 1} column ${c + 1}` +
-                (on ? ", shaded" : "") +
+                `Row ${r + 1}, column ${c + 1}` +
+                (on ? ", shaded" : ", unshaded") +
                 (letter ? `, region forms ${letter}` : "")
               }
             >

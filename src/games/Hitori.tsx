@@ -28,8 +28,13 @@ const orthOf = (i: number, n: number): number[] => {
 /** Start from a Latin square (no duplicates anywhere), pick a valid shading
  *  (non-adjacent, leaves the rest connected), then overwrite each shaded
  *  cell with a duplicate of an unshaded row/column mate. Shading those
- *  cells again is therefore always a solution; any valid one is accepted. */
-function generateHitori(seed: string, n: number, target: number): number[] {
+ *  cells again is therefore always a solution; any valid one is accepted.
+ *  Returns the grid and that shading (for hints). */
+function generateHitori(
+  seed: string,
+  n: number,
+  target: number
+): { grid: number[]; shaded: Set<number> } {
   const grid = generateLatin(`hitori-${seed}`, n);
   const rng = makeRng(`hitori-shade-${seed}`);
 
@@ -55,7 +60,7 @@ function generateHitori(seed: string, n: number, target: number): number[] {
     }
     grid[i] = grid[mates[Math.floor(rng() * mates.length)]];
   }
-  return grid;
+  return { grid, shaded };
 }
 
 type Mark = 0 | 1 | 2; // clear | shaded | circled (kept)
@@ -66,13 +71,16 @@ interface SavedState {
 }
 
 export default function Hitori({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, finish, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle } =
     useGame<SavedState>((_s, d) => ({
       marks: Array(SIZE[d] * SIZE[d]).fill(0) as Mark[],
       done: false
     }));
   const n = SIZE[diff];
-  const grid = useMemo(() => generateHitori(seed, n, SHADED[diff]), [seed, n, diff]);
+  const { grid, shaded: answer } = useMemo(
+    () => generateHitori(seed, n, SHADED[diff]),
+    [seed, n, diff]
+  );
 
   /** Only rule breaks the player caused: two shaded cells touching. */
   const conflicts = useMemo(() => {
@@ -114,6 +122,18 @@ export default function Hitori({ onExit }: { onExit: () => void }) {
     write: (marks, undoable) => commit({ ...saved, marks }, { undoable })
   });
 
+  /** Shade or circle one wrong or unmarked cell from the generated answer. */
+  function hint() {
+    if (saved.done) return;
+    const want = (i: number): Mark => (answer.has(i) ? 1 : 2);
+    const wrong = saved.marks.flatMap((m, i) => (m === want(i) ? [] : [i]));
+    if (!wrong.length) return;
+    const i = wrong[Math.floor(Math.random() * wrong.length)];
+    const marks = saved.marks.slice();
+    marks[i] = want(i);
+    commitHint({ ...saved, marks });
+  }
+
   return (
     <div className="game game-hitori">
       <GameHeader title="Hitori" onExit={onExit} onNew={() => newPuzzle()} />
@@ -127,6 +147,7 @@ export default function Hitori({ onExit }: { onExit: () => void }) {
         help={HELP}
         onUndo={undo}
         canUndo={canUndo && !saved.done}
+        onHint={saved.done ? undefined : hint}
       />
 
       <div
@@ -141,6 +162,9 @@ export default function Hitori({ onExit }: { onExit: () => void }) {
             key={i}
             data-cell={i}
             role="gridcell"
+            aria-label={`Row ${Math.floor(i / n) + 1}, column ${(i % n) + 1}, ${v}, ${
+              saved.marks[i] === 1 ? "shaded" : saved.marks[i] === 2 ? "circled" : "clear"
+            }${conflicts.has(i) ? ", conflict" : ""}`}
             className={[
               "hitori-cell",
               saved.marks[i] === 1 ? "shaded" : "",
