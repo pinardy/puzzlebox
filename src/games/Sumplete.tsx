@@ -2,6 +2,8 @@ import { useEffect, useMemo, type CSSProperties } from "react";
 import { generateSumplete, lineSums } from "../lib/sumplete";
 import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
+import { useGridNav } from "../lib/gridnav";
+import { cellLabel } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
 import "./Sumplete.css";
@@ -70,6 +72,10 @@ export default function Sumplete({ onExit }: { onExit: () => void }) {
 
   const mark = (got: number, want: number) =>
     got === want ? " ok" : got > want ? " over" : "";
+  const say = (got: number, want: number) =>
+    `${got === want ? "met" : got > want ? "over" : "under"}, standing ${got}`;
+  // Arrows move between numbers; Enter / Space toggles one (its onClick).
+  const nav = useGridNav();
   const crossedCount = saved.crossed.filter(Boolean).length;
 
   return (
@@ -92,6 +98,7 @@ export default function Sumplete({ onExit }: { onExit: () => void }) {
         style={{ "--n": n } as CSSProperties}
         role="grid"
         aria-label="Sumplete board"
+        {...nav}
       >
         {Array.from({ length: n }, (_, r) => [
           ...Array.from({ length: n }, (_, c) => {
@@ -100,13 +107,12 @@ export default function Sumplete({ onExit }: { onExit: () => void }) {
             return (
               <button
                 key={i}
+                data-cell={i}
                 role="gridcell"
                 className={`sp-cell${out ? " out" : ""}`}
                 onClick={() => toggle(i)}
                 aria-pressed={out}
-                aria-label={`Row ${r + 1} column ${c + 1}, ${values[i]}${
-                  out ? ", crossed out" : ""
-                }`}
+                aria-label={cellLabel(i, n, values[i], out ? "crossed out" : "kept")}
               >
                 {values[i]}
               </button>
@@ -115,6 +121,8 @@ export default function Sumplete({ onExit }: { onExit: () => void }) {
           <span
             key={`rt${r}`}
             className={`sp-target row${mark(sums.rows[r], rowTargets[r])}`}
+            role="gridcell"
+            aria-label={`Row ${r + 1} total ${rowTargets[r]}, ${say(sums.rows[r], rowTargets[r])}`}
           >
             {rowTargets[r]}
           </span>
@@ -124,6 +132,8 @@ export default function Sumplete({ onExit }: { onExit: () => void }) {
           <span
             key={`ct${c}`}
             className={`sp-target col${mark(sums.cols[c], colTargets[c])}`}
+            role="gridcell"
+            aria-label={`Column ${c + 1} total ${colTargets[c]}, ${say(sums.cols[c], colTargets[c])}`}
           >
             {colTargets[c]}
           </span>

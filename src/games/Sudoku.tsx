@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { generateSudoku, isSolved, peersConflict, Grid } from "../lib/sudoku";
 import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
-import { useGridKeys } from "../lib/keys";
+import { cellLabel, notesLabel, useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
 import { Numpad } from "./Numpad";
@@ -160,6 +160,15 @@ export default function Sudoku({ onExit }: { onExit: () => void }) {
                 c % 3 === 2 && c !== 8 ? "br" : "",
                 r % 3 === 2 && r !== 8 ? "bb" : ""
               ].join(" ")}
+              aria-label={cellLabel(
+                i,
+                9,
+                v,
+                given && "given",
+                v === 0 && notesLabel(saved.notes[i]),
+                conflict && "conflict"
+              )}
+              aria-selected={selected === i}
               onClick={() => setSelected(i)}
             >
               {v !== 0 ? (

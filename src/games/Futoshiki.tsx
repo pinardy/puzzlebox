@@ -3,7 +3,7 @@ import { makeRng, shuffled } from "../lib/rng";
 import { generateLatin } from "../lib/latin";
 import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
-import { useGridKeys } from "../lib/keys";
+import { cellLabel, useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
 import { Numpad } from "./Numpad";
@@ -51,6 +51,17 @@ function generateFutoshiki(seed: string, n: number, clues: number, givenCount: n
 interface SavedState {
   entries: number[];
   done: boolean;
+}
+
+/** An inequality sign between two cells, named for screen readers. */
+function SignMark({ mark, names }: { mark: string; names: Record<string, string> }) {
+  return mark ? (
+    <span className="futo-sign" role="img" aria-label={names[mark]}>
+      {mark}
+    </span>
+  ) : (
+    <span className="futo-sign" aria-hidden="true" />
+  );
 }
 
 export default function Futoshiki({ onExit }: { onExit: () => void }) {
@@ -133,6 +144,28 @@ export default function Futoshiki({ onExit }: { onExit: () => void }) {
     return "";
   };
 
+  /** The inequalities touching a cell, in words, for its accessible name. */
+  const relations = (i: number): string | null => {
+    const out: string[] = [];
+    const sides: [number, string][] = [];
+    if (i % n < n - 1) sides.push([i + 1, "right"]);
+    if (i % n > 0) sides.push([i - 1, "left"]);
+    if (i + n < n * n) sides.push([i + n, "below"]);
+    if (i - n >= 0) sides.push([i - n, "above"]);
+    for (const [j, where] of sides)
+      for (const { lo, hi } of ineqs) {
+        if (lo === i && hi === j) out.push(`less than the cell ${where}`);
+        if (lo === j && hi === i) out.push(`greater than the cell ${where}`);
+      }
+    return out.length ? out.join(", ") : null;
+  };
+  const signName: Record<string, string> = {
+    "<": "left is less than right",
+    ">": "left is greater than right",
+    "∧": "upper is less than lower",
+    "∨": "upper is greater than lower"
+  };
+
   const G = 2 * n - 1;
   const track = Array(n - 1).fill("1fr 0.42fr").join(" ") + " 1fr";
 
@@ -173,6 +206,15 @@ export default function Futoshiki({ onExit }: { onExit: () => void }) {
                   selected === i ? "selected" : "",
                   conflicts.has(i) ? "conflict" : ""
                 ].join(" ")}
+                aria-label={cellLabel(
+                  i,
+                  n,
+                  board[i],
+                  given && "given",
+                  relations(i),
+                  conflicts.has(i) && "conflict"
+                )}
+                aria-selected={selected === i}
                 onClick={() => setSelected(i)}
               >
                 {board[i] || ""}
@@ -182,17 +224,13 @@ export default function Futoshiki({ onExit }: { onExit: () => void }) {
           if (gr % 2 === 0 && gc % 2 === 1) {
             const a = (gr / 2) * n + (gc - 1) / 2;
             return (
-              <span key={k} className="futo-sign" aria-hidden="true">
-                {sign(a, a + 1, true)}
-              </span>
+              <SignMark key={k} mark={sign(a, a + 1, true)} names={signName} />
             );
           }
           if (gr % 2 === 1 && gc % 2 === 0) {
             const a = ((gr - 1) / 2) * n + gc / 2;
             return (
-              <span key={k} className="futo-sign" aria-hidden="true">
-                {sign(a, a + n, false)}
-              </span>
+              <SignMark key={k} mark={sign(a, a + n, false)} names={signName} />
             );
           }
           return <span key={k} />;

@@ -2,6 +2,8 @@ import { useEffect, useMemo, type CSSProperties } from "react";
 import { makeRng } from "../lib/rng";
 import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
+import { useGridNav } from "../lib/gridnav";
+import { cellLabel } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
 import "./Kakurasu.css";
@@ -45,13 +47,13 @@ interface SavedState {
 }
 
 export default function Kakurasu({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, finish, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, commitHint, finish, undo, canUndo, newPuzzle } =
     useGame<SavedState>((_s, d) => ({
       shaded: Array(SIZE[d] * SIZE[d]).fill(false),
       done: false
     }));
   const n = SIZE[diff];
-  const { rowTargets, colTargets } = useMemo(
+  const { rowTargets, colTargets, solution } = useMemo(
     () => generateKakurasu(`kakurasu-${seed}`, n),
     [seed, n]
   );
@@ -84,8 +86,24 @@ export default function Kakurasu({ onExit }: { onExit: () => void }) {
     commit({ ...saved, shaded });
   }
 
+  /** Set one square that differs from the generator's solution to match
+   *  it. That solution fits every total, so the nudge is always safe even
+   *  when the puzzle has other answers. */
+  function hint() {
+    const wrong = [...Array(n * n).keys()].filter((i) => saved.shaded[i] !== solution[i]);
+    if (!wrong.length) return;
+    const i = wrong[Math.floor(Math.random() * wrong.length)];
+    const shaded = saved.shaded.slice();
+    shaded[i] = solution[i];
+    commitHint({ ...saved, shaded });
+  }
+
   const mark = (got: number, want: number) =>
     got === want ? "ok" : got > want ? "over" : "";
+  const say = (got: number, want: number) =>
+    `${got === want ? "met" : got > want ? "over" : "under"}, shaded ${got}`;
+  // Arrows move between squares; Enter / Space toggles one (its onClick).
+  const nav = useGridNav();
 
   return (
     <div className="game game-kakurasu">
@@ -99,6 +117,7 @@ export default function Kakurasu({ onExit }: { onExit: () => void }) {
         help={HELP}
         onUndo={undo}
         canUndo={canUndo && !saved.done}
+        onHint={saved.done ? undefined : hint}
       />
 
       <div
@@ -106,17 +125,18 @@ export default function Kakurasu({ onExit }: { onExit: () => void }) {
         style={{ "--n": n + 2 } as CSSProperties}
         role="grid"
         aria-label="Kakurasu board"
+        {...nav}
       >
-        <span className="ks-pad" />
+        <span className="ks-pad" aria-hidden="true" />
         {Array.from({ length: n }, (_, c) => (
-          <span key={`w${c}`} className="ks-weight">
+          <span key={`w${c}`} className="ks-weight" aria-hidden="true">
             {c + 1}
           </span>
         ))}
-        <span className="ks-pad" />
+        <span className="ks-pad" aria-hidden="true" />
 
         {Array.from({ length: n }, (_, r) => [
-          <span key={`lw${r}`} className="ks-weight">
+          <span key={`lw${r}`} className="ks-weight" aria-hidden="true">
             {r + 1}
           </span>,
           ...Array.from({ length: n }, (_, c) => {
@@ -124,26 +144,42 @@ export default function Kakurasu({ onExit }: { onExit: () => void }) {
             return (
               <button
                 key={i}
+                data-cell={i}
                 role="gridcell"
                 className={`ks-cell${saved.shaded[i] ? " on" : ""}`}
                 onClick={() => toggle(i)}
                 aria-pressed={saved.shaded[i]}
-                aria-label={`Row ${r + 1} column ${c + 1}`}
+                aria-label={cellLabel(
+                  i,
+                  n,
+                  saved.shaded[i] ? "shaded" : "unshaded",
+                  `worth ${c + 1} across, ${r + 1} down`
+                )}
               />
             );
           }),
-          <span key={`rt${r}`} className={`ks-target ${mark(sums.rows[r], rowTargets[r])}`}>
+          <span
+            key={`rt${r}`}
+            className={`ks-target ${mark(sums.rows[r], rowTargets[r])}`}
+            role="gridcell"
+            aria-label={`Row ${r + 1} total ${rowTargets[r]}, ${say(sums.rows[r], rowTargets[r])}`}
+          >
             {rowTargets[r]}
           </span>
         ])}
 
-        <span className="ks-pad" />
+        <span className="ks-pad" aria-hidden="true" />
         {Array.from({ length: n }, (_, c) => (
-          <span key={`ct${c}`} className={`ks-target ${mark(sums.cols[c], colTargets[c])}`}>
+          <span
+            key={`ct${c}`}
+            className={`ks-target ${mark(sums.cols[c], colTargets[c])}`}
+            role="gridcell"
+            aria-label={`Column ${c + 1} total ${colTargets[c]}, ${say(sums.cols[c], colTargets[c])}`}
+          >
             {colTargets[c]}
           </span>
         ))}
-        <span className="ks-pad" />
+        <span className="ks-pad" aria-hidden="true" />
       </div>
 
       {saved.done && (

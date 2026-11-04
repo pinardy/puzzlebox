@@ -3,7 +3,7 @@ import { makeRng, shuffled } from "../lib/rng";
 import { generateLatin } from "../lib/latin";
 import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
-import { useGridKeys } from "../lib/keys";
+import { cellLabel, useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
 import { Numpad } from "./Numpad";
@@ -98,6 +98,20 @@ interface SavedState {
   entries: number[];
   done: boolean;
 }
+
+const OP_NAME: Record<Cage["op"], string> = {
+  "+": "sum",
+  "×": "product",
+  "−": "difference",
+  "÷": "quotient",
+  "=": "value"
+};
+
+/** A cage's clue in words, e.g. "cage of 3, sum 12". */
+const cageText = (cage: Cage) =>
+  cage.op === "="
+    ? `single cell cage, value ${cage.target}`
+    : `cage of ${cage.cells.length}, ${OP_NAME[cage.op]} ${cage.target}`;
 
 export default function KenKen({ onExit }: { onExit: () => void }) {
   const { seed, diff, saved, commit, commitHint, finish, undo, canUndo, newPuzzle } =
@@ -209,6 +223,14 @@ export default function KenKen({ onExit }: { onExit: () => void }) {
                 r > 0 && cageOf[i - n] !== cageOf[i] ? "cage-t" : "",
                 c > 0 && cageOf[i - 1] !== cageOf[i] ? "cage-l" : ""
               ].join(" ")}
+              aria-label={cellLabel(
+                i,
+                n,
+                v,
+                cageText(cages[cageOf[i]]),
+                conflicts.has(i) && "conflict"
+              )}
+              aria-selected={selected === i}
               onClick={() => setSelected(i)}
             >
               {clue && (

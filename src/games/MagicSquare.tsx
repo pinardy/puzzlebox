@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { generateMagic } from "../lib/magic";
 import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
-import { useGridKeys } from "../lib/keys";
+import { cellLabel, useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
 import "./MagicSquare.css";
@@ -174,7 +174,8 @@ export default function MagicSquare({ onExit }: { onExit: () => void }) {
                   selected === i ? "selected" : "",
                   r === c || r + c === n - 1 ? "diag" : ""
                 ].join(" ")}
-                aria-label={`Row ${r + 1} column ${c + 1}${v ? `, ${v}` : ", empty"}`}
+                aria-label={cellLabel(i, n, v, given && "given")}
+                aria-selected={selected === i}
                 onClick={() => {
                   if (!given && saved.entries[i] !== 0 && selected === i) setCell(i, 0);
                   else setSelected(i);

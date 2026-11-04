@@ -3,6 +3,7 @@ import { makeRng } from "../lib/rng";
 import { LetterState, scoreGuess } from "../lib/words";
 import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
+import { cellLabel } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result, Toast } from "./ui";
 import "./Equation.css";
@@ -94,6 +95,18 @@ interface SavedState {
 }
 
 const KEY_ROWS = ["1234567890", "+-×÷="];
+const SAY_CHAR: Record<string, string> = {
+  "+": "plus",
+  "-": "minus",
+  "×": "times",
+  "÷": "divided by",
+  "=": "equals"
+};
+const SAY_SCORE: Record<LetterState, string> = {
+  correct: "right spot",
+  present: "elsewhere",
+  absent: "not in the equation"
+};
 
 export default function Equation({ onExit }: { onExit: () => void }) {
   const { seed, diff, saved, commit, newPuzzle }= useGame<SavedState>(() => ({ guesses: [], done: false, won: false })
@@ -194,6 +207,12 @@ export default function Equation({ onExit }: { onExit: () => void }) {
                 <div
                   key={c}
                   role="gridcell"
+                  aria-label={cellLabel(
+                    r * LEN + c,
+                    LEN,
+                    chars[c] && (SAY_CHAR[chars[c]] ?? chars[c]),
+                    score && SAY_SCORE[score[c]]
+                  )}
                   className={`word-cell${score ? ` is-${score[c]}` : ""}${
                     chars[c] ? " filled" : ""
                   }`}
@@ -224,13 +243,18 @@ export default function Equation({ onExit }: { onExit: () => void }) {
                   key={k}
                   className={`key${st ? ` is-${st}` : ""}`}
                   onClick={() => onKey(k)}
+                  aria-label={`${SAY_CHAR[k] ?? k}${st ? `, ${SAY_SCORE[st]}` : ""}`}
                 >
                   {k}
                 </button>
               );
             })}
             {i === 1 && (
-              <button className="key key-wide" onClick={() => onKey("back")}>
+              <button
+                className="key key-wide"
+                onClick={() => onKey("back")}
+                aria-label="Backspace"
+              >
                 ⌫
               </button>
             )}

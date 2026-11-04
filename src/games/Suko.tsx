@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { generateSuko, sukoSolved, SUKO_CIRCLES } from "../lib/suko";
-import { useGridKeys } from "../lib/keys";
+import { cellLabel, useGridKeys } from "../lib/keys";
 import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
@@ -114,7 +114,8 @@ export default function Suko({ onExit }: { onExit: () => void }) {
                   `sk-g${groupOf[i]}`,
                   selected === i ? "selected" : ""
                 ].join(" ")}
-                aria-label={`Row ${Math.floor(i / 3) + 1} column ${(i % 3) + 1}, block ${letter}, ${v || "empty"}`}
+                aria-label={cellLabel(i, 3, v, `block ${letter}`)}
+                aria-selected={selected === i}
                 onClick={() => {
                   if (v !== 0 && selected === i) setCell(i, 0);
                   else setSelected(i);

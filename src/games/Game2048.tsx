@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, type CSSProperties } from "rea
 import { makeRng } from "../lib/rng";
 import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
+import { cellLabel } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
 import "./Game2048.css";
@@ -160,6 +161,8 @@ export default function Game2048({ onExit }: { onExit: () => void }) {
     return () => window.removeEventListener("keydown", h);
   }, [move]);
 
+  const valueAt = new Map(state.tiles.map((t) => [t.r * N + t.c, t.v]));
+
   return (
     <div className="game game-2048">
       <GameHeader title="2048" onExit={onExit} onNew={() => newPuzzle()} />
@@ -201,7 +204,14 @@ export default function Game2048({ onExit }: { onExit: () => void }) {
       >
         <div className="t2048-bg">
           {Array.from({ length: N * N }).map((_, i) => (
-            <div key={i} className="t2048-slot" />
+            // The slots carry the board's names; the sliding tiles on top
+            // are decoration for sighted players.
+            <div
+              key={i}
+              className="t2048-slot"
+              role="gridcell"
+              aria-label={cellLabel(i, N, valueAt.get(i))}
+            />
           ))}
         </div>
         {state.tiles.map((t) => (
@@ -214,6 +224,7 @@ export default function Game2048({ onExit }: { onExit: () => void }) {
               t.spawned ? "pop" : ""
             ].join(" ")}
             style={{ "--r": t.r, "--c": t.c } as CSSProperties}
+            aria-hidden="true"
           >
             {t.v}
           </div>
