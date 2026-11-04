@@ -51,17 +51,35 @@ function generateSuguru(seed: string, n: number, reveal: number): Puzzle {
       }
       regions.push(cells);
     }
+    // A boxed-in straggler is a 1-cell region, and two of those touching
+    // would both have to be 1 — unsolvable. Fold each into a neighbouring
+    // region with room to spare.
+    for (let id = 0; id < regions.length; id++) {
+      if (regions[id].length !== 1) continue;
+      const i = regions[id][0];
+      const r = Math.floor(i / n), c = i % n;
+      const nbrs = [
+        r > 0 ? i - n : -1,
+        r < n - 1 ? i + n : -1,
+        c > 0 ? i - 1 : -1,
+        c < n - 1 ? i + 1 : -1
+      ].filter((j) => j !== -1 && regions[regionOf[j]].length < 5);
+      if (!nbrs.length) continue;
+      const into = regionOf[nbrs[Math.floor(rng() * nbrs.length)]];
+      regions[into].push(i);
+      regionOf[i] = into;
+      regions[id] = [];
+    }
     const regionSize = regionOf.map((id) => regions[id].length);
 
-    // Fill: 1..size per region, no equal numbers touching (8-way).
+    // Fill: 1..size per region, no equal numbers touching (8-way). Always
+    // branch on the cell with the fewest options left — a random cell order
+    // could backtrack for tens of seconds on a 6×6 board.
     const values = Array(n * n).fill(0);
-    let steps = 0;
-    const fill = (k: number, order: number[]): boolean => {
-      if (++steps > 40000) return false;
-      if (k === order.length) return true;
-      const i = order[k];
+    const options = (i: number): number[] => {
       const r = Math.floor(i / n), c = i % n;
       const used = new Set(regions[regionOf[i]].map((j) => values[j]));
+      const out: number[] = [];
       for (let v = 1; v <= regionSize[i]; v++) {
         if (used.has(v)) continue;
         let ok = true;
@@ -73,14 +91,34 @@ function generateSuguru(seed: string, n: number, reveal: number): Puzzle {
               break;
             }
           }
-        if (!ok) continue;
-        values[i] = v;
-        if (fill(k + 1, order)) return true;
-        values[i] = 0;
+        if (ok) out.push(v);
       }
+      return out;
+    };
+    let steps = 0;
+    const fill = (): boolean => {
+      if (++steps > 20000) return false;
+      let best = -1;
+      let bestOpts: number[] = [];
+      for (let i = 0; i < n * n; i++) {
+        if (values[i]) continue;
+        const o = options(i);
+        if (!o.length) return false;
+        if (best === -1 || o.length < bestOpts.length) {
+          best = i;
+          bestOpts = o;
+          if (o.length === 1) break;
+        }
+      }
+      if (best === -1) return true;
+      for (const v of shuffled(bestOpts, rng)) {
+        values[best] = v;
+        if (fill()) return true;
+      }
+      values[best] = 0;
       return false;
     };
-    if (!fill(0, shuffled([...Array(n * n).keys()], rng))) continue;
+    if (!fill()) continue;
 
     const givens = Array(n * n).fill(0);
     for (const i of shuffled([...Array(n * n).keys()], rng).slice(
@@ -99,10 +137,14 @@ interface SavedState {
 
 export default function Suguru({ onExit }: { onExit: () => void }) {
   const { seed, diff, saved, commit, commitHint, finish, undo, canUndo, newPuzzle } =
-    useGame<SavedState>((_s, d) => ({
-      entries: Array(SIZE[d] * SIZE[d]).fill(0),
-      done: false
-    }));
+    useGame<SavedState>(
+      (_s, d) => ({
+        entries: Array(SIZE[d] * SIZE[d]).fill(0),
+        done: false
+      }),
+      // v1: the generator changed, so a seed now deals a different board.
+      1
+    );
   const n = SIZE[diff];
   const puzzle = useMemo(
     () => generateSuguru(`suguru-${seed}`, n, REVEAL[diff]),
