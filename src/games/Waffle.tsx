@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import {
   colorBoard,
@@ -43,7 +43,7 @@ interface SavedState {
 const key = (seed: string) => `waffle-${seed}`;
 
 export default function Waffle({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle } =
     useGame<SavedState>((s, d) => ({
       letters: generateWaffle(key(s), DEPTH[d]).start,
       swaps: 0,
@@ -64,17 +64,10 @@ export default function Waffle({ onExit }: { onExit: () => void }) {
   const left = BUDGET - saved.swaps;
 
   useEffect(() => {
-    if (saved.done) return;
     // Solved wins even on the very last swap, so check that first.
-    if (solved) {
-      commit({ ...saved, done: true, won: true }, { undoable: false });
-      recordResult("waffle", true);
-    } else if (saved.swaps >= BUDGET) {
-      commit({ ...saved, done: true, won: false }, { undoable: false });
-      recordResult("waffle", false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [solved, saved]);
+    if (solved) finish(true, { won: true });
+    else if (saved.swaps >= BUDGET) finish(false, { won: false });
+  }, [solved, saved.swaps, finish]);
 
   function tap(i: number) {
     if (saved.done) return;

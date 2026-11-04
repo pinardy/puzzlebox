@@ -1,5 +1,5 @@
 import { useMemo, useState, type CSSProperties } from "react";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -123,8 +123,10 @@ export default function PegSolitaire({ onExit }: { onExit: () => void }) {
     const done = !anyMove;
     const won =
       done && left === 1 && (!board.winCenter || next[board.center]);
-    commit({ pegs: next, moves: saved.moves + 1, done, won });
-    if (done) recordResult("pegs", won);
+    commit(
+      { pegs: next, moves: saved.moves + 1, done, won },
+      { outcome: done ? (won ? "won" : "lost") : undefined }
+    );
   }
 
   function startNew(d?: Diff) {

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -167,8 +167,10 @@ export default function DotsBoxes({ onExit }: { onExit: () => void }) {
       done: full,
       won: full && you > them
     };
-    commit(next, { undoable: false });
-    if (full) recordResult("dots", next.won);
+    commit(next, {
+      undoable: false,
+      outcome: full ? (next.won ? "won" : "lost") : undefined
+    });
   }
 
   useEffect(() => {

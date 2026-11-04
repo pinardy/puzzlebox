@@ -1,6 +1,6 @@
 import { useMemo, useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -127,7 +127,6 @@ export default function Mahjong({ onExit }: { onExit: () => void }) {
     if (next.present.every((p) => !p)) {
       next.done = true;
       next.won = true;
-      recordResult("mahjong", true);
       return;
     }
     const freeFaces: number[] = [];
@@ -138,7 +137,6 @@ export default function Mahjong({ onExit }: { onExit: () => void }) {
     for (const f of freeFaces) counts.set(f, (counts.get(f) ?? 0) + 1);
     if (![...counts.values()].some((c) => c >= 2)) {
       next.done = true;
-      recordResult("mahjong", false);
     }
   }
 
@@ -153,7 +151,7 @@ export default function Mahjong({ onExit }: { onExit: () => void }) {
       present[selected] = present[i] = false;
       const next: SavedState = { ...saved, present };
       judge(next);
-      commit(next);
+      commit(next, { outcome: next.done ? (next.won ? "won" : "lost") : undefined });
       setSelected(null);
       return;
     }

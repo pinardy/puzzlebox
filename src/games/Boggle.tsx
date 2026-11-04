@@ -15,7 +15,7 @@ import {
   type BoggleBoard
 } from "../lib/boggle";
 import { isWord } from "../lib/dict";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result, Toast } from "./ui";
@@ -41,7 +41,7 @@ const byValue = (a: string, b: string) =>
   b.length - a.length || a.localeCompare(b);
 
 export default function Boggle({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle } =
     useGame<SavedState>(() => ({ found: [], done: false }));
   const n = SIZE[diff];
   const board: BoggleBoard = useMemo(
@@ -139,12 +139,8 @@ export default function Boggle({ onExit }: { onExit: () => void }) {
   }, [submit, back, trace, traceWord]);
 
   useEffect(() => {
-    if (!saved.done && score >= board.target) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("boggle", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [score, board.target, saved]);
+    if (score >= board.target) finish();
+  }, [score, board.target, finish]);
 
   /** Name one word still out there — the shortest unfound one, so the hint
    *  is a real lead rather than a nine-letter needle. */

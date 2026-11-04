@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { makeRng, shuffled } from "../lib/rng";
 import { WORDS3, WORDS4, WORDS5, Entry } from "../lib/crossword";
-import { recordResult } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -161,7 +160,7 @@ interface SavedState {
 }
 
 export default function MiniCrossword({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+  const { seed, saved, commit, finish, commitHint, undo, canUndo, newPuzzle } =
     useGame<SavedState>(() => ({
       entries: Array(N * N).fill(""),
       done: false
@@ -193,12 +192,8 @@ export default function MiniCrossword({ onExit }: { onExit: () => void }) {
     const complete = puzzle.solution.every(
       (ch, i) => puzzle.black[i] || saved.entries[i] === ch
     );
-    if (!saved.done && complete) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("mini", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [saved, puzzle]);
+    if (complete) finish();
+  }, [saved.entries, puzzle, finish]);
 
   function tapCell(i: number) {
     if (puzzle.black[i]) return;

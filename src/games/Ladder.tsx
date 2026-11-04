@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { makeRng, shuffled } from "../lib/rng";
 import { WORDS4 } from "../lib/words4";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result, Toast } from "./ui";
@@ -103,9 +103,8 @@ export default function Ladder({ onExit }: { onExit: () => void }) {
     const chain = [...saved.chain, next];
     const won = next === target;
     const done = won || chain.length - 1 >= budget;
-    commit({ chain, done, won });
+    commit({ chain, done, won }, { outcome: done ? (won ? "won" : "lost") : undefined });
     setSlot(null);
-    if (done) recordResult("ladder", won);
   };
 
   useEffect(() => {

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { N, makeCodeword } from "../lib/codeword";
-import { recordResult, type Diff } from "../lib/storage";
+import { type Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -21,7 +21,7 @@ interface SavedState {
 }
 
 export default function Codeword({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, commitHint, finish, undo, canUndo, newPuzzle } =
     useGame<SavedState>((s, d) => fresh(s, d));
   const puzzle = useMemo(() => makeCodeword(seed, GIVENS[diff]), [seed, diff]);
   const [sel, setSel] = useState<number | null>(null);
@@ -46,13 +46,9 @@ export default function Codeword({ onExit }: { onExit: () => void }) {
   );
 
   useEffect(() => {
-    if (saved.done || !puzzle.key.length) return;
-    if (saved.assign.every((l, i) => l === puzzle.key[i])) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("codeword", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [saved, puzzle]);
+    if (!puzzle.key.length) return;
+    if (saved.assign.every((l, i) => l === puzzle.key[i])) finish();
+  }, [saved.assign, puzzle.key, finish]);
 
   /** Assign a letter to the selected cell's number, freeing it elsewhere. */
   function setLetter(letter: string) {

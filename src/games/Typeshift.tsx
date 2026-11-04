@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { LEN, isShiftWord, makeShift } from "../lib/typeshift";
-import { recordResult, type Diff } from "../lib/storage";
+import { type Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result, Toast } from "./ui";
@@ -82,11 +82,8 @@ export default function Typeshift({ onExit }: { onExit: () => void }) {
       )
     };
     const left = cols.reduce((n, col, c) => n + col.length - next.used[c].length, 0);
-    if (left === 0) {
-      next.done = true;
-      recordResult("typeshift", true);
-    }
-    commit(next);
+    if (left === 0) next.done = true;
+    commit(next, { outcome: left === 0 ? "won" : undefined });
   }
 
   function startNew(d?: Diff) {

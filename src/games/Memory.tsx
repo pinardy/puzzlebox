@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -55,12 +55,12 @@ export default function Memory({ onExit }: { onExit: () => void }) {
       next.matched[first] = next.matched[i] = true;
       next.done = next.matched.every(Boolean);
       setOpen([]);
-      if (next.done) recordResult("memory", true);
     } else {
       setOpen([first, i]);
       closeTimer.current = window.setTimeout(() => setOpen([]), 800);
     }
-    commit(next, { undoable: false }); // undo would reveal card positions
+    // Undo would reveal card positions.
+    commit(next, { undoable: false, outcome: next.done ? "won" : undefined });
   }
 
   function startNew(d?: Diff) {

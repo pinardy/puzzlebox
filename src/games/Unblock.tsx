@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState, type CSSProperties } from "react";
 import { makeRng } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -246,8 +246,7 @@ export default function Unblock({ onExit }: { onExit: () => void }) {
     next[k] = to;
     const done = k === 0 && to === N - cars[0].len;
     const state: SavedState = { pos: next, moves: saved.moves + 1, done };
-    commit(state);
-    if (done) recordResult("unblock", true);
+    commit(state, { outcome: done ? "won" : undefined });
   }
 
   return (

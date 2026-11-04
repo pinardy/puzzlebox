@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { dealNim, machineMove, type NimMove } from "../lib/nim";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -54,9 +54,8 @@ export default function Nim({ onExit }: { onExit: () => void }) {
       const cleared = heaps.every((h) => h === 0);
       commit(
         { heaps, turn: "you", last: mv, tip: null, done: cleared, won: false },
-        { undoable: false }
+        { undoable: false, outcome: cleared ? "lost" : undefined }
       );
-      if (cleared) recordResult("nim", false);
     }, REPLY_MS);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -70,15 +69,17 @@ export default function Nim({ onExit }: { onExit: () => void }) {
     const heaps = saved.heaps.slice();
     heaps[i] = j;
     const cleared = heaps.every((h) => h === 0);
-    commit({
-      heaps,
-      turn: cleared ? "you" : "machine",
-      last: null,
-      tip: null,
-      done: cleared,
-      won: cleared
-    });
-    if (cleared) recordResult("nim", true);
+    commit(
+      {
+        heaps,
+        turn: cleared ? "you" : "machine",
+        last: null,
+        tip: null,
+        done: cleared,
+        won: cleared
+      },
+      { outcome: cleared ? "won" : undefined }
+    );
     setHover(null);
   }
 

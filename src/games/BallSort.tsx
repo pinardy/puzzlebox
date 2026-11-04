@@ -1,6 +1,6 @@
 import { useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -79,8 +79,10 @@ export default function BallSort({ onExit }: { onExit: () => void }) {
     for (let k = 0; k < run; k++) to.push(from.pop()!);
     setSel(null);
     const done = isSolved(tubes);
-    commit({ tubes, moves: saved.moves + 1, done });
-    if (done) recordResult("ballsort", true);
+    commit(
+      { tubes, moves: saved.moves + 1, done },
+      { outcome: done ? "won" : undefined }
+    );
   }
 
   function startNew(d?: Diff) {

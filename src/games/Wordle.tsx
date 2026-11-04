@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { makeRng } from "../lib/rng";
 import { ANSWERS, LetterState, scoreGuess } from "../lib/words";
 import { COMMON4 } from "../lib/words4";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result, Toast } from "./ui";
@@ -109,9 +109,11 @@ export default function Wordle({ onExit }: { onExit: () => void }) {
     const guesses = [...saved.guesses, current];
     const won = current === answer;
     const done = won || guesses.length >= ROWS;
-    commit({ ...saved, guesses, done, won });
+    commit(
+      { ...saved, guesses, done, won },
+      { outcome: done ? (won ? "won" : "lost") : undefined }
+    );
     setCurrent("");
-    if (done) recordResult("word", won);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current, saved, answer, diff, cols]);
 

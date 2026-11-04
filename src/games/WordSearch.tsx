@@ -1,7 +1,7 @@
 import { useMemo, useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
 import { ANSWERS } from "../lib/words";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -113,8 +113,7 @@ export default function WordSearch({ onExit }: { onExit: () => void }) {
     if (!hit) return;
     const found = [...saved.found, hit.word];
     const done = found.length === placed.length;
-    commit({ found, done });
-    if (done) recordResult("wordsearch", true);
+    commit({ found, done }, { outcome: done ? "won" : undefined });
   }
 
   function startNew(d?: Diff) {

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -60,7 +60,7 @@ function fresh(n: number): SavedState {
 }
 
 export default function Mines({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, undo, canUndo, newPuzzle } =
     useGame<SavedState>((_s, d) => fresh(LEVELS[d][0]));
   const [n, mineCount] = LEVELS[diff];
   const [flagMode, setFlagMode] = useState(false);
@@ -83,14 +83,10 @@ export default function Mines({ onExit }: { onExit: () => void }) {
   }, [isMine, n]);
 
   useEffect(() => {
-    if (!isMine || saved.done) return;
+    if (!isMine) return;
     const allClear = saved.revealed.every((r, i) => r || isMine[i]);
-    if (allClear) {
-      commit({ ...saved, done: true, won: true }, { undoable: false });
-      recordResult("mines", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [saved, isMine]);
+    if (allClear) finish(true, { won: true });
+  }, [saved.revealed, isMine, finish]);
 
   function floodReveal(start: number, mines: boolean[], cnts: number[], revealed: boolean[]) {
     const stack = [start];
@@ -114,8 +110,7 @@ export default function Mines({ onExit }: { onExit: () => void }) {
     if (!isMine || !counts) return;
     if (targets.some((i) => isMine[i])) {
       const revealed = saved.revealed.map((r, i) => r || isMine[i]);
-      commit({ ...saved, revealed, done: true, won: false });
-      recordResult("mines", false);
+      commit({ ...saved, revealed, done: true, won: false }, { outcome: "lost" });
       return;
     }
     const revealed = saved.revealed.slice();
