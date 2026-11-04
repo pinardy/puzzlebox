@@ -97,8 +97,8 @@ interface SavedState {
 }
 
 export default function Net({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("net", (s, d) => ({
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((s, d) => ({
       rots: scramble(`net-${s}`, SIZE[d]),
       taps: 0,
       done: false
@@ -180,10 +180,8 @@ export default function Net({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="net"
           won
           message={`Network sealed in ${saved.taps} taps!`}
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

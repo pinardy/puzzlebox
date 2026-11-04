@@ -52,8 +52,8 @@ interface SavedState {
 }
 
 export default function Futoshiki({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("futoshiki", (_s, d) => ({
+  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
       entries: Array(SIZE[d] * SIZE[d]).fill(0),
       done: false
     }));
@@ -221,10 +221,8 @@ export default function Futoshiki({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="futoshiki"
           won
           message="Inequalities satisfied!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

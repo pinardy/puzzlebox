@@ -161,8 +161,8 @@ interface SavedState {
 }
 
 export default function MiniCrossword({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("mini", () => ({
+  const { seed, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>(() => ({
       entries: Array(N * N).fill(""),
       done: false
     }));
@@ -361,10 +361,8 @@ export default function MiniCrossword({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="mini"
           won
           message="Crossword complete!"
-          playMs={playMs}
           onNew={startNew}
           onExit={onExit}
         />

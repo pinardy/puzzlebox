@@ -129,8 +129,8 @@ interface SavedState {
 }
 
 export default function Fillomino({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("fillomino", (_s, d) => ({
+  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
       entries: Array(SIZE[d] * SIZE[d]).fill(0),
       done: false
     }));
@@ -278,10 +278,8 @@ export default function Fillomino({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="fillomino"
           won
           message="Every group fits!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

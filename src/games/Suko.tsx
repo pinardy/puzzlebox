@@ -31,8 +31,8 @@ const markOf = (vals: number[], target: number): Mark =>
 const GLYPH: Record<Mark, string> = { open: "", ok: "✓", bad: "✗" };
 
 export default function Suko({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("suko", () => ({ entries: Array(9).fill(0), done: false }));
+  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>(() => ({ entries: Array(9).fill(0), done: false }));
   const puzzle = useMemo(() => generateSuko(`suko-${seed}`, diff), [seed, diff]);
   const { circles, groups, groupOf, groupSums, solution } = puzzle;
   const [selected, setSelected] = useState<number | null>(null);
@@ -189,10 +189,8 @@ export default function Suko({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="suko"
           won
           message="Every sum lands!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

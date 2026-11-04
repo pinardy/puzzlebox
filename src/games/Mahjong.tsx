@@ -109,8 +109,8 @@ interface SavedState {
 }
 
 export default function Mahjong({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("mahjong", (s, d) => ({
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((s, d) => ({
       present: generateMahjong(s, d).pos.map(() => true),
       done: false,
       won: false
@@ -220,12 +220,10 @@ export default function Mahjong({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="mahjong"
           won={saved.won}
           message={
             saved.won ? "Board cleared!" : `No matches left — ${left} tiles remained`
           }
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

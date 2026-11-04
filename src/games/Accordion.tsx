@@ -35,8 +35,8 @@ const matches = (a: number[], b: number[]) =>
   suit(top(a)) === suit(top(b)) || rank(top(a)) === rank(top(b));
 
 export default function Accordion({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("accordion", (s) => deal(s));
+  const { seed, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((s) => deal(s));
   const [sel, setSel] = useState<number | null>(null);
 
   /** A pile can move left one or left three, onto a matching top card. */
@@ -142,14 +142,12 @@ export default function Accordion({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="accordion"
           won={saved.won}
           message={
             saved.won
               ? `Squeezed to one pile in ${saved.moves} moves!`
               : `Stuck at ${saved.piles.length} piles`
           }
-          playMs={playMs}
           onNew={startNew}
           onExit={onExit}
         />

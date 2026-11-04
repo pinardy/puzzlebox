@@ -43,8 +43,8 @@ function buildTarget(seed: string, size: number): number[] {
 }
 
 export default function Picross({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("picross", (_s, d) => ({
+  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
       marks: Array(SIZE[d] * SIZE[d]).fill(0) as Mark[],
       done: false
     }));
@@ -226,10 +226,8 @@ export default function Picross({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="picross"
           won
           message="Picture complete!"
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

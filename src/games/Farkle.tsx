@@ -80,9 +80,7 @@ function fresh(seed: string): SavedState {
 }
 
 export default function Farkle({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, newPuzzle, playMs } = useGame<SavedState>(
-    "farkle",
-    (s) => fresh(s)
+  const { seed, diff, saved, commit, newPuzzle }= useGame<SavedState>((s) => fresh(s)
   );
   const [picked, setPicked] = useState<boolean[]>([]);
   const target = TARGET[diff];
@@ -233,14 +231,12 @@ export default function Farkle({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="farkle"
           won={saved.won}
           message={
             saved.won
               ? `${saved.total} points — target beaten!`
               : `${saved.total} of ${target} — out of turns`
           }
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

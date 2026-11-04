@@ -41,8 +41,8 @@ interface SavedState {
 }
 
 export default function Fifteen({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("fifteen", (s, d) => ({
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((s, d) => ({
       cells: scramble(`fifteen-${s}`, SIZE[d]),
       moves: 0,
       done: false
@@ -108,10 +108,8 @@ export default function Fifteen({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="fifteen"
           won
           message={`Solved in ${saved.moves} moves!`}
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

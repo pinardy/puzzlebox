@@ -67,8 +67,8 @@ const rowOf = (i: number) => [0, 1, 2, 3, 4].map((c) => i * SIZE + c);
 const colOf = (i: number) => [0, 1, 2, 3, 4].map((r) => r * SIZE + i);
 
 export default function PokerSolitaire({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("poker", (s) => deal(s));
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((s) => deal(s));
 
   const current = saved.queue.length ? saved.queue[saved.queue.length - 1] : null;
 
@@ -181,14 +181,12 @@ export default function PokerSolitaire({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="poker"
           won={saved.won}
           message={
             saved.won
               ? `${saved.score} points — target beaten!`
               : `${saved.score} points — ${TARGET[diff]} needed.`
           }
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

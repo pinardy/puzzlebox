@@ -17,9 +17,7 @@ interface SavedState {
 }
 
 export default function Zip({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, newPuzzle, playMs } = useGame<SavedState>(
-    "zip",
-    (s, d) => {
+  const { seed, diff, saved, commit, newPuzzle }= useGame<SavedState>((s, d) => {
       const n = SIZE[d];
       const p = generateZip(`zip-${s}`, n, n + 1);
       return { path: [p.start], done: false };
@@ -133,10 +131,8 @@ export default function Zip({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="zip"
           won
           message="Zipped!"
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

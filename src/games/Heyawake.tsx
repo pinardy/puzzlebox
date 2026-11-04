@@ -19,8 +19,8 @@ interface SavedState {
 }
 
 export default function Heyawake({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("heyawake", (_s, d) => ({
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
       shaded: Array(SIZE[d] * SIZE[d]).fill(false),
       done: false
     }));
@@ -180,10 +180,8 @@ export default function Heyawake({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="heyawake"
           won
           message="Rooms balanced!"
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

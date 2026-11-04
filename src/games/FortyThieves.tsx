@@ -44,8 +44,8 @@ function deal(seed: string): SavedState {
 type Sel = { from: "waste" } | { from: "tableau"; pile: number } | null;
 
 export default function FortyThieves({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("forty", (s) => deal(s));
+  const { seed, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((s) => deal(s));
   const [sel, setSel] = useState<Sel>(null);
 
   const selCard = (): number | null => {
@@ -229,10 +229,8 @@ export default function FortyThieves({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="forty"
           won
           message={`All eight foundations in ${saved.moves} moves!`}
-          playMs={playMs}
           onNew={startNew}
           onExit={onExit}
         />

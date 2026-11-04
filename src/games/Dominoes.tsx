@@ -68,8 +68,8 @@ interface SavedState {
 }
 
 export default function Dominoes({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("dominoes", () => ({ placed: [], done: false }));
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>(() => ({ placed: [], done: false }));
   const maxPip = MAX_PIP[diff];
   const puzzle = useMemo(
     () => generateDominoes(`dominoes-${seed}`, maxPip),
@@ -214,10 +214,8 @@ export default function Dominoes({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="dominoes"
           won
           message="A perfect set!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

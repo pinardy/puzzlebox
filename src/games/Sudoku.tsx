@@ -41,8 +41,8 @@ function peers(idx: number): number[] {
 }
 
 export default function Sudoku({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("sudoku", fresh);
+  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>(fresh);
   const { puzzle, solution } = useMemo(
     () => generateSudoku(`sudoku-${seed}`, REMOVALS[diff]),
     [seed, diff]
@@ -213,10 +213,8 @@ export default function Sudoku({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="sudoku"
           won
           message="Solved!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

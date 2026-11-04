@@ -82,9 +82,7 @@ interface SavedState {
 }
 
 export default function WordSearch({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, newPuzzle, playMs } = useGame<SavedState>(
-    "wordsearch",
-    () => ({ found: [], done: false })
+  const { seed, diff, saved, commit, newPuzzle }= useGame<SavedState>(() => ({ found: [], done: false })
   );
   const { letters, placed } = useMemo(
     () => buildPuzzle(`wordsearch-${seed}`, WORDS[diff]),
@@ -168,10 +166,8 @@ export default function WordSearch({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="wordsearch"
           won
           message="All words found!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

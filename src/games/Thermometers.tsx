@@ -66,8 +66,8 @@ function dirClass(from: number, to: number, n: number): string {
 }
 
 export default function Thermometers({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("thermo", (s, d) => {
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((s, d) => {
       const p = generateThermo(`thermo-${s}`, SIZE[d]);
       return { fills: Array(p.thermos.length).fill(0), done: false };
     });
@@ -186,10 +186,8 @@ export default function Thermometers({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="thermo"
           won
           message="Temperatures balanced!"
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

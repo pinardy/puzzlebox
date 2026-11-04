@@ -60,8 +60,8 @@ const exposed = (removed: boolean[], s: number): boolean => {
 };
 
 export default function Pyramid({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("pyramid", (s, d) => deal(s, d));
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((s, d) => deal(s, d));
   const [selected, setSelected] = useState<"waste" | number | null>(null);
 
   const wasteTop = saved.waste.length ? saved.waste[saved.waste.length - 1] : null;
@@ -236,12 +236,10 @@ export default function Pyramid({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="pyramid"
           won={saved.won}
           message={
             saved.won ? "Pyramid cleared!" : `Out of moves — ${left} cards remained`
           }
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

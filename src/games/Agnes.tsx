@@ -54,9 +54,7 @@ type Sel =
   | null;
 
 export default function Agnes({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle, playMs } = useGame<SavedState>(
-    "agnes",
-    (s) => deal(s)
+  const { seed, saved, commit, undo, canUndo, newPuzzle }= useGame<SavedState>((s) => deal(s)
   );
   const [sel, setSel] = useState<Sel>(null);
 
@@ -285,10 +283,8 @@ export default function Agnes({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="agnes"
           won
           message={`Agnes home in ${saved.moves} moves!`}
-          playMs={playMs}
           onNew={startNew}
           onExit={onExit}
         />

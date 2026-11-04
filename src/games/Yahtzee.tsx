@@ -71,9 +71,7 @@ function totals(scores: (number | null)[]): { upper: number; bonus: number; tota
 }
 
 export default function Yahtzee({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, newPuzzle, playMs } = useGame<SavedState>(
-    "yahtzee",
-    (s) => fresh(s)
+  const { seed, saved, commit, newPuzzle }= useGame<SavedState>((s) => fresh(s)
   );
   const [rolling, setRolling] = useState(false);
 
@@ -184,10 +182,8 @@ export default function Yahtzee({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="yahtzee"
           won
           message={`Final score: ${total}${bonus ? " (with bonus)" : ""}`}
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

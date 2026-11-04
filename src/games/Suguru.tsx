@@ -97,8 +97,8 @@ interface SavedState {
 }
 
 export default function Suguru({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("suguru", (_s, d) => ({
+  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
       entries: Array(SIZE[d] * SIZE[d]).fill(0),
       done: false
     }));
@@ -242,10 +242,8 @@ export default function Suguru({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="suguru"
           won
           message="Regions all in order!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

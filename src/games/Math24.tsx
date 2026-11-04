@@ -71,8 +71,8 @@ interface SavedState {
 }
 
 export default function Math24({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("math24", (s, d) => ({
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((s, d) => ({
       tiles: generate24(s, d).map((v) => frac(v, 1)),
       merges: 0,
       done: false
@@ -180,10 +180,8 @@ export default function Math24({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="math24"
           won
           message={`24 — in ${saved.merges} merges!`}
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

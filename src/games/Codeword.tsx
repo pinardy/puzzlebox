@@ -21,8 +21,8 @@ interface SavedState {
 }
 
 export default function Codeword({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("codeword", (s, d) => fresh(s, d));
+  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((s, d) => fresh(s, d));
   const puzzle = useMemo(() => makeCodeword(seed, GIVENS[diff]), [seed, diff]);
   const [sel, setSel] = useState<number | null>(null);
 
@@ -182,10 +182,8 @@ export default function Codeword({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="codeword"
           won
           message="Code cracked!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

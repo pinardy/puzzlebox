@@ -26,8 +26,8 @@ function fresh(n: number): SavedState {
 }
 
 export default function Masyu({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("masyu", (_s, d) => fresh(SIZE[d]));
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => fresh(SIZE[d]));
   const n = SIZE[diff];
   const puzzle = useMemo(() => generateMasyu(`masyu-${seed}`, n), [seed, n]);
 
@@ -129,10 +129,8 @@ export default function Masyu({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="masyu"
           won
           message="Every pearl satisfied!"
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

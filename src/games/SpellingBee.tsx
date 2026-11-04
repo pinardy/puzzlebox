@@ -51,8 +51,8 @@ const praise = (word: string): string =>
           : "Good!";
 
 export default function SpellingBee({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, newPuzzle, playMs } =
-    useGame<SavedState>("bee", () => ({ found: [], done: false }));
+  const { seed, diff, saved, commit, commitHint, newPuzzle } =
+    useGame<SavedState>(() => ({ found: [], done: false }));
   const [min, max] = BAND[diff];
   const puzzle = useMemo(() => generateBee(`bee-${seed}`, min, max), [seed, min, max]);
 
@@ -264,10 +264,8 @@ export default function SpellingBee({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="bee"
           won
           message={queen ? "Queen Bee!" : "Genius!"}
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

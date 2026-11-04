@@ -64,8 +64,8 @@ interface SavedState {
 }
 
 export default function Hitori({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("hitori", (_s, d) => ({
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
       marks: Array(SIZE[d] * SIZE[d]).fill(0) as Mark[],
       done: false
     }));
@@ -189,10 +189,8 @@ export default function Hitori({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="hitori"
           won
           message="All duplicates shaded away!"
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

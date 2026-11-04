@@ -36,8 +36,8 @@ function deal(seed: string): SavedState {
 }
 
 export default function Golf({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("golf", (s) => deal(s));
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((s) => deal(s));
 
   const wasteTop = saved.waste[saved.waste.length - 1];
 
@@ -152,10 +152,8 @@ export default function Golf({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="golf"
           won={saved.won}
           message={saved.won ? "Course cleared!" : `Stuck — ${left} cards remained`}
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

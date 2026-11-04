@@ -23,8 +23,8 @@ interface SavedState {
 }
 
 export default function Typeshift({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("typeshift", (s, d) => fresh(s, d));
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((s, d) => fresh(s, d));
   const { cols } = useMemo(() => makeShift(seed, COUNT[diff]), [seed, diff]);
   const [toast, setToast] = useState<string | null>(null);
 
@@ -170,10 +170,8 @@ export default function Typeshift({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="typeshift"
           won
           message={`Every letter used — ${saved.found.length} words!`}
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

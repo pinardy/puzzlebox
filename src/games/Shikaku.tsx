@@ -64,8 +64,8 @@ interface SavedState {
 }
 
 export default function Shikaku({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("shikaku", () => ({ rects: [], done: false }));
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>(() => ({ rects: [], done: false }));
   const n = SIZE[diff];
   const clues = useMemo(() => generateShikaku(`shikaku-${seed}`, n), [seed, n]);
   const [anchor, setAnchor] = useState<number | null>(null);
@@ -179,10 +179,8 @@ export default function Shikaku({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="shikaku"
           won
           message="Perfectly boxed!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

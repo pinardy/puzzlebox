@@ -17,8 +17,8 @@ interface SavedState {
 }
 
 export default function Tango({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("tango", () => ({
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>(() => ({
       entries: Array(T * T).fill(0),
       done: false
     }));
@@ -104,10 +104,8 @@ export default function Tango({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="tango"
           won
           message="Perfectly balanced!"
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

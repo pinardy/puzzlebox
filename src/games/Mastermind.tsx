@@ -46,9 +46,7 @@ interface SavedState {
 }
 
 export default function Mastermind({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, newPuzzle, playMs } = useGame<SavedState>(
-    "mastermind",
-    () => ({ guesses: [], done: false, won: false })
+  const { seed, diff, saved, commit, newPuzzle }= useGame<SavedState>(() => ({ guesses: [], done: false, won: false })
   );
   const colors = COLOR_COUNT[diff];
   const codeLen = CODE_LEN[diff];
@@ -147,14 +145,12 @@ export default function Mastermind({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="mastermind"
           won={saved.won}
           message={
             saved.won
               ? `Cracked in ${saved.guesses.length}!`
               : "Out of guesses — code revealed"
           }
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

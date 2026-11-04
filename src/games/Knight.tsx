@@ -71,8 +71,8 @@ interface SavedState {
 }
 
 export default function Knight({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("knight", (s, d) => ({
+  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((s, d) => ({
       path: [startSquare(s, SIZE[d])],
       done: false
     }));
@@ -163,10 +163,8 @@ export default function Knight({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="knight"
           won
           message={`Every square in ${n * n} hops!`}
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

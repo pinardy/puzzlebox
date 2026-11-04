@@ -28,9 +28,7 @@ function answerFor(seed: string, diff: Diff): string {
 }
 
 export default function Hangman({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, newPuzzle, playMs } = useGame<SavedState>(
-    "hangman",
-    () => ({ guessed: [], done: false, won: false })
+  const { seed, diff, saved, commit, newPuzzle }= useGame<SavedState>(() => ({ guessed: [], done: false, won: false })
   );
   const LIVES = LIVES_BY[diff];
   const answer = answerFor(seed, diff);
@@ -115,14 +113,12 @@ export default function Hangman({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="hangman"
           won={saved.won}
           message={
             saved.won
               ? `Saved with ${livesLeft} ♥ to spare!`
               : `The word was ${answer}`
           }
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

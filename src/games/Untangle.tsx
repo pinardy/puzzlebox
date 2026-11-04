@@ -98,8 +98,8 @@ interface SavedState {
 }
 
 export default function Untangle({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("untangle", (s, d) => ({
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((s, d) => ({
       pos: generateGraph(`untangle-${s}`, NODES[d]).start,
       done: false
     }));
@@ -202,10 +202,8 @@ export default function Untangle({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="untangle"
           won
           message="Untangled!"
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

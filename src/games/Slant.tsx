@@ -29,8 +29,8 @@ interface SavedState {
 }
 
 export default function Slant({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("slant", (_s, d) => ({
+  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
       cells: Array(SIZE[d] * SIZE[d]).fill(EMPTY),
       done: false
     }));
@@ -171,10 +171,8 @@ export default function Slant({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="slant"
           won
           message="Every corner counted!"
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

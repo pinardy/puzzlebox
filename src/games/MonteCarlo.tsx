@@ -60,9 +60,7 @@ function hasPair(grid: (number | null)[]): boolean {
 }
 
 export default function MonteCarlo({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle, playMs } = useGame<SavedState>(
-    "montecarlo",
-    (s) => deal(s)
+  const { seed, saved, commit, undo, canUndo, newPuzzle }= useGame<SavedState>((s) => deal(s)
   );
   const [sel, setSel] = useState<number | null>(null);
 
@@ -157,14 +155,12 @@ export default function MonteCarlo({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="montecarlo"
           won={saved.won}
           message={
             saved.won
               ? "Every pair found — cleared!"
               : `No touching pairs left — ${saved.removed} of 52 discarded.`
           }
-          playMs={playMs}
           onNew={startNew}
           onExit={onExit}
         />

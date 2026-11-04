@@ -48,9 +48,7 @@ function deal(seed: string): SavedState {
 }
 
 export default function Calculation({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle, playMs } = useGame<SavedState>(
-    "calculation",
-    (s) => deal(s)
+  const { seed, saved, commit, undo, canUndo, newPuzzle }= useGame<SavedState>((s) => deal(s)
   );
 
   const current = saved.stock.length ? saved.stock[saved.stock.length - 1] : null;
@@ -210,14 +208,12 @@ export default function Calculation({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="calculation"
           won={saved.won}
           message={
             saved.won
               ? `All forty-eight calculated in ${saved.moves} moves!`
               : `Stuck with ${home} of 48 home.`
           }
-          playMs={playMs}
           onNew={startNew}
           onExit={onExit}
         />

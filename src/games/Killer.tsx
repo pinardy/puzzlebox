@@ -95,8 +95,8 @@ function peers(idx: number): number[] {
 }
 
 export default function Killer({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("killer", fresh);
+  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>(fresh);
   const { cages, cageOf, givens, solution } = useMemo(
     () => generateKiller(seed, GIVENS[diff]),
     [seed, diff]
@@ -291,10 +291,8 @@ export default function Killer({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="killer"
           won
           message="Every cage adds up!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

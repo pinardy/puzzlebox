@@ -51,8 +51,8 @@ type Sel =
   | null;
 
 export default function FreeCell({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("freecell", (s, d) => deal(s, d));
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((s, d) => deal(s, d));
   const [sel, setSel] = useState<Sel>(null);
 
   const selCards = useMemo((): number[] => {
@@ -296,10 +296,8 @@ export default function FreeCell({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="freecell"
           won
           message={`Cleared in ${saved.moves} moves!`}
-          playMs={playMs}
           onNew={startNew}
           onExit={onExit}
         />

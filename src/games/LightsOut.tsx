@@ -43,8 +43,8 @@ interface SavedState {
 }
 
 export default function LightsOut({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("lights", (s, d) => ({
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((s, d) => ({
       cells: buildBoard(`lights-${s}`, SCRAMBLES[d]),
       moves: 0,
       done: false
@@ -104,14 +104,12 @@ export default function LightsOut({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="lights"
           won
           message={
             saved.moves <= scrambles
               ? `Perfect — ${saved.moves} moves!`
               : `Lights out in ${saved.moves} moves`
           }
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

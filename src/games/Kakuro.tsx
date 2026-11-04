@@ -18,8 +18,8 @@ interface SavedState {
 }
 
 export default function Kakuro({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("kakuro", (_s, d) => ({
+  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
       entries: Array(SIZE[d] * SIZE[d]).fill(0),
       done: false
     }));
@@ -164,10 +164,8 @@ export default function Kakuro({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="kakuro"
           won
           message="All sums add up!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

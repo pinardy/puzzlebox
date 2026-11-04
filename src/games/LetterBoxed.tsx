@@ -51,8 +51,8 @@ interface SavedState {
 }
 
 export default function LetterBoxed({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("boxed", () => ({
+  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>(() => ({
       words: [],
       hint: null,
       hintFull: false,
@@ -295,10 +295,8 @@ export default function LetterBoxed({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="boxed"
           won
           message={resultMessage(saved.words.length, par)}
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

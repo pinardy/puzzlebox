@@ -177,8 +177,8 @@ interface SavedState {
 }
 
 export default function Unblock({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("unblock", (s, d) => ({
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((s, d) => ({
       pos: generateUnblock(s, d).start,
       moves: 0,
       done: false
@@ -305,14 +305,12 @@ export default function Unblock({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="unblock"
           won
           message={
             saved.moves <= par
               ? `Freed in ${saved.moves} — perfect!`
               : `Freed in ${saved.moves} moves (par ${par})`
           }
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

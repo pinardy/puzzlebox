@@ -65,8 +65,8 @@ function clearRuns(next: SavedState): void {
 type Sel = { pile: number; index: number } | null;
 
 export default function Scorpion({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("scorpion", (s) => deal(s));
+  const { seed, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((s) => deal(s));
   const [sel, setSel] = useState<Sel>(null);
 
   function finish(next: SavedState) {
@@ -203,10 +203,8 @@ export default function Scorpion({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="scorpion"
           won
           message={`All four suits in ${saved.moves} moves!`}
-          playMs={playMs}
           onNew={startNew}
           onExit={onExit}
         />

@@ -43,8 +43,8 @@ interface SavedState {
 const key = (seed: string) => `waffle-${seed}`;
 
 export default function Waffle({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("waffle", (s, d) => ({
+  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((s, d) => ({
       letters: generateWaffle(key(s), DEPTH[d]).start,
       swaps: 0,
       done: false,
@@ -203,14 +203,12 @@ export default function Waffle({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="waffle"
           won={saved.won}
           message={
             saved.won
               ? `Solved in ${saved.swaps} swap${saved.swaps === 1 ? "" : "s"}!`
               : "Out of swaps"
           }
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

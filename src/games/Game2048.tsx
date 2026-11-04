@@ -112,8 +112,8 @@ function migrate(state: SavedState & { cells?: number[] }, n: number): SavedStat
 }
 
 export default function Game2048({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("2048", (s, d) => fresh(s, SIZE[d]));
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((s, d) => fresh(s, SIZE[d]));
   const N = SIZE[diff];
   const TARGET = TARGET_BY[diff];
   const state = useMemo(() => migrate(saved, N), [saved, N]);
@@ -233,10 +233,8 @@ export default function Game2048({ onExit }: { onExit: () => void }) {
       {state.done && (
         <Result
           key={seed}
-          game="2048"
           won={state.won}
           message={state.won ? `${TARGET} — you made it!` : `No moves left — score ${state.score}`}
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

@@ -45,9 +45,7 @@ function deal(seed: string): SavedState {
 }
 
 export default function Clock({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle, playMs } = useGame<SavedState>(
-    "clock",
-    (s) => deal(s)
+  const { seed, saved, commit, undo, canUndo, newPuzzle }= useGame<SavedState>((s) => deal(s)
   );
 
   /** Lay the held card on its hour, then pick up that pile's next card. */
@@ -151,14 +149,12 @@ export default function Clock({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="clock"
           won={saved.won}
           message={
             saved.won
               ? "All thirteen hours complete!"
               : `Stuck at ${saved.placed} of 52 — the deal decided.`
           }
-          playMs={playMs}
           onNew={startNew}
           onExit={onExit}
         />

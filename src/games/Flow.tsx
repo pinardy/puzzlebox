@@ -48,9 +48,7 @@ interface SavedState {
 }
 
 export default function Flow({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, newPuzzle, playMs } = useGame<SavedState>(
-    "flow",
-    () => ({ paths: {}, done: false })
+  const { seed, diff, saved, commit, newPuzzle }= useGame<SavedState>(() => ({ paths: {}, done: false })
   );
   const n = SIZE[diff];
   const pipes = SIZE[diff];
@@ -207,10 +205,8 @@ export default function Flow({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="flow"
           won
           message="Everything flows!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

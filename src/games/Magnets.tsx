@@ -33,8 +33,8 @@ interface SavedState {
 
 export default function Magnets({ onExit }: { onExit: () => void }) {
   const {
-    seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs
-  } = useGame<SavedState>("magnets", (_s, d) => ({
+    seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle
+  }= useGame<SavedState>((_s, d) => ({
     board: Array<Sign>(SIZE[d] * SIZE[d]).fill(0),
     done: false
   }));
@@ -215,10 +215,8 @@ export default function Magnets({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="magnets"
           won
           message="Every pole in place!"
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

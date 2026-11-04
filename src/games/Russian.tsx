@@ -43,9 +43,7 @@ function deal(seed: string): SavedState {
 type Sel = { pile: number; index: number } | null;
 
 export default function Russian({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle, playMs } = useGame<SavedState>(
-    "russian",
-    (s) => deal(s)
+  const { seed, saved, commit, undo, canUndo, newPuzzle }= useGame<SavedState>((s) => deal(s)
   );
   const [sel, setSel] = useState<Sel>(null);
 
@@ -194,10 +192,8 @@ export default function Russian({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="russian"
           won
           message={`Cleared in ${saved.moves} moves!`}
-          playMs={playMs}
           onNew={startNew}
           onExit={onExit}
         />

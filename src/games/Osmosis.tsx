@@ -47,9 +47,7 @@ const rowSuit = (row: number[]): number | null =>
   row.length ? suit(row[0]) : null;
 
 export default function Osmosis({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle, playMs } = useGame<SavedState>(
-    "osmosis",
-    (s) => deal(s)
+  const { seed, saved, commit, undo, canUndo, newPuzzle }= useGame<SavedState>((s) => deal(s)
   );
 
   const wasteTop = saved.waste.length ? saved.waste[saved.waste.length - 1] : null;
@@ -225,10 +223,8 @@ export default function Osmosis({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="osmosis"
           won={saved.won}
           message={`Osmosis complete in ${saved.moves} moves!`}
-          playMs={playMs}
           onNew={startNew}
           onExit={onExit}
         />

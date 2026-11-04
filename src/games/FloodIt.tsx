@@ -90,8 +90,8 @@ function deal(seed: string, diff: Diff): SavedState {
 }
 
 export default function FloodIt({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("flood", (s, d) => deal(s, d));
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((s, d) => deal(s, d));
   const n = SIZE[diff];
   const colors = COLORS[diff];
 
@@ -172,14 +172,12 @@ export default function FloodIt({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="flood"
           won={saved.won}
           message={
             saved.won
               ? `Whole board in ${saved.moves} moves!`
               : `Out of moves — ${n * n - owned.size} squares short`
           }
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

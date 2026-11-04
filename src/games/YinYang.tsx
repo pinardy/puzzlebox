@@ -171,8 +171,8 @@ interface SavedState {
 }
 
 export default function YinYang({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("yinyang", (_s, d) => ({
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
       cells: Array(SIZE[d] * SIZE[d]).fill(0) as Cell[],
       done: false
     }));
@@ -263,10 +263,8 @@ export default function YinYang({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="yinyang"
           won
           message="Perfect balance!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

@@ -113,8 +113,8 @@ interface SavedState {
 }
 
 export default function Galaxies({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("galaxies", (_s, d) => ({
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
       assign: Array(SIZE[d] * SIZE[d]).fill(-1),
       done: false
     }));
@@ -273,10 +273,8 @@ export default function Galaxies({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="galaxies"
           won
           message="A perfectly symmetric sky!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

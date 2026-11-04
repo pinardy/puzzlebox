@@ -16,9 +16,7 @@ interface SavedState {
 }
 
 export default function Memory({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, newPuzzle, playMs } = useGame<SavedState>(
-    "memory",
-    (_s, d) => ({ matched: Array(PAIRS[d] * 2).fill(false), flips: 0, done: false })
+  const { seed, diff, saved, commit, newPuzzle }= useGame<SavedState>((_s, d) => ({ matched: Array(PAIRS[d] * 2).fill(false), flips: 0, done: false })
   );
   const pairs = PAIRS[diff];
   const cards = useMemo(() => {
@@ -107,10 +105,8 @@ export default function Memory({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="memory"
           won
           message={`Matched everything in ${saved.flips} flips!`}
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

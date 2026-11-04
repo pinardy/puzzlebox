@@ -38,8 +38,8 @@ interface SavedState {
 }
 
 export default function TrainTracks({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("tracks", (_s, d) => ({
+  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
       cells: Array(SIZE[d] * SIZE[d]).fill(0),
       done: false
     }));
@@ -199,10 +199,8 @@ export default function TrainTracks({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="tracks"
           won
           message="The line runs through!"
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

@@ -130,9 +130,7 @@ function chooseMove(state: SavedState, n: number, diff: Diff, rng: () => number)
 }
 
 export default function DotsBoxes({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, newPuzzle, playMs } = useGame<SavedState>(
-    "dots",
-    (_s, d) => fresh(SIZE[d])
+  const { seed, diff, saved, commit, newPuzzle }= useGame<SavedState>((_s, d) => fresh(SIZE[d])
   );
   const n = SIZE[diff];
 
@@ -257,7 +255,6 @@ export default function DotsBoxes({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="dots"
           won={saved.won}
           message={
             scores.you === scores.them
@@ -266,7 +263,6 @@ export default function DotsBoxes({ onExit }: { onExit: () => void }) {
                 ? `You win ${scores.you}–${scores.them}!`
                 : `Lost ${scores.you}–${scores.them}`
           }
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

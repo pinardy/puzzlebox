@@ -95,9 +95,7 @@ interface SavedState {
 const KEY_ROWS = ["1234567890", "+-×÷="];
 
 export default function Equation({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, newPuzzle, playMs } = useGame<SavedState>(
-    "equation",
-    () => ({ guesses: [], done: false, won: false })
+  const { seed, diff, saved, commit, newPuzzle }= useGame<SavedState>(() => ({ guesses: [], done: false, won: false })
   );
   const answer = useMemo(() => answerFor(seed, diff), [seed, diff]);
   const [current, setCurrent] = useState("");
@@ -243,10 +241,8 @@ export default function Equation({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="equation"
           won={saved.won}
           message={saved.won ? "Balanced!" : `It was ${answer}`}
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

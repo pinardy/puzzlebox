@@ -48,8 +48,8 @@ function deal(seed: string): SavedState {
 type Sel = { pile: number; index: number } | null;
 
 export default function Yukon({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("yukon", (s) => deal(s));
+  const { seed, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((s) => deal(s));
   const [sel, setSel] = useState<Sel>(null);
 
   function finish(next: SavedState) {
@@ -201,10 +201,8 @@ export default function Yukon({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="yukon"
           won
           message={`Cleared in ${saved.moves} moves!`}
-          playMs={playMs}
           onNew={startNew}
           onExit={onExit}
         />

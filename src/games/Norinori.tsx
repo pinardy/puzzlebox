@@ -74,8 +74,8 @@ interface SavedState {
 }
 
 export default function Norinori({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("norinori", (_s, d) => ({
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
       shaded: Array(SIZE[d] * SIZE[d]).fill(false),
       done: false
     }));
@@ -168,10 +168,8 @@ export default function Norinori({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="norinori"
           won
           message="Dominoes all placed!"
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

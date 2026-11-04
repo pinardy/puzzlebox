@@ -24,8 +24,8 @@ function fresh(n: number): SavedState {
 }
 
 export default function Slitherlink({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("slither", (_s, d) => fresh(SIZE[d]));
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => fresh(SIZE[d]));
   const n = SIZE[diff];
   const puzzle = useMemo(() => generateSlither(`slither-${seed}`, n), [seed, n]);
 
@@ -117,10 +117,8 @@ export default function Slitherlink({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="slither"
           won
           message="The loop is closed!"
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

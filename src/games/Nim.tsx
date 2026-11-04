@@ -37,8 +37,8 @@ const fresh = (seed: string, d: Diff): SavedState => ({
 const describe = (m: NimMove) => `took ${m.take} from heap ${m.heap + 1}`;
 
 export default function Nim({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("nim", fresh);
+  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>(fresh);
   const [hover, setHover] = useState<NimMove | null>(null);
 
   // The reply is keyed on the committed state, so a doubled effect run in
@@ -175,12 +175,10 @@ export default function Nim({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="nim"
           won={saved.won}
           message={
             saved.won ? "You took the last counter!" : "The machine took the last one."
           }
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

@@ -98,8 +98,8 @@ interface SavedState {
 }
 
 export default function KenKen({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("kenken", (_s, d) => ({
+  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
       entries: Array(SIZE[d] * SIZE[d]).fill(0),
       done: false
     }));
@@ -247,10 +247,8 @@ export default function KenKen({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="kenken"
           won
           message="All cages check out!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

@@ -45,8 +45,8 @@ interface SavedState {
 }
 
 export default function Numbrix({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("numbrix", (_s, d) => ({
+  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
       entries: Array(SIZE[d] * SIZE[d]).fill(0),
       done: false
     }));
@@ -209,10 +209,8 @@ export default function Numbrix({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="numbrix"
           won
           message="One unbroken chain!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

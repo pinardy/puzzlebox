@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { TEXT_GAMES, useGameShell } from "../lib/shell";
+import { useGameShell } from "../lib/shell";
+import { GAME_BY_ID } from "./registry";
 import { useTheme } from "../lib/theme";
 import { GameId, Diff, loadStats } from "../lib/storage";
 import { fmtTime } from "../lib/format";
@@ -133,7 +134,7 @@ export function GameHeader({
       }
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       // Word games read bare letters as guesses.
-      if (info.game && TEXT_GAMES.has(info.game)) return;
+      if (info.game && GAME_BY_ID[info.game].textInput) return;
       if (e.key === "n") {
         e.preventDefault();
         armOrDeal();

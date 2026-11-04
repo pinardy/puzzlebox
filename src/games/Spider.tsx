@@ -67,8 +67,8 @@ function clearRuns(next: SavedState, suitOf: (id: number) => number): void {
 type Sel = { pile: number; index: number } | null;
 
 export default function Spider({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("spider", (s) => deal(s));
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((s) => deal(s));
   const [sel, setSel] = useState<Sel>(null);
   const nSuits = SUIT_COUNT[diff];
   const suitOf = (id: number) => Math.floor(id / 13) % nSuits;
@@ -219,10 +219,8 @@ export default function Spider({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="spider"
           won
           message={`All eight runs in ${saved.moves} moves!`}
-          playMs={playMs}
           onNew={startNew}
           onExit={onExit}
         />

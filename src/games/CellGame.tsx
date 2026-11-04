@@ -90,9 +90,7 @@ export function CellGame({
   wonMessage: (moves: number) => string;
   onExit: () => void;
 }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle, playMs } = useGame<SavedState>(
-    game,
-    (s) => deal(s, rules)
+  const { seed, saved, commit, undo, canUndo, newPuzzle }= useGame<SavedState>((s) => deal(s, rules)
   );
   const [sel, setSel] = useState<Sel>(null);
 
@@ -355,10 +353,8 @@ export function CellGame({
       {saved.done && (
         <Result
           key={seed}
-          game={game}
           won
           message={wonMessage(saved.moves)}
-          playMs={playMs}
           onNew={startNew}
           onExit={onExit}
         />

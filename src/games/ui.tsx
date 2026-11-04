@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { GameId, Diff, loadStats, loadSlot, load, save } from "../lib/storage";
-import { TEXT_GAMES, useGameShell } from "../lib/shell";
+import { useGameId, useGameShell } from "../lib/shell";
 import { playWin, playLose, playHint } from "../lib/sound";
 import { fmtTime } from "../lib/format";
-import { TIPS } from "../lib/tips";
+import { GAME_BY_ID } from "./registry";
 
 const DIFFS: Diff[] = ["easy", "medium", "hard"];
 const DIFF_LABEL: Record<Diff, string> = { easy: "Easy", medium: "Medium", hard: "Hard" };
@@ -44,7 +44,7 @@ function KeysPopover({
 }) {
   // Bare-letter shortcuts are suppressed in games that read letters as
   // guesses, so don't advertise them there.
-  const letterKeys = !(game && TEXT_GAMES.has(game));
+  const letterKeys = !(game && GAME_BY_ID[game].textInput);
   return (
     <span className="tools-menu-wrap">
       <button className="tools-menu-scrim" onClick={onClose} aria-label="Close" />
@@ -133,7 +133,7 @@ export function GameTools({
 
   // Same idea for a board's unadvertised gesture — a hold-to-flag nobody
   // finds may as well not exist.
-  const tip = info.game ? TIPS[info.game] : undefined;
+  const tip = info.game ? GAME_BY_ID[info.game].tip : undefined;
   const tipKey = info.game ? `pref:seentip:${info.game}` : null;
   useEffect(() => {
     if (!tip || !tipKey || load(tipKey, false)) return;
@@ -166,7 +166,7 @@ export function GameTools({
       }
       if (mod || e.altKey) return;
       // Word games read bare letters as guesses.
-      if (info.game && TEXT_GAMES.has(info.game)) return;
+      if (info.game && GAME_BY_ID[info.game].textInput) return;
       if (e.key === "u") {
         e.preventDefault();
         if (canUndo) onUndo();
@@ -309,26 +309,24 @@ export function Toast({ message }: { message: string | null }) {
 /** End-of-game banner: result message, time, best time, streak, and the
  *  two actions that matter. Dismissable to inspect the final board. */
 export function Result({
-  game,
   won,
   message,
-  playMs,
   onNew,
   onExit
 }: {
-  game: GameId;
   won: boolean;
   message: string;
-  playMs?: number;
   onNew: () => void;
   onExit: () => void;
 }) {
+  const game = useGameId();
   const [hidden, setHidden] = useState(false);
   const stats = loadStats(game);
   // The finishing commit saved the slot before this rendered, so it holds
   // this puzzle's final difficulty, play time, and hint count.
   const slot = loadSlot<unknown>(game);
   const diff = slot?.diff;
+  const playMs = slot?.playMs;
   const hinted = (slot?.hints ?? 0) > 0;
   const best = diff ? stats.best?.[diff] : undefined;
   const newBest =

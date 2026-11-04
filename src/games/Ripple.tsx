@@ -26,8 +26,8 @@ interface SavedState {
 }
 
 export default function Ripple({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("ripple", (_s, d) => ({
+  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
       entries: Array(SIZE[d] * SIZE[d]).fill(0),
       done: false
     }));
@@ -186,10 +186,8 @@ export default function Ripple({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="ripple"
           won
           message="Every ripple settled!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

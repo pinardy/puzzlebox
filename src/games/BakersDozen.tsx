@@ -38,8 +38,8 @@ function deal(seed: string): SavedState {
 }
 
 export default function BakersDozen({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("bakers", (s) => deal(s));
+  const { seed, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((s) => deal(s));
   const [sel, setSel] = useState<number | null>(null);
 
   function clone(): SavedState {
@@ -168,10 +168,8 @@ export default function BakersDozen({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="bakers"
           won
           message={`Cleared in ${saved.moves} moves!`}
-          playMs={playMs}
           onNew={startNew}
           onExit={onExit}
         />

@@ -20,8 +20,8 @@ interface SavedState {
 }
 
 export default function Sumplete({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("sumplete", (_s, d) => ({
+  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
       crossed: Array(SIZE[d] * SIZE[d]).fill(false),
       done: false
     }));
@@ -145,10 +145,8 @@ export default function Sumplete({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="sumplete"
           won
           message="Every line adds up!"
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

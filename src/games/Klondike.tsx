@@ -60,8 +60,8 @@ type Sel =
   | null;
 
 export default function Klondike({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("klondike", (s, d) => deal(s, d));
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((s, d) => deal(s, d));
   const [sel, setSel] = useState<Sel>(null);
   // Saves from before draw modes lack the redeal counter.
   const redeals = saved.redeals ?? -1;
@@ -328,10 +328,8 @@ export default function Klondike({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="klondike"
           won
           message={`Cleared in ${saved.moves} moves!`}
-          playMs={playMs}
           onNew={startNew}
           onExit={onExit}
         />

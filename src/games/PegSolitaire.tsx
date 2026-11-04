@@ -69,8 +69,8 @@ function fresh(diff: Diff): SavedState {
 }
 
 export default function PegSolitaire({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("pegs", (_s, d) => fresh(d));
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => fresh(d));
   const board = useMemo(() => boardFor(diff), [diff]);
   const [picked, setPicked] = useState<number | null>(null);
 
@@ -196,7 +196,6 @@ export default function PegSolitaire({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="pegs"
           won={saved.won}
           message={
             saved.won
@@ -207,7 +206,6 @@ export default function PegSolitaire({ onExit }: { onExit: () => void }) {
                 ? "One peg left, but not in the centre"
                 : `No moves left — ${pegCount} pegs remain`
           }
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

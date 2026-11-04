@@ -41,8 +41,8 @@ function deal(seed: string): SavedState {
 const top = (p: number[]) => (p.length ? p[p.length - 1] : null);
 
 export default function AcesUp({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("acesup", (s) => deal(s));
+  const { seed, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((s) => deal(s));
   const [sel, setSel] = useState<number | null>(null);
 
   /** A top card dies if another pile shows a higher card of its suit. */
@@ -193,14 +193,12 @@ export default function AcesUp({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="acesup"
           won={saved.won}
           message={
             saved.won
               ? "Four aces left standing!"
               : `Stuck — ${saved.piles.reduce((a, p) => a + p.length, 0)} cards remain`
           }
-          playMs={playMs}
           onNew={startNew}
           onExit={onExit}
         />

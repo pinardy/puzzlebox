@@ -65,8 +65,8 @@ interface SavedState {
 }
 
 export default function Ladder({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("ladder", (s, d) => ({
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((s, d) => ({
       chain: [generateLadder(`ladder-${s}`, PAR[d]).start],
       done: false,
       won: false
@@ -201,7 +201,6 @@ export default function Ladder({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="ladder"
           won={saved.won}
           message={
             saved.won
@@ -210,7 +209,6 @@ export default function Ladder({ onExit }: { onExit: () => void }) {
                 : `Climbed in ${saved.chain.length - 1} steps`
               : `Out of moves — it was ${saved.chain[0].toUpperCase()} → ${target.toUpperCase()}`
           }
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

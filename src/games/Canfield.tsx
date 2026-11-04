@@ -58,8 +58,8 @@ type Sel =
   | null;
 
 export default function Canfield({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("canfield", (s) => deal(s));
+  const { seed, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((s) => deal(s));
   const [sel, setSel] = useState<Sel>(null);
 
   const selCards = (): number[] => {
@@ -286,10 +286,8 @@ export default function Canfield({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="canfield"
           won
           message={`Home in ${saved.moves} moves!`}
-          playMs={playMs}
           onNew={startNew}
           onExit={onExit}
         />

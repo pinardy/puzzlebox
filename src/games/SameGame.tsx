@@ -88,8 +88,8 @@ function settle(cells: (number | null)[], w: number, h: number): (number | null)
 }
 
 export default function SameGame({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("samegame", (s, d) => deal(s, d));
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((s, d) => deal(s, d));
   const { w, h } = saved;
 
   const remaining = useMemo(
@@ -152,14 +152,12 @@ export default function SameGame({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="samegame"
           won={saved.won}
           message={
             saved.won
               ? `Board cleared — ${saved.score} points!`
               : `No moves left — ${saved.score} points, ${remaining} tiles stuck`
           }
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

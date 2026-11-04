@@ -21,8 +21,8 @@ interface SavedState {
 }
 
 export default function Lits({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("lits", (_s, d) => ({
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
       shaded: Array(SIZE[d] * SIZE[d]).fill(false),
       done: false
     }));
@@ -127,10 +127,8 @@ export default function Lits({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="lits"
           won
           message="Every region a tetromino!"
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

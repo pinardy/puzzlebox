@@ -37,9 +37,7 @@ function generateAnagram(seed: string, diff: Diff): Puzzle {
 }
 
 export default function Anagram({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, newPuzzle, playMs } = useGame<SavedState>(
-    "anagram",
-    () => ({ tries: 0, hints: 0, done: false, won: false })
+  const { seed, diff, saved, commit, newPuzzle }= useGame<SavedState>(() => ({ tries: 0, hints: 0, done: false, won: false })
   );
   const { word, scrambled } = useMemo(() => generateAnagram(seed, diff), [seed, diff]);
   const L = word.length;
@@ -168,7 +166,6 @@ export default function Anagram({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="anagram"
           won={won}
           message={
             !won
@@ -177,7 +174,6 @@ export default function Anagram({ onExit }: { onExit: () => void }) {
                 ? `${word} — with ${saved.hints} hint${saved.hints > 1 ? "s" : ""}`
                 : `${word} — in ${saved.tries} ${saved.tries === 1 ? "try" : "tries"}!`
           }
-          playMs={playMs}
           onNew={startNew}
           onExit={onExit}
         />

@@ -52,8 +52,8 @@ interface SavedState {
 }
 
 export default function Sandwich({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("sandwich", () => ({
+  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>(() => ({
       entries: Array(81).fill(0),
       done: false
     }));
@@ -210,10 +210,8 @@ export default function Sandwich({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="sandwich"
           won
           message="Every sandwich adds up!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

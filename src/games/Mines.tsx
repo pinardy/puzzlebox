@@ -60,8 +60,8 @@ function fresh(n: number): SavedState {
 }
 
 export default function Mines({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("mines", (_s, d) => fresh(LEVELS[d][0]));
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => fresh(LEVELS[d][0]));
   const [n, mineCount] = LEVELS[diff];
   const [flagMode, setFlagMode] = useState(false);
   const pressTimer = useRef<number | null>(null);
@@ -243,10 +243,8 @@ export default function Mines({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="mines"
           won={saved.won}
           message={saved.won ? "Field cleared!" : "Boom — that was a mine"}
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

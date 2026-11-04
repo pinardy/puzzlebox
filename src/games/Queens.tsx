@@ -22,8 +22,8 @@ interface SavedState {
 }
 
 export default function Queens({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("queens", (_s, d) => ({
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
       marks: Array(SIZE[d] * SIZE[d]).fill(0),
       done: false
     }));
@@ -115,10 +115,8 @@ export default function Queens({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="queens"
           won
           message="All crowns placed!"
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

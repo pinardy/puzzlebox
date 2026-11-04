@@ -47,8 +47,8 @@ interface SavedState {
 }
 
 export default function Skyscrapers({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("sky", (_s, d) => ({
+  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
       entries: Array(SIZE[d] * SIZE[d]).fill(0),
       done: false
     }));
@@ -212,10 +212,8 @@ export default function Skyscrapers({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="sky"
           won
           message="Skyline complete!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

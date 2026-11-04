@@ -22,8 +22,8 @@ interface SavedState {
 }
 
 export default function Stars({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("stars", (_s, d) => ({
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
       marks: Array(SIZE[d] * SIZE[d]).fill(0),
       done: false
     }));
@@ -133,10 +133,8 @@ export default function Stars({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="stars"
           won
           message="A perfect constellation!"
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

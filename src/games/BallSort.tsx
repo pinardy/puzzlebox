@@ -45,8 +45,8 @@ function isSolved(tubes: number[][]): boolean {
 }
 
 export default function BallSort({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("ballsort", (s, d) => deal(s, COLOR_COUNT[d]));
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((s, d) => deal(s, COLOR_COUNT[d]));
   const [sel, setSel] = useState<number | null>(null);
 
   function tap(t: number) {
@@ -139,10 +139,8 @@ export default function BallSort({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="ballsort"
           won
           message={`Sorted in ${saved.moves} pours!`}
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

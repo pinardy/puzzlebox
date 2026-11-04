@@ -26,8 +26,8 @@ interface BridgeMark {
 }
 
 export default function Hashi({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("hashi", () => ({ edges: {}, done: false }));
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>(() => ({ edges: {}, done: false }));
   const [n, islandCount] = LEVELS[diff];
   const puzzle = useMemo(
     () => generateHashi(`hashi-${seed}`, n, islandCount),
@@ -177,10 +177,8 @@ export default function Hashi({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="hashi"
           won
           message="All islands connected!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

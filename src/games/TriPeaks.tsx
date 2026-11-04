@@ -72,8 +72,8 @@ const playable = (a: number, b: number, wrap: boolean): boolean => {
 };
 
 export default function TriPeaks({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("tripeaks", (s, d) => deal(s, d));
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((s, d) => deal(s, d));
   const wrap = WRAP[diff];
 
   const wasteTop = saved.waste[saved.waste.length - 1];
@@ -179,14 +179,12 @@ export default function TriPeaks({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="tripeaks"
           won={saved.won}
           message={
             saved.won
               ? "All three peaks cleared!"
               : `Out of moves — ${left} cards remained`
           }
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

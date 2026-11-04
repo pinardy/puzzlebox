@@ -48,8 +48,8 @@ interface SavedState {
 }
 
 export default function Cryptogram({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("crypto", () => ({ mapping: {}, done: false }));
+  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>(() => ({ mapping: {}, done: false }));
   const { answer, cipherText, givens } = useMemo(
     () => generateCryptogram(`crypto-${seed}`, GIVENS[diff]),
     [seed, diff]
@@ -200,10 +200,8 @@ export default function Cryptogram({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="crypto"
           won
           message="Cipher cracked!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

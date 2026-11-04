@@ -75,8 +75,8 @@ interface SavedState {
 }
 
 export default function Akari({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("akari", (_s, d) => ({
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
       marks: Array(SIZE[d] * SIZE[d]).fill(0) as Mark[],
       done: false
     }));
@@ -183,10 +183,8 @@ export default function Akari({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="akari"
           won
           message="All lit up!"
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

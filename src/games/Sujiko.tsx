@@ -78,8 +78,8 @@ interface SavedState {
 }
 
 export default function Sujiko({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("sujiko", () => ({ entries: Array(9).fill(0), done: false }));
+  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>(() => ({ entries: Array(9).fill(0), done: false }));
   const { sums, givens, solution } = useMemo(
     () => generateSujiko(`sujiko-${seed}`, GIVENS[diff]),
     [seed, diff]
@@ -212,10 +212,8 @@ export default function Sujiko({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="sujiko"
           won
           message="All four circles balance!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

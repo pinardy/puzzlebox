@@ -44,8 +44,8 @@ interface SavedState {
 }
 
 export default function Kakurasu({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("kakurasu", (_s, d) => ({
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
       shaded: Array(SIZE[d] * SIZE[d]).fill(false),
       done: false
     }));
@@ -153,10 +153,8 @@ export default function Kakurasu({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="kakurasu"
           won
           message="Every line adds up!"
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

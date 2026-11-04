@@ -19,8 +19,8 @@ interface SavedState {
 }
 
 export default function Jigsaw({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("jigsaw", () => ({
+  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>(() => ({
       entries: Array(81).fill(0),
       notes: Array.from({ length: 81 }, () => []),
       done: false
@@ -197,10 +197,8 @@ export default function Jigsaw({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="jigsaw"
           won
           message="Every region solved!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

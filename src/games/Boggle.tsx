@@ -41,8 +41,8 @@ const byValue = (a: string, b: string) =>
   b.length - a.length || a.localeCompare(b);
 
 export default function Boggle({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("boggle", () => ({ found: [], done: false }));
+  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>(() => ({ found: [], done: false }));
   const n = SIZE[diff];
   const board: BoggleBoard = useMemo(
     () => generateBoggle(`boggle-${seed}`, n, SHARE[diff]),
@@ -269,10 +269,8 @@ export default function Boggle({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="boggle"
           won
           message={`Target reached — ${score} points!`}
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

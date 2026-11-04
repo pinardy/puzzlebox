@@ -79,8 +79,8 @@ interface SavedState {
 }
 
 export default function Sokoban({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("sokoban", (s, d) => {
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((s, d) => {
       const lvl = generateSokoban(`sokoban-${s}`, SIZE[d], BOXES[d]);
       return { player: lvl.startPlayer, boxes: lvl.startBoxes, moves: 0, done: false };
     });
@@ -195,10 +195,8 @@ export default function Sokoban({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="sokoban"
           won
           message={`Warehouse cleared in ${saved.moves} moves!`}
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

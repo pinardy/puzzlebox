@@ -26,8 +26,8 @@ function fresh(disks: number): SavedState {
 }
 
 export default function Hanoi({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("hanoi", (_s, d) => fresh(DISKS[d]));
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => fresh(DISKS[d]));
   const disks = DISKS[diff];
   const optimal = 2 ** disks - 1;
   const [picked, setPicked] = useState<number | null>(null);
@@ -125,14 +125,12 @@ export default function Hanoi({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="hanoi"
           won
           message={
             saved.moves === optimal
               ? `Perfect — ${optimal} moves!`
               : `Solved in ${saved.moves} (optimal ${optimal})`
           }
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

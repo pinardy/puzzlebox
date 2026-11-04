@@ -58,8 +58,8 @@ interface SavedState {
 }
 
 export default function Kropki({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("kropki", (_s, d) => ({
+  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
       entries: Array(SIZE[d] * SIZE[d]).fill(0),
       done: false
     }));
@@ -219,10 +219,8 @@ export default function Kropki({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="kropki"
           won
           message="Every dot satisfied!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

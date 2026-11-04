@@ -37,8 +37,8 @@ const fresh = (n: number): SavedState => ({
 });
 
 export default function Yajilin({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("yajilin", (_s, d) => fresh(SIZE[d]));
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => fresh(SIZE[d]));
   const n = SIZE[diff];
   const puzzle = useMemo(() => generateYajilin(`yajilin-${seed}`, n), [seed, n]);
 
@@ -214,10 +214,8 @@ export default function Yajilin({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="yajilin"
           won
           message="Loop closed, every arrow counted!"
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

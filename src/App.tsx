@@ -299,7 +299,7 @@ export default function App() {
     const Game = GAME_COMPONENT[view];
     const title = GAMES.find((g) => g.id === view)?.name ?? "Puzzle";
     return (
-      <GameShell>
+      <GameShell game={view}>
         {/* A board that can't be opened — an old save, a generator that
             throws — offers a way out instead of a blank screen. */}
         <GameBoundary game={view} title={title} onExit={exit}>

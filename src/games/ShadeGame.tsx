@@ -45,8 +45,8 @@ export function ShadeGame({
     done: boolean;
   }
 
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>(game, (s, d) => ({
+  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((s, d) => ({
       marks: Array(build(s, d).n ** 2).fill(0),
       done: false
     }));
@@ -168,10 +168,8 @@ export function ShadeGame({
       {saved.done && (
         <Result
           key={seed}
-          game={game}
           won
           message="Solved!"
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

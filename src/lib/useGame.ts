@@ -1,22 +1,31 @@
-import { useEffect, useRef, useState } from "react";
-import { GameId, Diff, load, save, loadSlot, saveSlot } from "./storage";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Diff, load, save, loadSlot, saveSlot, recordResult } from "./storage";
 import { newSeed } from "./rng";
 import { tick } from "./haptics";
-import { useGameShell } from "./shell";
+import { useGameId, useGameShell } from "./shell";
+
+export interface CommitOpts {
+  /** Push the previous state onto the undo stack (default true). Pass
+   *  false for the follow-on steps of one gesture, so a drag is one undo. */
+  undoable?: boolean;
+  /** Count this move as a hint: the win won't set a best time or streak. */
+  hint?: boolean;
+  /** This move ends the game: record the result in the stats once the
+   *  board is saved, so the stats see its final time and hint count. */
+  outcome?: "won" | "lost";
+}
 
 /** Shared per-game plumbing: seed + difficulty management, persisted state
  *  with an undo stack, an active-play-time counter (gaps over a minute
- *  don't count, so a paused game doesn't inflate the clock), and a hint
- *  counter that marks the puzzle as assisted.
+ *  don't count, so a paused game doesn't inflate the clock), a hint
+ *  counter that marks the puzzle as assisted, and recording the result.
+ *  The game's id comes from the surrounding `GameShell`.
  *
  *  Pass `stateV` when a game changes the shape of its saved state: boards
  *  saved under a different version are dropped and dealt fresh instead of
  *  being fed to code that no longer understands them. */
-export function useGame<T>(
-  game: GameId,
-  fresh: (seed: string, diff: Diff) => T,
-  stateV?: number
-) {
+export function useGame<T>(fresh: (seed: string, diff: Diff) => T, stateV?: number) {
+  const game = useGameId();
   const slot = useRef(loadSlot<T>(game, stateV)).current;
   const [diff, setDiff] = useState<Diff>(
     slot?.diff ?? load<Diff>(`pref:diff:${game}`, "medium")
@@ -28,15 +37,15 @@ export function useGame<T>(
   const [hints, setHints] = useState(slot?.hints ?? 0);
   const lastAction = useRef(Date.now());
 
-  // Tell the shared header/toolbar what's running. Play time is restored
+  // Tell the shared header/toolbar how it's going. Play time is restored
   // from the slot, so a resumed board counts as progress too.
   const { publish } = useGameShell();
+  const done = (saved as { done?: boolean }).done === true;
   useEffect(() => {
-    const done = (saved as { done?: boolean }).done === true;
-    publish({ game, dirty: playMs > 0 && !done, playMs });
-  }, [publish, game, playMs, saved]);
+    publish({ dirty: playMs > 0 && !done, playMs });
+  }, [publish, playMs, done]);
 
-  function commit(next: T, opts?: { undoable?: boolean; hint?: boolean }) {
+  function commit(next: T, opts?: CommitOpts) {
     tick();
     const now = Date.now();
     const ms = playMs + Math.min(now - lastAction.current, 60000);
@@ -47,6 +56,7 @@ export function useGame<T>(
     if (opts?.undoable !== false) setHistory((prev) => [...prev.slice(-19), saved]);
     setSaved(next);
     saveSlot(game, seed, next, diff, ms, h, stateV);
+    if (opts?.outcome) recordResult(game, opts.outcome === "won");
   }
 
   /** Apply a hint: commits like a normal move but marks the puzzle as
@@ -54,6 +64,24 @@ export function useGame<T>(
   function commitHint(next: T) {
     commit(next, { hint: true });
   }
+
+  // `finish` is stable so a "has the player solved it?" effect can list it
+  // as a dependency; it reaches the latest render's state through a ref.
+  const latest = useRef({ saved, commit });
+  useLayoutEffect(() => {
+    latest.current = { saved, commit };
+  });
+
+  /** End the game on the current board: mark it done (merging in `patch`,
+   *  e.g. `{ won: true }`) and record the result. A no-op once done, so
+   *  it is safe to call from an effect that re-runs. Meant for "solved?"
+   *  effects: an event handler that has just built the finishing state
+   *  should instead pass it straight to `commit(next, { outcome })`. */
+  const finish = useCallback((won = true, patch?: Partial<T>) => {
+    const { saved, commit } = latest.current;
+    if ((saved as { done?: boolean }).done) return;
+    commit({ ...saved, ...patch, done: true }, { undoable: false, outcome: won ? "won" : "lost" });
+  }, []);
 
   function undo() {
     if (!history.length) return;
@@ -79,11 +107,13 @@ export function useGame<T>(
   }
 
   return {
+    game,
     seed,
     diff,
     saved,
     commit,
     commitHint,
+    finish,
     undo,
     canUndo: history.length > 0,
     newPuzzle,

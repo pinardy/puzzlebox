@@ -36,8 +36,8 @@ const HELP =
 type SavedState = CastleState;
 
 export default function BeleagueredCastle({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("castle", (s) => dealCastle(s));
+  const { seed, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((s) => dealCastle(s));
   const [sel, setSel] = useState<number | null>(null);
 
   const moves = useMemo(() => legalMoves(saved), [saved]);
@@ -211,10 +211,8 @@ export default function BeleagueredCastle({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="castle"
           won={saved.won}
           message={`Castle taken in ${saved.moves} moves!`}
-          playMs={playMs}
           onNew={startNew}
           onExit={onExit}
         />

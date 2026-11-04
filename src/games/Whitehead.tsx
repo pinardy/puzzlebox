@@ -44,9 +44,7 @@ function deal(seed: string): SavedState {
 type Sel = { from: "col"; pile: number; index: number } | { from: "waste" } | null;
 
 export default function Whitehead({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle, playMs } = useGame<SavedState>(
-    "whitehead",
-    (s) => deal(s)
+  const { seed, saved, commit, undo, canUndo, newPuzzle }= useGame<SavedState>((s) => deal(s)
   );
   const [sel, setSel] = useState<Sel>(null);
 
@@ -258,10 +256,8 @@ export default function Whitehead({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="whitehead"
           won
           message={`Cleared in ${saved.moves} moves!`}
-          playMs={playMs}
           onNew={startNew}
           onExit={onExit}
         />

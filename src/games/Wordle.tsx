@@ -54,8 +54,8 @@ function hardModeViolation(
 }
 
 export default function Wordle({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, newPuzzle, playMs } =
-    useGame<SavedState>("word", (_s, d) => ({
+  const { seed, diff, saved, commit, commitHint, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
       guesses: [],
       revealed: Array(LEN[d]).fill(null),
       done: false,
@@ -251,10 +251,8 @@ export default function Wordle({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="word"
           won={saved.won}
           message={saved.won ? winMessage(saved.guesses.length) : `The word was ${answer}`}
-          playMs={playMs}
           onNew={() => startNew()}
           onExit={onExit}
         />

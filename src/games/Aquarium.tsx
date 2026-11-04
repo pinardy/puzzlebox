@@ -72,8 +72,8 @@ interface SavedState {
 }
 
 export default function Aquarium({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle, playMs } =
-    useGame<SavedState>("aquarium", (_s, d) => ({
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
       marks: Array(SIZE[d] * SIZE[d]).fill(0) as Mark[],
       done: false
     }));
@@ -229,10 +229,8 @@ export default function Aquarium({ onExit }: { onExit: () => void }) {
       {saved.done && (
         <Result
           key={seed}
-          game="aquarium"
           won
           message="Every tank at its level!"
-          playMs={playMs}
           onNew={() => newPuzzle()}
           onExit={onExit}
         />
