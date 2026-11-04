@@ -21,7 +21,6 @@ const HELP =
 export default function StreetsAlleys({ onExit }: { onExit: () => void }) {
   return (
     <PileGame
-      game="streets"
       title="Streets & Alleys"
       hint="Tap the end card of a fan, then a green target. Build down by rank."
       help={HELP}

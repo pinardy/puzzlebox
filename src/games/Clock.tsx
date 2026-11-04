@@ -1,6 +1,5 @@
 import { makeRng, shuffled } from "../lib/rng";
 import { RANKS, isRed, label, rank } from "../lib/cards";
-import { recordResult } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -64,9 +63,8 @@ export default function Clock({ onExit }: { onExit: () => void }) {
     if (next.hand === null) {
       next.done = true;
       next.won = next.placed === 52;
-      recordResult("clock", next.won);
     }
-    commit(next);
+    commit(next, { outcome: next.done ? (next.won ? "won" : "lost") : undefined });
   }
 
   function startNew() {

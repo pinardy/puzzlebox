@@ -1,14 +1,17 @@
 import { useMemo, useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import type { Diff } from "../lib/storage";
+import { SUITS, cardId } from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
 
 // 104 cards in 8 sets of 13. Card id 0–103, rank = id % 13 + 1 (A…K);
 // the suit of each 13-card set cycles through the difficulty's suits.
-const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
-const SUITS = ["♠", "♥", "♦", "♣"];
+// This is deliberately NOT the shared `lib/cards` encoding: saved games
+// hold these ids, and the suit depends on the difficulty anyway. Cards are
+// mapped onto the shared encoding only to be drawn (see `face`).
 const SUIT_COUNT: Record<Diff, number> = { easy: 1, medium: 2, hard: 4 };
 const rank = (id: number) => (id % 13) + 1;
 const HELP =
@@ -72,22 +75,21 @@ export default function Spider({ onExit }: { onExit: () => void }) {
   const [sel, setSel] = useState<Sel>(null);
   const nSuits = SUIT_COUNT[diff];
   const suitOf = (id: number) => Math.floor(id / 13) % nSuits;
-  const isRed = (id: number) => suitOf(id) === 1 || suitOf(id) === 2;
-  const label = (id: number) => `${RANKS[rank(id) - 1]}${SUITS[suitOf(id)]}`;
+  /** The shared-encoding card this one shows as, for `PlayingCard`. */
+  const face = (id: number) => cardId(rank(id), suitOf(id));
 
   const selCards = useMemo(
     (): number[] => (sel ? saved.cols[sel.pile].slice(sel.index) : []),
     [sel, saved]
   );
 
-  function finish(next: SavedState) {
+  function play(next: SavedState) {
     next.moves++;
     clearRuns(next, suitOf);
     if (!next.done && next.completed === 8) {
       next.done = true;
-      recordResult("spider", true);
-    }
-    commit(next);
+      commit(next, { outcome: "won" });
+    } else commit(next);
     setSel(null);
   }
 
@@ -105,7 +107,7 @@ export default function Spider({ onExit }: { onExit: () => void }) {
     if (saved.cols.some((p) => p.length === 0)) return; // fill empties first
     const next = clone();
     for (let p = 0; p < 10; p++) next.cols[p].push(next.stock.pop()!);
-    finish(next);
+    play(next);
   }
 
   function tap(pile: number, index: number | null) {
@@ -130,7 +132,7 @@ export default function Spider({ onExit }: { onExit: () => void }) {
       if (src.length > 0 && src.length === next.faceDown[sel.pile])
         next.faceDown[sel.pile]--;
       next.cols[pile].push(...moved);
-      finish(next);
+      play(next);
       return;
     }
 
@@ -168,9 +170,9 @@ export default function Spider({ onExit }: { onExit: () => void }) {
       />
 
       <div className="kl-top">
-        <button className="kl-card kl-back" onClick={tapStock} aria-label="Stock">
+        <PlayingCard card={null} faceDown onClick={tapStock} aria-label="Stock">
           {saved.stock.length / 10}
-        </button>
+        </PlayingCard>
         <span className="kl-gap" />
         <span className="spider-done">
           {Array.from({ length: 8 }).map((_, i) => (
@@ -193,19 +195,15 @@ export default function Spider({ onExit }: { onExit: () => void }) {
             {pile.map((card, i) => {
               const up = i >= saved.faceDown[p];
               return (
-                <button
+                <PlayingCard
                   key={card}
-                  className={[
-                    "kl-card kl-stacked",
-                    up ? "" : "kl-back",
-                    up && isRed(card) ? "red" : "",
-                    isSelected(p, i) ? "selected" : ""
-                  ].join(" ")}
+                  card={face(card)}
+                  faceDown={!up}
+                  selected={isSelected(p, i)}
+                  className="kl-stacked"
                   style={{ "--stack": i } as CSSProperties}
                   onClick={() => tap(p, up ? i : null)}
-                >
-                  {up ? label(card) : ""}
-                </button>
+                />
               );
             })}
           </div>

@@ -1,15 +1,12 @@
 import { useMemo, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import type { Diff } from "../lib/storage";
+import { rank } from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
 
-const SUITS = ["♠", "♥", "♦", "♣"];
-const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
-const rank = (id: number) => Math.floor(id / 4) + 1;
-const isRed = (id: number) => id % 4 === 1 || id % 4 === 2;
-const label = (id: number) => `${RANKS[rank(id) - 1]}${SUITS[id % 4]}`;
 const WRAP: Record<Diff, boolean> = { easy: true, medium: false, hard: false };
 const STOCK: Record<Diff, number> = { easy: 23, medium: 23, hard: 20 };
 const HELP =
@@ -82,13 +79,14 @@ export default function TriPeaks({ onExit }: { onExit: () => void }) {
     [saved.removed]
   );
 
-  function judge(next: SavedState) {
+  /** Mark `next` finished if the peaks are clear or dead, returning the
+   *  outcome for the commit that ends the game. */
+  function judge(next: SavedState): "won" | "lost" | undefined {
     const remaining = next.removed.filter((r) => !r).length;
     if (remaining === 0) {
       next.done = true;
       next.won = true;
-      recordResult("tripeaks", true);
-      return;
+      return "won";
     }
     const top = next.waste[next.waste.length - 1];
     const anyPlay = next.tableau.some(
@@ -96,7 +94,7 @@ export default function TriPeaks({ onExit }: { onExit: () => void }) {
     );
     if (!anyPlay && next.stock.length === 0) {
       next.done = true;
-      recordResult("tripeaks", false);
+      return "lost";
     }
   }
 
@@ -110,8 +108,7 @@ export default function TriPeaks({ onExit }: { onExit: () => void }) {
       removed,
       waste: [...saved.waste, saved.tableau[i]]
     };
-    judge(next);
-    commit(next);
+    commit(next, { outcome: judge(next) });
   }
 
   function tapStock() {
@@ -119,8 +116,7 @@ export default function TriPeaks({ onExit }: { onExit: () => void }) {
     const stock = saved.stock.slice();
     const card = stock.pop()!;
     const next: SavedState = { ...saved, stock, waste: [...saved.waste, card] };
-    judge(next);
-    commit(next);
+    commit(next, { outcome: judge(next) });
   }
 
   return (
@@ -144,34 +140,23 @@ export default function TriPeaks({ onExit }: { onExit: () => void }) {
           const open = exposed(saved.removed, i);
           const hot = open && playable(card, wasteTop, wrap);
           return (
-            <button
+            <PlayingCard
               key={card}
-              className={[
-                "kl-card tp-card",
-                open ? "" : "kl-back",
-                open && isRed(card) ? "red" : "",
-                hot ? "tp-hot" : ""
-              ].join(" ")}
+              card={card}
+              faceDown={!open}
+              className={hot ? "tp-card tp-hot" : "tp-card"}
               style={{ "--x": SPOTS[i].x, "--r": SPOTS[i].r } as CSSProperties}
               onClick={() => tapCard(i)}
-            >
-              {open ? label(card) : ""}
-            </button>
+            />
           );
         })}
       </div>
 
       <div className="kl-top tp-bottom" style={{ "--cols": 8 } as CSSProperties}>
-        <button className="kl-card kl-back" onClick={tapStock} aria-label="Stock">
+        <PlayingCard card={null} faceDown onClick={tapStock} aria-label="Stock">
           {saved.stock.length || "—"}
-        </button>
-        <button
-          className={`kl-card${isRed(wasteTop) ? " red" : ""}`}
-          aria-label="Waste"
-          tabIndex={-1}
-        >
-          {label(wasteTop)}
-        </button>
+        </PlayingCard>
+        <PlayingCard card={wasteTop} aria-label="Waste" tabIndex={-1} />
         <span className="kl-gap" />
         <span className="tp-left">{left} cards left</span>
       </div>

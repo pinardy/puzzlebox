@@ -20,7 +20,6 @@ const HELP =
 export default function EightOff({ onExit }: { onExit: () => void }) {
   return (
     <CellGame
-      game="eightoff"
       title="Eight Off"
       hint="Build down in suit. Tap a run, then its destination."
       help={HELP}

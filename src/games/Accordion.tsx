@@ -1,16 +1,11 @@
 import { useMemo, useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult } from "../lib/storage";
+import { label, rank, suit } from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
+import { PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
 
-const SUITS = ["♠", "♥", "♦", "♣"];
-const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
-const rank = (id: number) => Math.floor(id / 4) + 1;
-const suit = (id: number) => id % 4;
-const isRed = (id: number) => suit(id) === 1 || suit(id) === 2;
-const label = (id: number) => `${RANKS[rank(id) - 1]}${SUITS[suit(id)]}`;
 const HELP =
   "Fifty-two piles in a row, squeezing together like an accordion. A pile " +
   "may jump onto the pile immediately to its left, or the one three to " +
@@ -67,14 +62,12 @@ export default function Accordion({ onExit }: { onExit: () => void }) {
     if (piles.length === 1) {
       next.done = true;
       next.won = true;
-      recordResult("accordion", true);
     } else if (!piles.some((_, i) =>
       [i - 1, i - 3].some((j) => j >= 0 && matches(piles[i], piles[j]))
     )) {
       next.done = true;
-      recordResult("accordion", false);
     }
-    commit(next);
+    commit(next, { outcome: next.done ? (next.won ? "won" : "lost") : undefined });
     setSel(null);
   }
 
@@ -120,12 +113,12 @@ export default function Accordion({ onExit }: { onExit: () => void }) {
         {saved.piles.map((pile, i) => {
           const card = top(pile);
           return (
-            <button
+            <PlayingCard
               key={`${i}-${card}`}
+              card={card}
+              selected={sel === i}
               className={[
-                "kl-card ac-card",
-                isRed(card) ? "red" : "",
-                sel === i ? "selected" : "",
+                "ac-card",
                 targets.includes(i) ? "ac-target" : "",
                 sel === null && targetsOf(i).length ? "ac-live" : ""
               ].join(" ")}
@@ -134,7 +127,7 @@ export default function Accordion({ onExit }: { onExit: () => void }) {
             >
               {label(card)}
               {pile.length > 1 && <small className="ac-depth">{pile.length}</small>}
-            </button>
+            </PlayingCard>
           );
         })}
       </div>

@@ -1,9 +1,10 @@
 /** Gaps (Montana): the whole deck goes face up into four rows of thirteen
  *  and the four aces are pulled out, leaving four gaps. Cards use the same
- *  0..51 ids as the other solitaires — rank = ⌊id/4⌋+1, suit = id%4 — which
- *  makes "one rank up, same suit" simply id + 4. */
+ *  0..51 ids as the other solitaires (see `lib/cards`: rank = ⌊id/4⌋+1,
+ *  suit = id%4), which makes "one rank up, same suit" simply id + 4. */
 
 import { makeRng, shuffled } from "./rng";
+import { rank } from "./cards";
 
 export const ROWS = 4;
 export const COLS = 13;
@@ -15,9 +16,6 @@ export interface Move {
   card: number;
   gap: number;
 }
-
-export const rank = (id: number) => Math.floor(id / 4) + 1;
-export const suit = (id: number) => id % 4;
 
 /** Deal all 52, then lift the aces out where they fell. */
 export function deal(seed: string): Board {

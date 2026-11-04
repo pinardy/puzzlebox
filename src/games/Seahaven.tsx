@@ -21,7 +21,6 @@ const HELP =
 export default function Seahaven({ onExit }: { onExit: () => void }) {
   return (
     <CellGame
-      game="seahaven"
       title="Seahaven Towers"
       hint="Down in suit; only kings open an empty tower."
       help={HELP}

@@ -23,7 +23,6 @@ const HELP =
 export default function Penguin({ onExit }: { onExit: () => void }) {
   return (
     <CellGame
-      game="penguin"
       title="Penguin"
       hint="Foundations start at the beak's rank and wrap past the king."
       help={HELP}
