@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { generateLatin } from "../lib/latin";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import { Numpad } from "./Numpad";
 
 const SIZE: Record<Diff, number> = { easy: 4, medium: 5, hard: 6 };
 const HELP =
@@ -47,7 +48,7 @@ interface SavedState {
 }
 
 export default function Skyscrapers({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, commitHint, finish, undo, canUndo, newPuzzle } =
     useGame<SavedState>((_s, d) => ({
       entries: Array(SIZE[d] * SIZE[d]).fill(0),
       done: false
@@ -90,19 +91,15 @@ export default function Skyscrapers({ onExit }: { onExit: () => void }) {
     };
   }, [board, clues, n]);
 
+  const solved =
+    board.every((v) => v !== 0) &&
+    conflicts.size === 0 &&
+    [...clueOk.top, ...clueOk.bottom, ...clueOk.left, ...clueOk.right].every(
+      (ok) => ok === true
+    );
   useEffect(() => {
-    const allOk =
-      board.every((v) => v !== 0) &&
-      conflicts.size === 0 &&
-      [...clueOk.top, ...clueOk.bottom, ...clueOk.left, ...clueOk.right].every(
-        (ok) => ok === true
-      );
-    if (!saved.done && allOk) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("sky", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [board, conflicts, clueOk, saved]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   function setCell(idx: number, val: number) {
     if (saved.done) return;
@@ -191,23 +188,7 @@ export default function Skyscrapers({ onExit }: { onExit: () => void }) {
         })}
       </div>
 
-      <div className="numpad numpad-5">
-        {Array.from({ length: n }, (_, d) => d + 1).map((d) => (
-          <button
-            key={d}
-            className="num-key"
-            onClick={() => selected !== null && setCell(selected, d)}
-          >
-            {d}
-          </button>
-        ))}
-        <button
-          className="num-key tool"
-          onClick={() => selected !== null && setCell(selected, 0)}
-        >
-          ⌫
-        </button>
-      </div>
+      <Numpad max={n} onDigit={(d) => selected !== null && setCell(selected, d)} />
 
       {saved.done && (
         <Result

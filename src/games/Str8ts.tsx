@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import { Numpad } from "./Numpad";
 
 const SIZE: Record<Diff, number> = { easy: 6, medium: 6, hard: 7 };
 const REVEAL: Record<Diff, number> = { easy: 0.42, medium: 0.32, hard: 0.28 };
@@ -151,7 +152,7 @@ interface SavedState {
 }
 
 export default function Str8ts({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, commitHint, finish, undo, canUndo, newPuzzle } =
     useGame<SavedState>((_s, d) => ({
       entries: Array(SIZE[d] * SIZE[d]).fill(0),
       done: false
@@ -193,20 +194,19 @@ export default function Str8ts({ onExit }: { onExit: () => void }) {
     return bad;
   }, [board, puzzle, n]);
 
-  useEffect(() => {
-    if (saved.done || conflicts.size > 0) return;
+  const solved = useMemo(() => {
+    if (conflicts.size > 0) return false;
     const whitesFull = board.every((v, i) => puzzle.black[i] || v !== 0);
-    if (!whitesFull) return;
+    if (!whitesFull) return false;
     const straight = (cells: number[]) => {
       const vals = cells.map((c) => board[c]);
       return Math.max(...vals) - Math.min(...vals) === cells.length - 1;
     };
-    if (puzzle.compRow.every(straight) && puzzle.compCol.every(straight)) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("str8ts", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [board, conflicts, saved, puzzle]);
+    return puzzle.compRow.every(straight) && puzzle.compCol.every(straight);
+  }, [board, conflicts, puzzle]);
+  useEffect(() => {
+    if (solved) finish();
+  }, [solved, finish]);
 
   function setCell(idx: number, val: number) {
     if (saved.done || puzzle.black[idx] || puzzle.givens[idx] !== 0) return;
@@ -293,23 +293,7 @@ export default function Str8ts({ onExit }: { onExit: () => void }) {
         })}
       </div>
 
-      <div className="numpad numpad-5">
-        {Array.from({ length: n }, (_, d) => d + 1).map((d) => (
-          <button
-            key={d}
-            className="num-key"
-            onClick={() => selected !== null && setCell(selected, d)}
-          >
-            {d}
-          </button>
-        ))}
-        <button
-          className="num-key tool"
-          onClick={() => selected !== null && setCell(selected, 0)}
-        >
-          ⌫
-        </button>
-      </div>
+      <Numpad max={n} onDigit={(d) => selected !== null && setCell(selected, d)} />
 
       {saved.done && (
         <Result

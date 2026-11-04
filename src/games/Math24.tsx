@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { makeRng } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -102,8 +102,10 @@ export default function Math24({ onExit }: { onExit: () => void }) {
     const tiles = saved.tiles.filter((_, k) => k !== pick && k !== i);
     tiles.push(result);
     const done = tiles.length === 1 && result.n === 24 && result.d === 1;
-    commit({ tiles, merges: saved.merges + 1, done });
-    if (done) recordResult("math24", true);
+    commit(
+      { tiles, merges: saved.merges + 1, done },
+      done ? { outcome: "won" } : undefined
+    );
   }
 
   function reset() {

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { generateSuko, sukoSolved, SUKO_CIRCLES } from "../lib/suko";
 import { useGridKeys } from "../lib/keys";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -31,7 +31,7 @@ const markOf = (vals: number[], target: number): Mark =>
 const GLYPH: Record<Mark, string> = { open: "", ok: "✓", bad: "✗" };
 
 export default function Suko({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, commitHint, finish, undo, canUndo, newPuzzle } =
     useGame<SavedState>(() => ({ entries: Array(9).fill(0), done: false }));
   const puzzle = useMemo(() => generateSuko(`suko-${seed}`, diff), [seed, diff]);
   const { circles, groups, groupOf, groupSums, solution } = puzzle;
@@ -47,13 +47,10 @@ export default function Suko({ onExit }: { onExit: () => void }) {
     [board, groups, groupSums]
   );
 
+  const solved = sukoSolved(board, puzzle);
   useEffect(() => {
-    if (!saved.done && sukoSolved(board, puzzle)) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("suko", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [board, puzzle, saved]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   function setCell(idx: number, val: number) {
     if (saved.done) return;

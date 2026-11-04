@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { generateHidato, kingAdjacent } from "../lib/hidato";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -22,7 +22,7 @@ interface SavedState {
 }
 
 export default function Hidato({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, commitHint, finish, undo, canUndo, newPuzzle } =
     useGame<SavedState>((_s, d) => ({
       entries: Array(SIZE[d] * SIZE[d]).fill(0),
       done: false
@@ -71,13 +71,10 @@ export default function Hidato({ onExit }: { onExit: () => void }) {
     return bad;
   }, [board, cellOf, n]);
 
+  const solved = board.every((v) => v !== 0) && conflicts.size === 0;
   useEffect(() => {
-    if (!saved.done && board.every((v) => v !== 0) && conflicts.size === 0) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("hidato", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [board, conflicts, saved]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   function place(value: number) {
     if (saved.done || selected === null || givens[selected] !== 0) return;

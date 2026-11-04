@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { generateKakuro } from "../lib/kakuro";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import { Numpad } from "./Numpad";
 
 const SIZE: Record<Diff, number> = { easy: 6, medium: 7, hard: 8 };
 const HELP =
@@ -18,7 +19,7 @@ interface SavedState {
 }
 
 export default function Kakuro({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, commitHint, finish, undo, canUndo, newPuzzle } =
     useGame<SavedState>((_s, d) => ({
       entries: Array(SIZE[d] * SIZE[d]).fill(0),
       done: false
@@ -45,16 +46,12 @@ export default function Kakuro({ onExit }: { onExit: () => void }) {
     return bad;
   }, [board, puzzle]);
 
+  const solved =
+    puzzle.runs.every((run) => run.cells.every((i) => board[i] !== 0)) &&
+    conflicts.size === 0;
   useEffect(() => {
-    const complete = puzzle.runs.every((run) =>
-      run.cells.every((i) => board[i] !== 0)
-    );
-    if (!saved.done && complete && conflicts.size === 0) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("kakuro", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [board, conflicts, puzzle, saved]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   function setCell(idx: number, val: number) {
     if (saved.done || puzzle.black[idx]) return;
@@ -143,23 +140,7 @@ export default function Kakuro({ onExit }: { onExit: () => void }) {
         })}
       </div>
 
-      <div className="numpad numpad-9">
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((dgt) => (
-          <button
-            key={dgt}
-            className="num-key"
-            onClick={() => selected !== null && setCell(selected, dgt)}
-          >
-            {dgt}
-          </button>
-        ))}
-        <button
-          className="num-key tool"
-          onClick={() => selected !== null && setCell(selected, 0)}
-        >
-          ⌫
-        </button>
-      </div>
+      <Numpad max={9} onDigit={(d) => selected !== null && setCell(selected, d)} />
 
       {saved.done && (
         <Result

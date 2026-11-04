@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { generateSudoku, isSolved, peersConflict, Grid } from "../lib/sudoku";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import { Numpad } from "./Numpad";
 
 const REMOVALS: Record<Diff, number> = { easy: 42, medium: 47, hard: 53 };
 const HELP =
@@ -41,7 +42,7 @@ function peers(idx: number): number[] {
 }
 
 export default function Sudoku({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, commitHint, finish, undo, canUndo, newPuzzle } =
     useGame<SavedState>(fresh);
   const { puzzle, solution } = useMemo(
     () => generateSudoku(`sudoku-${seed}`, REMOVALS[diff]),
@@ -55,13 +56,10 @@ export default function Sudoku({ onExit }: { onExit: () => void }) {
     [puzzle, saved.entries]
   );
 
+  const solved = board.every((v) => v !== 0) && isSolved(board, solution);
   useEffect(() => {
-    if (!saved.done && board.every((v) => v !== 0) && isSolved(board, solution)) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("sudoku", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [board, solution, saved]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   function setCell(idx: number, val: number) {
     if (saved.done || puzzle[idx] !== 0) return;
@@ -180,35 +178,12 @@ export default function Sudoku({ onExit }: { onExit: () => void }) {
         })}
       </div>
 
-      <div className="numpad">
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => {
-          const remaining = 9 - board.filter((v) => v === d).length;
-          return (
-            <button
-              key={d}
-              className="num-key"
-              disabled={remaining <= 0 && !pencil}
-              onClick={() => selected !== null && setCell(selected, d)}
-            >
-              {d}
-              <small>{remaining > 0 ? remaining : ""}</small>
-            </button>
-          );
-        })}
-        <button
-          className={`num-key tool${pencil ? " active" : ""}`}
-          onClick={() => setPencil((p) => !p)}
-          aria-pressed={pencil}
-        >
-          ✏️<small>notes</small>
-        </button>
-        <button
-          className="num-key tool"
-          onClick={() => selected !== null && setCell(selected, 0)}
-        >
-          ⌫<small>erase</small>
-        </button>
-      </div>
+      <Numpad
+        max={9}
+        onDigit={(d) => selected !== null && setCell(selected, d)}
+        remaining={(d) => 9 - board.filter((v) => v === d).length}
+        notes={{ on: pencil, toggle: () => setPencil((p) => !p) }}
+      />
 
       {saved.done && (
         <Result

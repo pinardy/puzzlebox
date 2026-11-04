@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { makeRng } from "../lib/rng";
 import { LetterState, scoreGuess } from "../lib/words";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result, Toast } from "./ui";
@@ -137,9 +137,8 @@ export default function Equation({ onExit }: { onExit: () => void }) {
     const guesses = [...saved.guesses, current];
     const won = current === answer;
     const done = won || guesses.length >= ROWS;
-    commit({ guesses, done, won });
+    commit({ guesses, done, won }, done ? { outcome: won ? "won" : "lost" } : undefined);
     setCurrent("");
-    if (done) recordResult("equation", won);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current, saved, answer]);
 

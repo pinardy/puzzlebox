@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import { Numpad } from "./Numpad";
 
 const SIZE: Record<Diff, number> = { easy: 6, medium: 7, hard: 8 };
 const REVEAL: Record<Diff, number> = { easy: 0.55, medium: 0.48, hard: 0.42 };
@@ -129,7 +130,7 @@ interface SavedState {
 }
 
 export default function Fillomino({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, commitHint, finish, undo, canUndo, newPuzzle } =
     useGame<SavedState>((_s, d) => ({
       entries: Array(SIZE[d] * SIZE[d]).fill(0),
       done: false
@@ -171,15 +172,14 @@ export default function Fillomino({ onExit }: { onExit: () => void }) {
     return bad;
   }, [board, n]);
 
-  useEffect(() => {
-    if (saved.done || board.some((v) => v === 0)) return;
+  const solved = useMemo(() => {
+    if (board.some((v) => v === 0)) return false;
     const { id, size } = groups(board, n);
-    if (board.every((v, i) => size[id[i]] === v)) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("fillomino", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [board, saved]);
+    return board.every((v, i) => size[id[i]] === v);
+  }, [board, n]);
+  useEffect(() => {
+    if (solved) finish();
+  }, [solved, finish]);
 
   function setCell(idx: number, val: number) {
     if (saved.done || givens[idx] !== 0) return;
@@ -257,23 +257,7 @@ export default function Fillomino({ onExit }: { onExit: () => void }) {
         })}
       </div>
 
-      <div className="numpad numpad-9">
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => (
-          <button
-            key={d}
-            className="num-key"
-            onClick={() => selected !== null && setCell(selected, d)}
-          >
-            {d}
-          </button>
-        ))}
-        <button
-          className="num-key tool"
-          onClick={() => selected !== null && setCell(selected, 0)}
-        >
-          ⌫
-        </button>
-      </div>
+      <Numpad max={9} onDigit={(d) => selected !== null && setCell(selected, d)} />
 
       {saved.done && (
         <Result

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, type CSSProperties } from "react";
 import { makeRng } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -44,7 +44,7 @@ interface SavedState {
 }
 
 export default function Kakurasu({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, undo, canUndo, newPuzzle } =
     useGame<SavedState>((_s, d) => ({
       shaded: Array(SIZE[d] * SIZE[d]).fill(false),
       done: false
@@ -69,17 +69,12 @@ export default function Kakurasu({ onExit }: { onExit: () => void }) {
     return { rows, cols };
   }, [saved.shaded, n]);
 
+  const solved =
+    sums.rows.every((s, r) => s === rowTargets[r]) &&
+    sums.cols.every((s, c) => s === colTargets[c]);
   useEffect(() => {
-    if (
-      !saved.done &&
-      sums.rows.every((s, r) => s === rowTargets[r]) &&
-      sums.cols.every((s, c) => s === colTargets[c])
-    ) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("kakurasu", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sums, saved]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   function toggle(i: number) {
     if (saved.done) return;

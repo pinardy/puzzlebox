@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import { Numpad } from "./Numpad";
 
 const SIZE: Record<Diff, number> = { easy: 5, medium: 6, hard: 7 };
 const REVEAL: Record<Diff, number> = { easy: 0.5, medium: 0.4, hard: 0.32 };
@@ -97,7 +98,7 @@ interface SavedState {
 }
 
 export default function Suguru({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, commitHint, finish, undo, canUndo, newPuzzle } =
     useGame<SavedState>((_s, d) => ({
       entries: Array(SIZE[d] * SIZE[d]).fill(0),
       done: false
@@ -139,13 +140,10 @@ export default function Suguru({ onExit }: { onExit: () => void }) {
     return bad;
   }, [board, puzzle, n]);
 
+  const solved = board.every((v) => v !== 0) && conflicts.size === 0;
   useEffect(() => {
-    if (!saved.done && board.every((v) => v !== 0) && conflicts.size === 0) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("suguru", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [board, conflicts, saved]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   function setCell(idx: number, val: number) {
     if (saved.done || puzzle.givens[idx] !== 0) return;
@@ -221,23 +219,7 @@ export default function Suguru({ onExit }: { onExit: () => void }) {
         })}
       </div>
 
-      <div className="numpad numpad-5">
-        {[1, 2, 3, 4, 5].map((d) => (
-          <button
-            key={d}
-            className="num-key"
-            onClick={() => selected !== null && setCell(selected, d)}
-          >
-            {d}
-          </button>
-        ))}
-        <button
-          className="num-key tool"
-          onClick={() => selected !== null && setCell(selected, 0)}
-        >
-          ⌫
-        </button>
-      </div>
+      <Numpad max={5} onDigit={(d) => selected !== null && setCell(selected, d)} />
 
       {saved.done && (
         <Result

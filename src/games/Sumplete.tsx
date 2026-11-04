@@ -1,6 +1,6 @@
 import { useEffect, useMemo, type CSSProperties } from "react";
 import { generateSumplete, lineSums } from "../lib/sumplete";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -20,7 +20,7 @@ interface SavedState {
 }
 
 export default function Sumplete({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, commitHint, finish, undo, canUndo, newPuzzle } =
     useGame<SavedState>((_s, d) => ({
       crossed: Array(SIZE[d] * SIZE[d]).fill(false),
       done: false
@@ -43,13 +43,10 @@ export default function Sumplete({ onExit }: { onExit: () => void }) {
     [sums.cols, colTargets]
   );
 
+  const solved = rowsOk === n && colsOk === n;
   useEffect(() => {
-    if (!saved.done && rowsOk === n && colsOk === n) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("sumplete", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rowsOk, colsOk, n, saved]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   function toggle(i: number) {
     if (saved.done) return;

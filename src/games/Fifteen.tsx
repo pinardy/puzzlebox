@@ -1,6 +1,6 @@
 import { type CSSProperties } from "react";
 import { makeRng } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -63,8 +63,10 @@ export default function Fifteen({ onExit }: { onExit: () => void }) {
     cells[idx] = 0;
 
     const done = cells.every((v, i) => v === (i + 1) % (n * n));
-    commit({ cells, moves: saved.moves + 1, done });
-    if (done) recordResult("fifteen", true);
+    commit(
+      { cells, moves: saved.moves + 1, done },
+      done ? { outcome: "won" } : undefined
+    );
   }
 
   return (

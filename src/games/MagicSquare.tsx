@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { generateMagic } from "../lib/magic";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
@@ -55,7 +55,7 @@ interface SavedState {
 }
 
 export default function MagicSquare({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, commitHint, finish, undo, canUndo, newPuzzle } =
     useGame<SavedState>((_s, d) => ({
       entries: Array(SIZE[d] * SIZE[d]).fill(0),
       done: false
@@ -91,12 +91,8 @@ export default function MagicSquare({ onExit }: { onExit: () => void }) {
     [...lines.rows, ...lines.cols, lines.down, lines.up].every((l) => l.state === "ok");
 
   useEffect(() => {
-    if (!saved.done && solved) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("magic", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [solved, saved]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   /** Every number appears once, so writing one lifts it from anywhere else. */
   function setCell(i: number, v: number) {

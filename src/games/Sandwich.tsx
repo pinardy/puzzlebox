@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { makeRng, shuffled } from "../lib/rng";
 import { generateSudoku, peersConflict, Grid } from "../lib/sudoku";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import { Numpad } from "./Numpad";
 
 const GIVENS: Record<Diff, number> = { easy: 26, medium: 20, hard: 14 };
 const HELP =
@@ -52,7 +53,7 @@ interface SavedState {
 }
 
 export default function Sandwich({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, commitHint, finish, undo, canUndo, newPuzzle } =
     useGame<SavedState>(() => ({
       entries: Array(81).fill(0),
       done: false
@@ -91,19 +92,14 @@ export default function Sandwich({ onExit }: { onExit: () => void }) {
     };
   }, [board, rowSums, colSums]);
 
+  const solved =
+    board.every((v) => v !== 0) &&
+    board.every((v, i) => !peersConflict(board, i, v)) &&
+    lineState.rows.every((s) => s === "ok") &&
+    lineState.cols.every((s) => s === "ok");
   useEffect(() => {
-    if (
-      !saved.done &&
-      board.every((v) => v !== 0) &&
-      board.every((v, i) => !peersConflict(board, i, v)) &&
-      lineState.rows.every((s) => s === "ok") &&
-      lineState.cols.every((s) => s === "ok")
-    ) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("sandwich", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [board, lineState, saved]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   function setCell(idx: number, val: number) {
     if (saved.done || givens[idx] !== 0) return;
@@ -189,23 +185,11 @@ export default function Sandwich({ onExit }: { onExit: () => void }) {
         </div>
       </div>
 
-      <div className="numpad">
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => (
-          <button
-            key={d}
-            className="num-key"
-            onClick={() => selected !== null && setCell(selected, d)}
-          >
-            {d}
-          </button>
-        ))}
-        <button
-          className="num-key tool"
-          onClick={() => selected !== null && setCell(selected, 0)}
-        >
-          ⌫<small>erase</small>
-        </button>
-      </div>
+      <Numpad
+        max={9}
+        onDigit={(d) => selected !== null && setCell(selected, d)}
+        remaining={(d) => 9 - board.filter((v) => v === d).length}
+      />
 
       {saved.done && (
         <Result

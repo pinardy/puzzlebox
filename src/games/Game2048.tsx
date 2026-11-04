@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, type CSSProperties } from "react";
 import { makeRng } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -136,12 +136,10 @@ export default function Game2048({ onExit }: { onExit: () => void }) {
       if (!next.won && next.tiles.some((t) => t.v >= TARGET)) {
         next.done = true;
         next.won = true;
-        recordResult("2048", true);
       } else if (!anyMoves(next.tiles, N)) {
         next.done = true;
-        recordResult("2048", false);
       }
-      commit(next);
+      commit(next, next.done ? { outcome: next.won ? "won" : "lost" } : undefined);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [state, seed, N, TARGET]

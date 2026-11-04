@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import { Numpad } from "./Numpad";
 
 const GIVENS: Record<Diff, number> = { easy: 3, medium: 2, hard: 1 };
 const HELP =
@@ -78,7 +79,7 @@ interface SavedState {
 }
 
 export default function Sujiko({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, commitHint, finish, undo, canUndo, newPuzzle } =
     useGame<SavedState>(() => ({ entries: Array(9).fill(0), done: false }));
   const { sums, givens, solution } = useMemo(
     () => generateSujiko(`sujiko-${seed}`, GIVENS[diff]),
@@ -101,17 +102,10 @@ export default function Sujiko({ onExit }: { onExit: () => void }) {
     [board, sums]
   );
 
+  const solved = board.every((v) => v !== 0) && quadState.every((s) => s === "ok");
   useEffect(() => {
-    if (
-      !saved.done &&
-      board.every((v) => v !== 0) &&
-      quadState.every((s) => s === "ok")
-    ) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("sujiko", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [board, quadState, saved]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   function setCell(idx: number, val: number) {
     if (saved.done || givens[idx] !== 0) return;
@@ -191,23 +185,11 @@ export default function Sujiko({ onExit }: { onExit: () => void }) {
         ))}
       </div>
 
-      <div className="numpad numpad-9">
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => (
-          <button
-            key={d}
-            className={`num-key${usedDigits.has(d) ? " dim" : ""}`}
-            onClick={() => selected !== null && setCell(selected, d)}
-          >
-            {d}
-          </button>
-        ))}
-        <button
-          className="num-key tool"
-          onClick={() => selected !== null && setCell(selected, 0)}
-        >
-          ⌫
-        </button>
-      </div>
+      <Numpad
+        max={9}
+        onDigit={(d) => selected !== null && setCell(selected, d)}
+        dim={(d) => usedDigits.has(d)}
+      />
 
       {saved.done && (
         <Result
