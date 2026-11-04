@@ -1,11 +1,12 @@
 import { useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
 import {
-  SUITS,
   downSameColour,
-  label,
+  nCards,
   rank,
   rankName,
+  spoken,
+  stackPlace,
   stepsAbove,
   suit
 } from "../lib/cards";
@@ -213,7 +214,6 @@ export default function Agnes({ onExit }: { onExit: () => void }) {
             suit={s}
             top={foundationTop(f)}
             onClick={tryFoundation}
-            aria-label={`${SUITS[s]} foundation`}
           />
         ))}
       </div>
@@ -230,7 +230,7 @@ export default function Agnes({ onExit }: { onExit: () => void }) {
               aria-label={
                 top === null
                   ? `Reserve ${s + 1}, empty`
-                  : `Reserve ${s + 1}, ${label(top)}, ${slot.length} deep`
+                  : `Reserve ${s + 1}, ${spoken(top)}, ${nCards(slot.length)}`
               }
             >
               {top === null ? "·" : undefined}
@@ -266,6 +266,7 @@ export default function Agnes({ onExit }: { onExit: () => void }) {
                 selected={isSelected(p, i)}
                 className="kl-stacked"
                 style={{ "--stack": i } as CSSProperties}
+                place={stackPlace(`Column ${p + 1}`, i, pile.length)}
                 onClick={() => tapCol(p, i)}
               />
             ))}
@@ -275,7 +276,12 @@ export default function Agnes({ onExit }: { onExit: () => void }) {
 
       <div className="lights-meta">
         <span>Moves: {saved.moves}</span>
-        <button className="mini-btn" onClick={dealRow} disabled={!saved.stock.length}>
+        <button
+          className="mini-btn"
+          onClick={dealRow}
+          disabled={!saved.stock.length}
+          aria-label={`Deal a row, stock ${nCards(saved.stock.length)}`}
+        >
           Deal ({saved.stock.length})
         </button>
       </div>

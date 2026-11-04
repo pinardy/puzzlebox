@@ -1,9 +1,9 @@
 import { useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { SUITS, downInSuit, rank, suit } from "../lib/cards";
+import { downInSuit, rank, stackPlace, suit } from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
-import { Foundation, PlayingCard } from "./cards";
+import { Foundation, Pile, PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
 
 const HELP =
@@ -145,19 +145,17 @@ export default function Russian({ onExit }: { onExit: () => void }) {
             suit={s}
             top={f}
             onClick={tryFoundation}
-            aria-label={`${SUITS[s]} foundation`}
           />
         ))}
       </div>
 
       <div className="kl-tableau">
         {saved.tableau.map((pile, p) => (
-          <div
+          <Pile
             key={p}
-            className="kl-pile"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) tap(p, null);
-            }}
+            name={`Column ${p + 1}`}
+            empty={!pile.length}
+            onTap={() => tap(p, null)}
           >
             {pile.map((card, i) => {
               const up = i >= saved.faceDown[p];
@@ -169,11 +167,12 @@ export default function Russian({ onExit }: { onExit: () => void }) {
                   selected={isSelected(p, i)}
                   className="kl-stacked"
                   style={{ "--stack": i } as CSSProperties}
+                  place={stackPlace(`Column ${p + 1}`, i, pile.length)}
                   onClick={() => tap(p, up ? i : null)}
                 />
               );
             })}
-          </div>
+          </Pile>
         ))}
       </div>
 

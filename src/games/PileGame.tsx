@@ -13,7 +13,7 @@ import {
   type PileRules,
   type PileState
 } from "../lib/piles";
-import { RANKS, SUITS, isRed, label, rank, suit } from "../lib/cards";
+import { RANKS, isRed, label, rank, spoken, stackPlace, suit } from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { Foundation, PlayingCard } from "./cards";
@@ -142,11 +142,6 @@ export function PileGame({
               homeSuit === s ? "bc-target" : ""
             ].join(" ")}
             onClick={() => tapFoundation(s)}
-            aria-label={
-              f === 0
-                ? `${SUITS[s]} foundation, empty`
-                : `${SUITS[s]} foundation, up to ${RANKS[f - 1]}`
-            }
           />
         ))}
       </div>
@@ -190,7 +185,7 @@ export function PileGame({
                       ].join(" ")}
                       style={stack}
                       onClick={() => tapPile(p)}
-                      aria-label={`${label(card)}, end of pile ${p + 1}`}
+                      place={stackPlace(`Pile ${p + 1}`, i, pile.length)}
                     />
                   );
                 // Buried cards show rank only where suit does not matter;
@@ -200,6 +195,8 @@ export function PileGame({
                     key={card}
                     className={`kl-card bc-card bc-buried${isRed(card) ? " red" : ""}`}
                     style={stack}
+                    role="img"
+                    aria-label={`${stackPlace(`Pile ${p + 1}`, i, pile.length)}, ${spoken(card)}`}
                   >
                     {rules.fit === "downAny" ? RANKS[rank(card) - 1] : label(card)}
                   </span>

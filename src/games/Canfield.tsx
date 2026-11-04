@@ -1,9 +1,9 @@
 import { useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { RANKS, SUITS, isRed, nextRank, rank, suit } from "../lib/cards";
+import { RANKS, isRed, nCards, nextRank, rank, stackPlace, suit } from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
-import { Foundation, PlayingCard } from "./cards";
+import { Foundation, Pile, PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
 import "./Canfield.css";
 
@@ -186,7 +186,11 @@ export default function Canfield({ onExit }: { onExit: () => void }) {
           card={null}
           faceDown={saved.stock.length > 0}
           onClick={tapStock}
-          aria-label="Stock"
+          aria-label={
+            saved.stock.length
+              ? `Stock, ${nCards(saved.stock.length)}`
+              : "Stock, empty, turn the waste over"
+          }
         >
           {saved.stock.length || "↻"}
         </PlayingCard>
@@ -200,7 +204,7 @@ export default function Canfield({ onExit }: { onExit: () => void }) {
               toFoundation();
             } else setSel({ from: "waste" });
           }}
-          aria-label="Waste"
+          place={`Waste, ${nCards(saved.waste.length)}`}
         />
         <span className="kl-gap" />
         {saved.foundations.map((f, s) => (
@@ -209,7 +213,6 @@ export default function Canfield({ onExit }: { onExit: () => void }) {
             suit={s}
             top={f}
             onClick={toFoundation}
-            aria-label={`${SUITS[s]} foundation`}
           />
         ))}
       </div>
@@ -225,19 +228,18 @@ export default function Canfield({ onExit }: { onExit: () => void }) {
               toFoundation();
             } else setSel({ from: "reserve" });
           }}
-          aria-label="Reserve"
+          place={`Reserve, ${nCards(saved.reserve.length)}`}
         />
         <span className="tp-left">reserve {saved.reserve.length}</span>
       </div>
 
       <div className="kl-tableau">
         {saved.tableau.map((pile, p) => (
-          <div
+          <Pile
             key={p}
-            className="kl-pile"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) tapTableau(p, null);
-            }}
+            name={`Column ${p + 1}`}
+            empty={!pile.length}
+            onTap={() => tapTableau(p, null)}
           >
             {pile.map((card, i) => (
               <PlayingCard
@@ -246,10 +248,11 @@ export default function Canfield({ onExit }: { onExit: () => void }) {
                 selected={sel?.from === "tableau" && sel.pile === p && i >= sel.index}
                 className="kl-stacked"
                 style={{ "--stack": i } as CSSProperties}
+                place={stackPlace(`Column ${p + 1}`, i, pile.length)}
                 onClick={() => tapTableau(p, i)}
               />
             ))}
-          </div>
+          </Pile>
         ))}
       </div>
 

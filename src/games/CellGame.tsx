@@ -1,9 +1,9 @@
 import { useMemo, useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { RANKS, SUITS, downInSuit, label, rank, stepsAbove, suit } from "../lib/cards";
+import { RANKS, downInSuit, rank, stackPlace, stepsAbove, suit } from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
-import { Foundation, PlayingCard } from "./cards";
+import { Foundation, Pile, PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
 
 /** The FreeCell relatives: everything face-up, a few reserve cells, and a
@@ -281,7 +281,7 @@ export function CellGame({
             card={c}
             selected={sel?.from === "cell" && sel.slot === s}
             onClick={() => tapCell(s)}
-            aria-label={c === null ? `Cell ${s + 1}, empty` : `Cell ${s + 1}, ${label(c)}`}
+            place={`Cell ${s + 1}`}
           >
             {c === null ? "·" : undefined}
           </PlayingCard>
@@ -292,19 +292,17 @@ export function CellGame({
             suit={s}
             top={foundationTop(f)}
             onClick={tryFoundation}
-            aria-label={`${SUITS[s]} foundation`}
           />
         ))}
       </div>
 
       <div className="kl-tableau">
         {saved.cols.map((pile, p) => (
-          <div
+          <Pile
             key={p}
-            className="kl-pile"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) tapCol(p, null);
-            }}
+            name={`Column ${p + 1}`}
+            empty={!pile.length}
+            onTap={() => tapCol(p, null)}
           >
             {pile.map((card, i) => (
               <PlayingCard
@@ -313,10 +311,11 @@ export function CellGame({
                 selected={isSelected(p, i)}
                 className="kl-stacked"
                 style={{ "--stack": i } as CSSProperties}
+                place={stackPlace(`Column ${p + 1}`, i, pile.length)}
                 onClick={() => tapCol(p, i)}
               />
             ))}
-          </div>
+          </Pile>
         ))}
       </div>
 

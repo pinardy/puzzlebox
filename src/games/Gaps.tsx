@@ -14,6 +14,7 @@ import {
   type Board
 } from "../lib/gaps";
 import { RANKS, SUITS, rank, spoken, suit } from "../lib/cards";
+import { useGridNav } from "../lib/gridnav";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { PlayingCard } from "./cards";
@@ -44,6 +45,7 @@ export default function Gaps({ onExit }: { onExit: () => void }) {
   const { seed, saved, commit, undo, canUndo, newPuzzle }= useGame<SavedState>((s) => ({ board: deal(s), redeals: 0, moves: 0, done: false, won: false })
   );
   const [sel, setSel] = useState<Sel>(null);
+  const nav = useGridNav();
 
   const moves = useMemo(() => legalMoves(saved.board), [saved.board]);
   const movable = useMemo(() => new Set(moves.map((m) => m.card)), [moves]);
@@ -142,19 +144,20 @@ export default function Gaps({ onExit }: { onExit: () => void }) {
       </div>
 
       <div className="gp-wrap">
-        <div className="gp-board" role="grid" aria-label="Gaps board">
+        <div className="gp-board" role="grid" aria-label="Gaps board" {...nav}>
           {Array.from({ length: ROWS }, (_, r) => (
             <div className="gp-row" role="row" key={r}>
               {Array.from({ length: COLS }, (_, c) => {
                 const i = r * COLS + c;
                 const card = saved.board[i];
-                const where = `Row ${r + 1} column ${c + 1}`;
+                const where = `Row ${r + 1}, column ${c + 1}`;
                 if (card === null) {
                   const want = fillers(saved.board, i);
                   const picked = sel?.kind === "card" && pickGaps.includes(i);
                   return (
                     <PlayingCard
                       key={c}
+                      data-cell={i}
                       card={null}
                       role="gridcell"
                       className={want.length ? "gp-cell gp-target" : "gp-cell"}
@@ -186,6 +189,7 @@ export default function Gaps({ onExit }: { onExit: () => void }) {
                 return (
                   <PlayingCard
                     key={c}
+                    data-cell={i}
                     card={card}
                     role="gridcell"
                     className={[

@@ -1,6 +1,6 @@
 import { useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { SUITS, rank, suit } from "../lib/cards";
+import { rank, stackPlace, suit } from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { Foundation, PlayingCard } from "./cards";
@@ -121,7 +121,6 @@ export default function BakersDozen({ onExit }: { onExit: () => void }) {
             suit={s}
             top={f}
             onClick={() => sel !== null && toFoundation(sel)}
-            aria-label={`${SUITS[s]} foundation`}
           />
         ))}
       </div>
@@ -142,6 +141,7 @@ export default function BakersDozen({ onExit }: { onExit: () => void }) {
                 selected={sel === p && i === pile.length - 1}
                 className="kl-stacked"
                 style={{ "--stack": i } as CSSProperties}
+                place={stackPlace(`Column ${p + 1}`, i, pile.length)}
                 onClick={() => tapPile(p)}
               />
             ))}

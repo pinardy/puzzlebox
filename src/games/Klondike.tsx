@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
 import type { Diff } from "../lib/storage";
-import { SUITS, downAltColour, rank, suit } from "../lib/cards";
+import { downAltColour, nCards, rank, stackPlace, suit } from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
-import { Foundation, PlayingCard } from "./cards";
+import { Foundation, Pile, PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
 import "./Klondike.css";
 
@@ -240,7 +240,18 @@ export default function Klondike({ onExit }: { onExit: () => void }) {
       />
 
       <div className="kl-top">
-        <PlayingCard card={null} faceDown onClick={tapStock} aria-label="Stock">
+        <PlayingCard
+          card={null}
+          faceDown
+          onClick={tapStock}
+          aria-label={
+            saved.stock.length
+              ? `Stock, ${nCards(saved.stock.length)}`
+              : redeals !== 0
+                ? "Stock, empty, turn the waste over"
+                : "Stock, empty"
+          }
+        >
           {saved.stock.length ? saved.stock.length : redeals !== 0 ? "↻" : "—"}
         </PlayingCard>
         <span className="kl-fan">
@@ -254,7 +265,7 @@ export default function Klondike({ onExit }: { onExit: () => void }) {
                   selected={isTop && sel?.from === "waste"}
                   onClick={isTop ? tapWaste : undefined}
                   tabIndex={isTop ? 0 : -1}
-                  aria-label={isTop ? "Waste" : undefined}
+                  place={isTop ? `Waste, ${nCards(saved.waste.length)}` : "Waste"}
                 />
               );
             }
@@ -267,19 +278,17 @@ export default function Klondike({ onExit }: { onExit: () => void }) {
             suit={s}
             top={f}
             onClick={tryFoundation}
-            aria-label={`${SUITS[s]} foundation`}
           />
         ))}
       </div>
 
       <div className="kl-tableau">
         {saved.tableau.map((pile, p) => (
-          <div
+          <Pile
             key={p}
-            className="kl-pile"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) tapTableau(p, null);
-            }}
+            name={`Column ${p + 1}`}
+            empty={!pile.length}
+            onTap={() => tapTableau(p, null)}
           >
             {pile.map((card, i) => {
               const up = i >= saved.faceDown[p];
@@ -291,11 +300,12 @@ export default function Klondike({ onExit }: { onExit: () => void }) {
                   selected={isSelected(p, i)}
                   className="kl-stacked"
                   style={{ "--stack": i } as CSSProperties}
+                  place={stackPlace(`Column ${p + 1}`, i, pile.length)}
                   onClick={() => tapTableau(p, up ? i : null)}
                 />
               );
             })}
-          </div>
+          </Pile>
         ))}
       </div>
 

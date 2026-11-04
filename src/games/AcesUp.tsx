@@ -1,6 +1,6 @@
 import { useMemo, useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { rank, suit } from "../lib/cards";
+import { rank, stackPlace, suit } from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { PlayingCard } from "./cards";
@@ -141,7 +141,9 @@ export default function AcesUp({ onExit }: { onExit: () => void }) {
           card={null}
           faceDown={saved.stock.length > 0}
           onClick={tapStock}
-          aria-label="Deal four"
+          aria-label={
+            saved.stock.length ? `Stock, ${saved.stock.length} cards, deal four` : "Stock, empty"
+          }
         >
           {saved.stock.length || "—"}
         </PlayingCard>
@@ -163,7 +165,7 @@ export default function AcesUp({ onExit }: { onExit: () => void }) {
                 card={null}
                 className="au-slot"
                 onClick={() => tapPile(i)}
-                aria-label="Empty pile"
+                aria-label={`Pile ${i + 1}, empty`}
               />
             ) : (
               pile.map((card, k) => (
@@ -175,6 +177,7 @@ export default function AcesUp({ onExit }: { onExit: () => void }) {
                     k === pile.length - 1 && doomed[i] ? "kl-stacked tp-hot" : "kl-stacked"
                   }
                   style={{ "--stack": k } as CSSProperties}
+                  place={stackPlace(`Pile ${i + 1}`, k, pile.length)}
                   onClick={() => tapPile(i)}
                 />
               ))

@@ -1,10 +1,10 @@
 import { useMemo, useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
 import type { Diff } from "../lib/storage";
-import { SUITS, downAltColour, rank, suit } from "../lib/cards";
+import { downAltColour, rank, stackPlace, suit } from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
-import { Foundation, PlayingCard } from "./cards";
+import { Foundation, Pile, PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
 
 const CELLS: Record<Diff, number> = { easy: 4, medium: 3, hard: 2 };
@@ -233,7 +233,7 @@ export default function FreeCell({ onExit }: { onExit: () => void }) {
             card={c}
             selected={sel?.from === "free" && sel.slot === s}
             onClick={() => tapFree(s)}
-            aria-label={`Free cell ${s + 1}`}
+            place={`Free cell ${s + 1}`}
           >
             {c === null ? "·" : undefined}
           </PlayingCard>
@@ -244,19 +244,17 @@ export default function FreeCell({ onExit }: { onExit: () => void }) {
             suit={s}
             top={f}
             onClick={tryFoundation}
-            aria-label={`${SUITS[s]} foundation`}
           />
         ))}
       </div>
 
       <div className="kl-tableau">
         {saved.cascades.map((pile, p) => (
-          <div
+          <Pile
             key={p}
-            className="kl-pile"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) tapCascade(p, null);
-            }}
+            name={`Column ${p + 1}`}
+            empty={!pile.length}
+            onTap={() => tapCascade(p, null)}
           >
             {pile.map((card, i) => (
               <PlayingCard
@@ -265,10 +263,11 @@ export default function FreeCell({ onExit }: { onExit: () => void }) {
                 selected={isSelected(p, i)}
                 className="kl-stacked"
                 style={{ "--stack": i } as CSSProperties}
+                place={stackPlace(`Column ${p + 1}`, i, pile.length)}
                 onClick={() => tapCascade(p, i)}
               />
             ))}
-          </div>
+          </Pile>
         ))}
       </div>
 

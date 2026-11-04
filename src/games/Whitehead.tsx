@@ -1,9 +1,9 @@
 import { useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { SUITS, downInSuit, downSameColour, label, rank, suit } from "../lib/cards";
+import { downInSuit, downSameColour, nCards, rank, stackPlace, suit } from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
-import { Foundation, PlayingCard } from "./cards";
+import { Foundation, Pile, PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
 
 const HELP =
@@ -181,7 +181,7 @@ export default function Whitehead({ onExit }: { onExit: () => void }) {
           card={null}
           faceDown={saved.stock.length > 0}
           onClick={tapStock}
-          aria-label={`Stock, ${saved.stock.length} left`}
+          aria-label={saved.stock.length ? `Stock, ${nCards(saved.stock.length)}` : "Stock, empty"}
         >
           {saved.stock.length ? "" : "·"}
         </PlayingCard>
@@ -189,7 +189,7 @@ export default function Whitehead({ onExit }: { onExit: () => void }) {
           card={wasteTop}
           selected={sel?.from === "waste"}
           onClick={tapWaste}
-          aria-label={wasteTop === null ? "Waste, empty" : `Waste, ${label(wasteTop)}`}
+          place="Waste"
         >
           {wasteTop === null ? "·" : undefined}
         </PlayingCard>
@@ -200,19 +200,16 @@ export default function Whitehead({ onExit }: { onExit: () => void }) {
             suit={s}
             top={f}
             onClick={tryFoundation}
-            aria-label={`${SUITS[s]} foundation`}
           />
         ))}
       </div>
 
       <div className="kl-tableau">
         {saved.tableau.map((pile, p) => (
-          <div
+          <Pile
             key={p}
-            className="kl-pile"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) tapCol(p, null);
-            }}
+            name={`Column ${p + 1}`}
+            onTap={() => tapCol(p, null)}
           >
             {pile.length === 0 && (
               <PlayingCard
@@ -232,10 +229,11 @@ export default function Whitehead({ onExit }: { onExit: () => void }) {
                 selected={isSelected(p, i)}
                 className="kl-stacked"
                 style={{ "--stack": i } as CSSProperties}
+                place={stackPlace(`Column ${p + 1}`, i, pile.length)}
                 onClick={() => tapCol(p, i)}
               />
             ))}
-          </div>
+          </Pile>
         ))}
       </div>
 

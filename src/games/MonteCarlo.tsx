@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { label, rank } from "../lib/cards";
+import { rank } from "../lib/cards";
+import { useGridNav } from "../lib/gridnav";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { PlayingCard } from "./cards";
@@ -64,6 +65,7 @@ export default function MonteCarlo({ onExit }: { onExit: () => void }) {
   const { seed, saved, commit, undo, canUndo, newPuzzle }= useGame<SavedState>((s) => deal(s)
   );
   const [sel, setSel] = useState<number | null>(null);
+  const nav = useGridNav();
 
   /** Cells the held card can pair with, for the target highlight. */
   const targets = useMemo(() => {
@@ -125,16 +127,17 @@ export default function MonteCarlo({ onExit }: { onExit: () => void }) {
         canUndo={canUndo && !saved.done}
       />
 
-      <div className="mc-grid" role="grid" aria-label="Monte Carlo layout">
+      <div className="mc-grid" role="grid" aria-label="Monte Carlo layout" {...nav}>
         {saved.grid.map((card, i) => (
           <PlayingCard
             key={i}
+            data-cell={i}
             card={card}
             role="gridcell"
             selected={sel === i}
             className={targets.has(i) ? "mc-cell bc-target" : "mc-cell"}
             onClick={() => tap(i)}
-            aria-label={card === null ? "Empty" : label(card)}
+            place={`Row ${Math.floor(i / SIZE) + 1}, column ${(i % SIZE) + 1}`}
           />
         ))}
       </div>

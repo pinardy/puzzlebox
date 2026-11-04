@@ -1,9 +1,9 @@
 import { useMemo, useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { downAnySuit, downInSuit, label, rank, suit } from "../lib/cards";
+import { downAnySuit, downInSuit, nCards, rank, stackPlace, suit } from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
-import { PlayingCard } from "./cards";
+import { Pile, PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
 
 /** Single-pack Spider: seven columns, four suits, four runs to clear.
@@ -181,12 +181,10 @@ export function SpiderGame({
 
       <div className="kl-tableau">
         {saved.cols.map((pile, p) => (
-          <div
+          <Pile
             key={p}
-            className="kl-pile"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) tapPile(p, null);
-            }}
+            name={`Column ${p + 1}`}
+            onTap={() => tapPile(p, null)}
           >
             {pile.length === 0 && (
               <PlayingCard
@@ -210,11 +208,11 @@ export function SpiderGame({
                   className="kl-stacked"
                   style={{ "--stack": i } as CSSProperties}
                   onClick={() => tapPile(p, i)}
-                  aria-label={down ? "Face-down card" : label(card)}
+                  place={stackPlace(`Column ${p + 1}`, i, pile.length)}
                 />
               );
             })}
-          </div>
+          </Pile>
         ))}
       </div>
 
@@ -226,6 +224,7 @@ export function SpiderGame({
           className="mini-btn"
           onClick={dealRow}
           disabled={!saved.stock.length}
+          aria-label={`Deal a row, stock ${nCards(saved.stock.length)}`}
         >
           Deal ({saved.stock.length})
         </button>

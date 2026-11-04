@@ -1,9 +1,9 @@
 import { useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { SUITS, downInSuit, rank, suit } from "../lib/cards";
+import { SUIT_NAMES, downInSuit, nCards, rank, stackPlace, suit } from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
-import { Foundation, PlayingCard } from "./cards";
+import { Foundation, Pile, PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
 
 // Two packs: id 0–103, the second pack being ids 52–103 (see lib/cards).
@@ -158,7 +158,7 @@ export default function FortyThieves({ onExit }: { onExit: () => void }) {
           card={null}
           faceDown={saved.stock.length > 0}
           onClick={tapStock}
-          aria-label="Stock"
+          aria-label={saved.stock.length ? `Stock, ${nCards(saved.stock.length)}` : "Stock, empty"}
         >
           {saved.stock.length || "—"}
         </PlayingCard>
@@ -166,7 +166,7 @@ export default function FortyThieves({ onExit }: { onExit: () => void }) {
           card={wasteTop}
           selected={sel?.from === "waste"}
           onClick={tapWaste}
-          aria-label="Waste"
+          place={`Waste, ${nCards(saved.waste.length)}`}
         />
         {saved.foundations.map((f, k) => (
           <Foundation
@@ -174,19 +174,18 @@ export default function FortyThieves({ onExit }: { onExit: () => void }) {
             suit={k % 4}
             top={f}
             onClick={toFoundation}
-            aria-label={`${SUITS[k % 4]} foundation`}
+            name={`${SUIT_NAMES[k % 4]} foundation ${Math.floor(k / 4) + 1}`}
           />
         ))}
       </div>
 
       <div className="kl-tableau">
         {saved.tableau.map((pile, p) => (
-          <div
+          <Pile
             key={p}
-            className="kl-pile"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) tapPile(p);
-            }}
+            name={`Column ${p + 1}`}
+            empty={!pile.length}
+            onTap={() => tapPile(p)}
           >
             {pile.map((card, i) => (
               <PlayingCard
@@ -197,10 +196,11 @@ export default function FortyThieves({ onExit }: { onExit: () => void }) {
                 }
                 className="kl-stacked"
                 style={{ "--stack": i } as CSSProperties}
+                place={stackPlace(`Column ${p + 1}`, i, pile.length)}
                 onClick={() => tapPile(p)}
               />
             ))}
-          </div>
+          </Pile>
         ))}
       </div>
 

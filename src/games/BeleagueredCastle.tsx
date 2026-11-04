@@ -11,7 +11,7 @@ import {
   sendHome,
   type CastleState
 } from "../lib/castle";
-import { RANKS, SUITS, isRed, label, rank, suit } from "../lib/cards";
+import { RANKS, isRed, rank, spoken, stackPlace, suit } from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { Foundation, PlayingCard } from "./cards";
@@ -122,7 +122,6 @@ export default function BeleagueredCastle({ onExit }: { onExit: () => void }) {
             top={f}
             className={homeSuit === s ? "bc-target" : undefined}
             onClick={() => tapFoundation(s)}
-            aria-label={`${SUITS[s]} foundation, up to ${RANKS[f - 1]}`}
           />
         ))}
       </div>
@@ -162,7 +161,7 @@ export default function BeleagueredCastle({ onExit }: { onExit: () => void }) {
                       ].join(" ")}
                       style={stack}
                       onClick={() => tapPile(p)}
-                      aria-label={`${label(card)}, end of fan ${p + 1}`}
+                      place={stackPlace(`Fan ${p + 1}`, i, pile.length)}
                     />
                   );
                 // Buried cards show rank only: tableau building ignores suit,
@@ -172,6 +171,8 @@ export default function BeleagueredCastle({ onExit }: { onExit: () => void }) {
                     key={card}
                     className={`kl-card bc-card bc-buried${isRed(card) ? " red" : ""}`}
                     style={stack}
+                    role="img"
+                    aria-label={`${stackPlace(`Fan ${p + 1}`, i, pile.length)}, ${spoken(card)}`}
                   >
                     {RANKS[rank(card) - 1]}
                   </span>

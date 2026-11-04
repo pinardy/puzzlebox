@@ -1,7 +1,7 @@
 import { useMemo, useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
 import type { Diff } from "../lib/storage";
-import { rank } from "../lib/cards";
+import { nCards, rank } from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { PlayingCard } from "./cards";
@@ -193,6 +193,7 @@ export default function Pyramid({ onExit }: { onExit: () => void }) {
                 } as CSSProperties
               }
               onClick={() => tap(s)}
+              place={`Row ${ROW_OF[s] + 1}, card ${COL_OF[s] + 1}`}
             />
           );
         })}
@@ -203,7 +204,13 @@ export default function Pyramid({ onExit }: { onExit: () => void }) {
           card={null}
           faceDown={saved.stock.length > 0}
           onClick={tapStock}
-          aria-label="Stock"
+          aria-label={
+            saved.stock.length
+              ? `Stock, ${nCards(saved.stock.length)}`
+              : saved.redeals > 0
+                ? "Stock, empty, turn the waste over"
+                : "Stock, empty"
+          }
         >
           {saved.stock.length || (saved.redeals > 0 ? "↺" : "—")}
         </PlayingCard>
@@ -211,7 +218,7 @@ export default function Pyramid({ onExit }: { onExit: () => void }) {
           card={wasteTop}
           selected={selected === "waste"}
           onClick={() => tap("waste")}
-          aria-label="Waste"
+          place="Waste"
         />
         <span className="kl-gap" />
         <span className="tp-left">

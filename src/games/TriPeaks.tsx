@@ -1,7 +1,7 @@
 import { useMemo, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
 import type { Diff } from "../lib/storage";
-import { rank } from "../lib/cards";
+import { nCards, rank } from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { PlayingCard } from "./cards";
@@ -36,6 +36,9 @@ const SPOTS: Spot[] = (() => {
   for (let i = 0; i < 10; i++) out.push({ x: i, r: 3, covers: null });
   return out;
 })();
+
+/** The first spot of each row, to name a card's place within its row. */
+const ROW_START = [0, 3, 9, 18];
 
 interface SavedState {
   tableau: number[]; // card per spot
@@ -147,16 +150,22 @@ export default function TriPeaks({ onExit }: { onExit: () => void }) {
               className={hot ? "tp-card tp-hot" : "tp-card"}
               style={{ "--x": SPOTS[i].x, "--r": SPOTS[i].r } as CSSProperties}
               onClick={() => tapCard(i)}
+              place={`Row ${SPOTS[i].r + 1}, card ${i - ROW_START[SPOTS[i].r] + 1}`}
             />
           );
         })}
       </div>
 
       <div className="kl-top tp-bottom" style={{ "--cols": 8 } as CSSProperties}>
-        <PlayingCard card={null} faceDown onClick={tapStock} aria-label="Stock">
+        <PlayingCard
+          card={null}
+          faceDown
+          onClick={tapStock}
+          aria-label={saved.stock.length ? `Stock, ${nCards(saved.stock.length)}` : "Stock, empty"}
+        >
           {saved.stock.length || "—"}
         </PlayingCard>
-        <PlayingCard card={wasteTop} aria-label="Waste" tabIndex={-1} />
+        <PlayingCard card={wasteTop} place="Waste" tabIndex={-1} />
         <span className="kl-gap" />
         <span className="tp-left">{left} cards left</span>
       </div>

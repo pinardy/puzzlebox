@@ -1,5 +1,15 @@
 import { makeRng, shuffled } from "../lib/rng";
-import { SUITS, isRed, label, rank, suit } from "../lib/cards";
+import {
+  SUITS,
+  SUIT_NAMES,
+  isRed,
+  label,
+  nCards,
+  rank,
+  spoken,
+  spokenRank,
+  suit
+} from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { PlayingCard } from "./cards";
@@ -143,7 +153,18 @@ export default function Osmosis({ onExit }: { onExit: () => void }) {
 
       <div className="os-rows" role="group" aria-label="Foundation rows">
         {saved.rows.map((row, r) => (
-          <div key={r} className="os-row">
+          <div
+            key={r}
+            className="os-row"
+            role="img"
+            aria-label={
+              row.length === 0
+                ? `Row ${r + 1}, empty`
+                : `Row ${r + 1}, ${SUIT_NAMES[rowSuit(row)!]}, ${nCards(row.length)}: ${row
+                    .map((c) => spokenRank(rank(c)))
+                    .join(", ")}`
+            }
+          >
             <span className="os-row-suit">
               {rowSuit(row) === null ? "—" : SUITS[rowSuit(row)!]}
             </span>
@@ -178,7 +199,7 @@ export default function Osmosis({ onExit }: { onExit: () => void }) {
               aria-label={
                 top === null
                   ? `Reserve ${p + 1}, empty`
-                  : `Reserve ${p + 1}, ${label(top)}, ${pile.length} cards`
+                  : `Reserve ${p + 1}, ${spoken(top)}, ${nCards(pile.length)}`
               }
             >
               {top === null ? "·" : undefined}
@@ -192,7 +213,9 @@ export default function Osmosis({ onExit }: { onExit: () => void }) {
           card={null}
           faceDown={saved.stock.length > 0}
           onClick={tapStock}
-          aria-label={`Deck, ${saved.stock.length} left, ${saved.redeals} redeals`}
+          aria-label={`Deck, ${nCards(saved.stock.length)} left, ${saved.redeals} redeal${
+            saved.redeals === 1 ? "" : "s"
+          } left`}
         >
           {saved.stock.length ? "" : saved.redeals > 0 ? "⟳" : "·"}
         </PlayingCard>
@@ -200,7 +223,7 @@ export default function Osmosis({ onExit }: { onExit: () => void }) {
           card={wasteTop}
           className={playableWaste ? "bc-live" : undefined}
           onClick={() => wasteTop !== null && play(wasteTop, "waste")}
-          aria-label={wasteTop === null ? "Waste, empty" : `Waste, ${label(wasteTop)}`}
+          place="Waste"
         >
           {wasteTop === null ? "·" : undefined}
         </PlayingCard>

@@ -1,6 +1,6 @@
 import { useMemo, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { rank } from "../lib/cards";
+import { nCards, rank, stackPlace } from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { PlayingCard } from "./cards";
@@ -118,6 +118,7 @@ export default function Golf({ onExit }: { onExit: () => void }) {
                   style={{ "--stack": i } as CSSProperties}
                   onClick={() => tapColumn(c)}
                   disabled={!isBottom}
+                  place={stackPlace(`Column ${c + 1}`, i, col.length)}
                 />
               );
             })}
@@ -130,11 +131,11 @@ export default function Golf({ onExit }: { onExit: () => void }) {
           card={null}
           faceDown={saved.stock.length > 0}
           onClick={tapStock}
-          aria-label="Stock"
+          aria-label={saved.stock.length ? `Stock, ${nCards(saved.stock.length)}` : "Stock, empty"}
         >
           {saved.stock.length || "—"}
         </PlayingCard>
-        <PlayingCard card={wasteTop} tabIndex={-1} />
+        <PlayingCard card={wasteTop} tabIndex={-1} place="Waste" />
         <span className="kl-gap" />
         <span className="tp-left">{left} cards left</span>
       </div>

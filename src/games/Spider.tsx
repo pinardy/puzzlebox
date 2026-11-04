@@ -1,10 +1,10 @@
 import { useMemo, useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
 import type { Diff } from "../lib/storage";
-import { SUITS, cardId } from "../lib/cards";
+import { SUITS, cardId, stackPlace } from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
-import { PlayingCard } from "./cards";
+import { Pile, PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
 
 // 104 cards in 8 sets of 13. Card id 0–103, rank = id % 13 + 1 (A…K);
@@ -170,11 +170,22 @@ export default function Spider({ onExit }: { onExit: () => void }) {
       />
 
       <div className="kl-top">
-        <PlayingCard card={null} faceDown onClick={tapStock} aria-label="Stock">
+        <PlayingCard
+          card={null}
+          faceDown
+          onClick={tapStock}
+          aria-label={`Stock, ${saved.stock.length / 10} deal${
+            saved.stock.length === 10 ? "" : "s"
+          } left`}
+        >
           {saved.stock.length / 10}
         </PlayingCard>
         <span className="kl-gap" />
-        <span className="spider-done">
+        <span
+          className="spider-done"
+          role="img"
+          aria-label={`${saved.completed} of 8 runs complete`}
+        >
           {Array.from({ length: 8 }).map((_, i) => (
             <span key={i} className={i < saved.completed ? "run-done" : "run-todo"}>
               {SUITS[i % nSuits]}
@@ -185,12 +196,11 @@ export default function Spider({ onExit }: { onExit: () => void }) {
 
       <div className="kl-tableau">
         {saved.cols.map((pile, p) => (
-          <div
+          <Pile
             key={p}
-            className="kl-pile"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) tap(p, null);
-            }}
+            name={`Column ${p + 1}`}
+            empty={!pile.length}
+            onTap={() => tap(p, null)}
           >
             {pile.map((card, i) => {
               const up = i >= saved.faceDown[p];
@@ -202,11 +212,12 @@ export default function Spider({ onExit }: { onExit: () => void }) {
                   selected={isSelected(p, i)}
                   className="kl-stacked"
                   style={{ "--stack": i } as CSSProperties}
+                  place={stackPlace(`Column ${p + 1}`, i, pile.length)}
                   onClick={() => tap(p, up ? i : null)}
                 />
               );
             })}
-          </div>
+          </Pile>
         ))}
       </div>
 

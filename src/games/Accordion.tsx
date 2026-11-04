@@ -1,6 +1,6 @@
 import { useMemo, useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { label, rank, suit } from "../lib/cards";
+import { label, nCards, rank, spoken, suit } from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { PlayingCard } from "./cards";
@@ -124,10 +124,17 @@ export default function Accordion({ onExit }: { onExit: () => void }) {
                 sel === null && targetsOf(i).length ? "ac-live" : ""
               ].join(" ")}
               style={{ "--cols": 9 } as CSSProperties}
+              aria-label={`Pile ${i + 1}, ${spoken(card)}${
+                pile.length > 1 ? `, ${nCards(pile.length)}` : ""
+              }`}
               onClick={() => tap(i)}
             >
               {label(card)}
-              {pile.length > 1 && <small className="ac-depth">{pile.length}</small>}
+              {pile.length > 1 && (
+                <small className="ac-depth" aria-hidden="true">
+                  {pile.length}
+                </small>
+              )}
             </PlayingCard>
           );
         })}

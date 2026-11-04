@@ -1,5 +1,5 @@
 import { makeRng, shuffled } from "../lib/rng";
-import { RANKS, isRed, label, rank } from "../lib/cards";
+import { RANKS, isRed, label, nCards, rank, spoken, spokenRank } from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { PlayingCard } from "./cards";
@@ -131,12 +131,13 @@ export default function Calculation({ onExit }: { onExit: () => void }) {
           return (
             <button
               key={k}
+              type="button"
               className={`kl-card ca-found${fits ? " bc-target" : ""}${
                 f === 13 ? " cl-done" : ""
               }`}
               onClick={() => toFoundation(k, "stock")}
-              aria-label={`Foundation ${STEP_LABEL[k]}, ${f} of 13${
-                need ? `, wants ${RANKS[need - 1]}` : ", complete"
+              aria-label={`Foundation ${k + 1}, counts by ${k + 1}, ${f} of 13${
+                need ? `, needs ${spokenRank(need)}` : ", complete"
               }`}
             >
               <span className="ca-step">{STEP_LABEL[k]}</span>
@@ -147,9 +148,16 @@ export default function Calculation({ onExit }: { onExit: () => void }) {
         })}
       </div>
 
-      <div className="ca-deck">
-        <span className="ca-deck-label">Turned</span>
+      <div className="ca-deck" aria-live="polite">
+        <span className="ca-deck-label" aria-hidden="true">
+          Turned
+        </span>
         <span
+          key={current ?? "none"}
+          role="img"
+          aria-label={
+            current === null ? "No turned card" : `Turned card, ${spoken(current)}`
+          }
           className={`kl-card${current === null ? " kl-empty" : ""}${
             current !== null && isRed(current) ? " red" : ""
           }`}
@@ -185,12 +193,14 @@ export default function Calculation({ onExit }: { onExit: () => void }) {
                 aria-label={
                   top === null
                     ? `Heap ${i + 1}, empty`
-                    : `Heap ${i + 1}, ${label(top)}, ${w.length} cards`
+                    : `Heap ${i + 1}, ${spoken(top)}, ${nCards(w.length)}`
                 }
               >
                 {top === null ? "·" : undefined}
               </PlayingCard>
-              <span className="ca-heap-n">{w.length || ""}</span>
+              <span className="ca-heap-n" aria-hidden="true">
+                {w.length || ""}
+              </span>
             </div>
           );
         })}
