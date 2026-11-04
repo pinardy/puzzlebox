@@ -248,7 +248,7 @@ npm run dev        # local dev server
 npm run build      # production build in dist/
 npm run preview    # serve the production build locally
 npm run lint       # ESLint (also runs in CI before deploys)
-npm run format     # Prettier over src/
+npm run format     # Prettier over src/ (CI fails on unformatted code)
 ```
 
 > **PWA note:** service workers require a secure context. `npm run preview`
