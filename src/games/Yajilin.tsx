@@ -1,6 +1,6 @@
 import { useEffect, useMemo, type CSSProperties } from "react";
 import type { EdgeState } from "../lib/slither";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import {
   DIR_ARROW,
@@ -37,7 +37,7 @@ const fresh = (n: number): SavedState => ({
 });
 
 export default function Yajilin({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, undo, canUndo, newPuzzle } =
     useGame<SavedState>((_s, d) => fresh(SIZE[d]));
   const n = SIZE[diff];
   const puzzle = useMemo(() => generateYajilin(`yajilin-${seed}`, n), [seed, n]);
@@ -69,13 +69,13 @@ export default function Yajilin({ onExit }: { onExit: () => void }) {
     return { deg, bad, clueState, okClues, total, shadedCount };
   }, [n, saved.edges, saved.shaded, puzzle]);
 
+  const solved = useMemo(
+    () => yajilinSolved(puzzle, saved.edges, saved.shaded),
+    [puzzle, saved.edges, saved.shaded]
+  );
   useEffect(() => {
-    if (!saved.done && yajilinSolved(puzzle, saved.edges, saved.shaded)) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("yajilin", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [saved, puzzle]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   function tapEdge(kind: "h" | "v", idx: number) {
     if (saved.done) return;

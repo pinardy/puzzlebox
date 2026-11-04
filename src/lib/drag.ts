@@ -67,3 +67,27 @@ export function useDragPaint<M>(
     }
   });
 }
+
+/** `useDragPaint` over a plain array of per-cell marks, the shape most
+ *  mark grids save. `next` picks the mark a press paints (null ignores
+ *  the press). The stroke then paints it over every cell it crosses
+ *  whose mark differs, skipping `locked` cells (givens, clues), and hands
+ *  each new array to `write`; `undoable` is true only for the pressed
+ *  cell, so the whole stroke is one undo step. */
+export function useMarkPaint<M>(opts: {
+  marks: readonly M[];
+  next: (i: number) => M | null;
+  write: (marks: M[], undoable: boolean) => void;
+  locked?: (i: number) => boolean;
+}) {
+  const { marks, next, write, locked } = opts;
+  return useDragPaint<M>(
+    (i) => (locked?.(i) ? null : next(i)),
+    (i, m, undoable) => {
+      if (locked?.(i) || (!undoable && marks[i] === m)) return;
+      const out = marks.slice();
+      out[i] = m;
+      write(out, undoable);
+    }
+  );
+}

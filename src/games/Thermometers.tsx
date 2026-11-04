@@ -1,7 +1,7 @@
 import { useEffect, useMemo, type CSSProperties } from "react";
 import { makeRng } from "../lib/rng";
 import { hamiltonianPath } from "../lib/zip";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -66,7 +66,7 @@ function dirClass(from: number, to: number, n: number): string {
 }
 
 export default function Thermometers({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, undo, canUndo, newPuzzle } =
     useGame<SavedState>((s, d) => {
       const p = generateThermo(`thermo-${s}`, SIZE[d]);
       return { fills: Array(p.thermos.length).fill(0), done: false };
@@ -99,17 +99,12 @@ export default function Thermometers({ onExit }: { onExit: () => void }) {
     return { rows, cols };
   }, [puzzle, saved.fills, n]);
 
+  const solved =
+    counts.rows.every((v, r) => v === puzzle.rows[r]) &&
+    counts.cols.every((v, c) => v === puzzle.cols[c]);
   useEffect(() => {
-    if (saved.done) return;
-    const ok =
-      counts.rows.every((v, r) => v === puzzle.rows[r]) &&
-      counts.cols.every((v, c) => v === puzzle.cols[c]);
-    if (ok) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("thermo", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [counts, puzzle, saved]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   function tap(i: number) {
     if (saved.done) return;

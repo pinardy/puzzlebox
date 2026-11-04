@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useMarkPaint } from "../lib/drag";
 import { makeRng } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -43,7 +44,7 @@ function buildTarget(seed: string, size: number): number[] {
 }
 
 export default function Picross({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle } =
     useGame<SavedState>((_s, d) => ({
       marks: Array(SIZE[d] * SIZE[d]).fill(0) as Mark[],
       done: false
@@ -67,7 +68,6 @@ export default function Picross({ onExit }: { onExit: () => void }) {
   );
 
   const [mode, setMode] = useState<1 | 2>(1); // fill | cross
-  const paint = useRef<Mark | null>(null);
 
   const playerRow = (r: number) =>
     saved.marks.slice(r * size, r * size + size).map((m) => (m === 1 ? 1 : 0));
@@ -87,19 +87,18 @@ export default function Picross({ onExit }: { onExit: () => void }) {
     [saved.marks, colClues] // eslint-disable-line react-hooks/exhaustive-deps
   );
 
+  const solved = rowDone.every(Boolean) && colDone.every(Boolean);
   useEffect(() => {
-    if (!saved.done && rowDone.every(Boolean) && colDone.every(Boolean)) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("picross", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rowDone, colDone, saved]);
+    if (solved) finish();
+  }, [solved, finish]);
 
-  function apply(i: number, v: Mark, undoable: boolean) {
-    const marks = saved.marks.slice() as Mark[];
-    marks[i] = v;
-    commit({ ...saved, marks }, { undoable });
-  }
+  // A press toggles the cell between the current tool's mark and blank;
+  // the drag paints that over the cells that differ, as one undo step.
+  const drag = useMarkPaint<Mark>({
+    marks: saved.marks,
+    next: (i) => (saved.done ? null : saved.marks[i] === mode ? 0 : mode),
+    write: (marks, undoable) => commit({ ...saved, marks }, { undoable })
+  });
 
   /** Correct one random cell that disagrees with the picture: fill it if
    *  it should be filled, cross it otherwise. Marks the puzzle assisted. */
@@ -112,12 +111,6 @@ export default function Picross({ onExit }: { onExit: () => void }) {
     const marks = saved.marks.slice() as Mark[];
     marks[idx] = target[idx] === 1 ? 1 : 2;
     commitHint({ ...saved, marks });
-  }
-
-  function cellFromPoint(x: number, y: number): number | null {
-    const el = document.elementFromPoint(x, y)?.closest("[data-pic-idx]");
-    const v = el instanceof HTMLElement ? el.dataset.picIdx : undefined;
-    return v === undefined ? null : Number(v);
   }
 
   return (
@@ -166,23 +159,7 @@ export default function Picross({ onExit }: { onExit: () => void }) {
         </div>
         <div
           className="picross-grid drag-paint"
-          onPointerDown={(e) => {
-            if (saved.done) return;
-            (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-            const i = cellFromPoint(e.clientX, e.clientY);
-            if (i === null) return;
-            const v = (saved.marks[i] === mode ? 0 : mode) as Mark;
-            paint.current = v;
-            apply(i, v, true);
-          }}
-          onPointerMove={(e) => {
-            if (paint.current === null) return;
-            const i = cellFromPoint(e.clientX, e.clientY);
-            if (i !== null && saved.marks[i] !== paint.current)
-              apply(i, paint.current, false); // whole stroke = one undo step
-          }}
-          onPointerUp={() => { paint.current = null; }}
-          onPointerCancel={() => { paint.current = null; }}
+          {...drag}
         >
           {saved.marks.map((m, i) => {
             const r = Math.floor(i / size);
@@ -190,7 +167,7 @@ export default function Picross({ onExit }: { onExit: () => void }) {
             return (
               <button
                 key={i}
-                data-pic-idx={i}
+                data-cell={i}
                 className={[
                   "pic-cell",
                   m === 1 ? "fill" : m === 2 ? "cross" : "",

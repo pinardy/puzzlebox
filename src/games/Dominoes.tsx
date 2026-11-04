@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -68,7 +68,7 @@ interface SavedState {
 }
 
 export default function Dominoes({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, undo, canUndo, newPuzzle } =
     useGame<SavedState>(() => ({ placed: [], done: false }));
   const maxPip = MAX_PIP[diff];
   const puzzle = useMemo(
@@ -102,16 +102,11 @@ export default function Dominoes({ onExit }: { onExit: () => void }) {
     return out;
   }, [maxPip]);
 
+  const solved =
+    placedAt.size === rows * cols && allPairs.every((k) => pairCounts.get(k) === 1);
   useEffect(() => {
-    if (saved.done) return;
-    const covered = placedAt.size === rows * cols;
-    const exact = allPairs.every((k) => pairCounts.get(k) === 1);
-    if (covered && exact) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("dominoes", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [placedAt, pairCounts, allPairs, saved, rows, cols]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   function adjacent(a: number, b: number): boolean {
     const ra = Math.floor(a / cols), ca = a % cols;

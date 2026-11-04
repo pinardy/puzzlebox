@@ -6,7 +6,7 @@ import {
   rippleSolved,
   MAX_ROOM
 } from "../lib/ripple";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -26,7 +26,7 @@ interface SavedState {
 }
 
 export default function Ripple({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle } =
     useGame<SavedState>((_s, d) => ({
       entries: Array(SIZE[d] * SIZE[d]).fill(0),
       done: false
@@ -49,13 +49,13 @@ export default function Ripple({ onExit }: { onExit: () => void }) {
     [n, roomOf, rooms, board]
   );
 
+  const solved = useMemo(
+    () => rippleSolved(n, roomOf, rooms, board),
+    [n, roomOf, rooms, board]
+  );
   useEffect(() => {
-    if (!saved.done && rippleSolved(n, roomOf, rooms, board)) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("ripple", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [board, saved]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   /** Values too big for the room are refused rather than shown as errors —
    *  the tray greys them out, and the keyboard should agree. */

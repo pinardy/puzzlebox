@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
-import { recordResult, type Diff, type GameId } from "../lib/storage";
+import type { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -20,7 +20,6 @@ export interface ShadePuzzle {
  *  Because each puzzle judges a win against its own RULES rather than
  *  against the grid it was generated from, any legal answer is accepted. */
 export function ShadeGame({
-  game,
   title,
   hint,
   help,
@@ -29,7 +28,6 @@ export function ShadeGame({
   build,
   onExit
 }: {
-  game: GameId;
   title: string;
   hint: string;
   help: string;
@@ -45,7 +43,7 @@ export function ShadeGame({
     done: boolean;
   }
 
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle } =
     useGame<SavedState>((s, d) => ({
       marks: Array(build(s, d).n ** 2).fill(0),
       done: false
@@ -55,14 +53,10 @@ export function ShadeGame({
 
   const filled = useMemo(() => saved.marks.map((m) => m === 1), [saved.marks]);
 
+  const solved = useMemo(() => puzzle.solved(filled), [puzzle, filled]);
   useEffect(() => {
-    if (saved.done) return;
-    if (puzzle.solved(filled)) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult(game, true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filled, puzzle, saved.done]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   function setMark(i: number, value: number) {
     if (saved.done || puzzle.clue(i) !== null) return;

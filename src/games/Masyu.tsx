@@ -1,7 +1,7 @@
 import { useEffect, useMemo, type CSSProperties } from "react";
 import { generateMasyu, masyuSolved } from "../lib/masyu";
 import type { EdgeState } from "../lib/slither";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -26,18 +26,18 @@ function fresh(n: number): SavedState {
 }
 
 export default function Masyu({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, undo, canUndo, newPuzzle } =
     useGame<SavedState>((_s, d) => fresh(SIZE[d]));
   const n = SIZE[diff];
   const puzzle = useMemo(() => generateMasyu(`masyu-${seed}`, n), [seed, n]);
 
+  const solved = useMemo(
+    () => masyuSolved(puzzle, saved.edges),
+    [puzzle, saved.edges]
+  );
   useEffect(() => {
-    if (!saved.done && masyuSolved(puzzle, saved.edges)) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("masyu", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [saved, puzzle]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   function tapEdge(kind: "h" | "v", idx: number) {
     if (saved.done) return;

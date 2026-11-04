@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { generateHashi, hashiSolved, corridor, edgeKey, Edges } from "../lib/hashi";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -26,7 +26,7 @@ interface BridgeMark {
 }
 
 export default function Hashi({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, undo, canUndo, newPuzzle } =
     useGame<SavedState>(() => ({ edges: {}, done: false }));
   const [n, islandCount] = LEVELS[diff];
   const puzzle = useMemo(
@@ -62,13 +62,13 @@ export default function Hashi({ onExit }: { onExit: () => void }) {
     return d;
   }, [saved.edges]);
 
+  const solved = useMemo(
+    () => hashiSolved(puzzle, saved.edges),
+    [puzzle, saved.edges]
+  );
   useEffect(() => {
-    if (!saved.done && hashiSolved(puzzle, saved.edges)) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("hashi", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [saved, puzzle]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   function toggle(a: number, b: number) {
     const key = edgeKey(a, b);

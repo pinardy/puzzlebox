@@ -11,7 +11,7 @@ import {
   SOUTH,
   WEST
 } from "../lib/tracks";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -38,7 +38,7 @@ interface SavedState {
 }
 
 export default function TrainTracks({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle } =
     useGame<SavedState>((_s, d) => ({
       cells: Array(SIZE[d] * SIZE[d]).fill(0),
       done: false
@@ -69,13 +69,10 @@ export default function TrainTracks({ onExit }: { onExit: () => void }) {
   const total = useMemo(() => rowCounts.reduce((a, b) => a + b, 0), [rowCounts]);
   const placed = useMemo(() => board.filter(Boolean).length, [board]);
 
+  const solved = useMemo(() => checkTracks(board, puzzle), [board, puzzle]);
   useEffect(() => {
-    if (!saved.done && checkTracks(board, puzzle)) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("tracks", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [board, puzzle, saved]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   /** Step a cell through blank → the six pieces → blank; `step` is -1 for the
    *  long-press, since seven states is a long way round the wrong way. */

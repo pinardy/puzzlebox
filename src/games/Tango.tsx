@@ -1,6 +1,6 @@
 import { useEffect, useMemo, type CSSProperties } from "react";
 import { generateTango, tangoInvalid, T } from "../lib/tango";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -17,7 +17,7 @@ interface SavedState {
 }
 
 export default function Tango({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, undo, canUndo, newPuzzle } =
     useGame<SavedState>(() => ({
       entries: Array(T * T).fill(0),
       done: false
@@ -44,17 +44,11 @@ export default function Tango({ onExit }: { onExit: () => void }) {
     return bad;
   }, [board]);
 
+  const solved =
+    board.every((v) => v !== 0) && board.every((v, i) => v === solution[i]);
   useEffect(() => {
-    if (
-      !saved.done &&
-      board.every((v) => v !== 0) &&
-      board.every((v, i) => v === solution[i])
-    ) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("tango", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [board, solution, saved]);
+    if (solved) finish();
+  }, [solved, finish]);
 
   function tap(idx: number) {
     if (saved.done || givens[idx] !== 0) return;

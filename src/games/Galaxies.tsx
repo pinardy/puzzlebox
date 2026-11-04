@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useMarkPaint } from "../lib/drag";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -113,7 +114,7 @@ interface SavedState {
 }
 
 export default function Galaxies({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, finish, undo, canUndo, newPuzzle } =
     useGame<SavedState>((_s, d) => ({
       assign: Array(SIZE[d] * SIZE[d]).fill(-1),
       done: false
@@ -121,7 +122,6 @@ export default function Galaxies({ onExit }: { onExit: () => void }) {
   const n = SIZE[diff];
   const puzzle = useMemo(() => generateGalaxies(`galaxies-${seed}`, n), [seed, n]);
   const [sel, setSel] = useState(0);
-  const paint = useRef<number | null>(null);
 
   const solvedNow = useMemo(() => {
     if (saved.assign.some((g) => g === -1)) return false;
@@ -158,24 +158,16 @@ export default function Galaxies({ onExit }: { onExit: () => void }) {
   }, [saved.assign, puzzle, n]);
 
   useEffect(() => {
-    if (!saved.done && solvedNow) {
-      commit({ ...saved, done: true }, { undoable: false });
-      recordResult("galaxies", true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [solvedNow, saved]);
+    if (solvedNow) finish();
+  }, [solvedNow, finish]);
 
-  function apply(i: number, g: number, undoable: boolean) {
-    const assign = saved.assign.slice();
-    assign[i] = g;
-    commit({ ...saved, assign }, { undoable });
-  }
-
-  function cellFromPoint(x: number, y: number): number | null {
-    const el = document.elementFromPoint(x, y)?.closest("[data-gal-idx]");
-    const v = el instanceof HTMLElement ? el.dataset.galIdx : undefined;
-    return v === undefined ? null : Number(v);
-  }
+  // A press toggles the cell in or out of the selected galaxy; the drag
+  // paints that over the cells that differ, as one undo step.
+  const drag = useMarkPaint<number>({
+    marks: saved.assign,
+    next: (i) => (saved.done ? null : saved.assign[i] === sel ? -1 : sel),
+    write: (assign, undoable) => commit({ ...saved, assign }, { undoable })
+  });
 
   function startNew(d?: Diff) {
     newPuzzle(d);
@@ -207,30 +199,14 @@ export default function Galaxies({ onExit }: { onExit: () => void }) {
           className="gal-grid drag-paint"
           role="grid"
           aria-label="Galaxies board"
-          onPointerDown={(e) => {
-            if (saved.done) return;
-            (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-            const i = cellFromPoint(e.clientX, e.clientY);
-            if (i === null) return;
-            const v = saved.assign[i] === sel ? -1 : sel;
-            paint.current = v;
-            apply(i, v, true);
-          }}
-          onPointerMove={(e) => {
-            if (paint.current === null) return;
-            const i = cellFromPoint(e.clientX, e.clientY);
-            if (i !== null && saved.assign[i] !== paint.current)
-              apply(i, paint.current, false);
-          }}
-          onPointerUp={() => { paint.current = null; }}
-          onPointerCancel={() => { paint.current = null; }}
+          {...drag}
         >
           {saved.assign.map((g, i) => {
             const r = Math.floor(i / n), c = i % n;
             return (
               <button
                 key={i}
-                data-gal-idx={i}
+                data-cell={i}
                 role="gridcell"
                 className={[
                   "gal-cell",

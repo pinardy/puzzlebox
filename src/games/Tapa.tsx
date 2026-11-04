@@ -36,7 +36,6 @@ export default function Tapa({ onExit }: { onExit: () => void }) {
 
   return (
     <ShadeGame
-      game="tapa"
       title="Tapa"
       hint="One connected wall, no solid 2×2. Numbers count runs of neighbours."
       help={HELP}

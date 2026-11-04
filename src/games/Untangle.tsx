@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { makeRng, shuffled } from "../lib/rng";
-import { recordResult, Diff } from "../lib/storage";
+import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
@@ -148,8 +148,7 @@ export default function Untangle({ onExit }: { onExit: () => void }) {
     const solved = crossingEdges(live, edges).size === 0;
     const next: SavedState = { pos: live, done: solved };
     setLive(null);
-    commit(next);
-    if (solved) recordResult("untangle", true);
+    commit(next, { outcome: solved ? "won" : undefined });
   }
 
   return (
