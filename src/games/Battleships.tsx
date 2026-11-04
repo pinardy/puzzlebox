@@ -48,24 +48,34 @@ function generateShips(seed: string, n: number, fleet: number[]): Puzzle {
         if (cells.some((i) => blocked[i])) continue;
         for (const i of cells) {
           ship[i] = true;
-          const rr = Math.floor(i / n), cc = i % n;
+          const rr = Math.floor(i / n),
+            cc = i % n;
           for (let dr = -1; dr <= 1; dr++)
             for (let dc = -1; dc <= 1; dc++) {
-              const r2 = rr + dr, c2 = cc + dc;
+              const r2 = rr + dr,
+                c2 = cc + dc;
               if (r2 >= 0 && r2 < n && c2 >= 0 && c2 < n) blocked[r2 * n + c2] = true;
             }
         }
         placed = true;
       }
-      if (!placed) { ok = false; break; }
+      if (!placed) {
+        ok = false;
+        break;
+      }
     }
     if (!ok) continue;
 
-    const rows = Array(n).fill(0), cols = Array(n).fill(0);
-    const shipCells: number[] = [], waterCells: number[] = [];
+    const rows = Array(n).fill(0),
+      cols = Array(n).fill(0);
+    const shipCells: number[] = [],
+      waterCells: number[] = [];
     ship.forEach((s, i) => {
-      if (s) { rows[Math.floor(i / n)]++; cols[i % n]++; shipCells.push(i); }
-      else waterCells.push(i);
+      if (s) {
+        rows[Math.floor(i / n)]++;
+        cols[i % n]++;
+        shipCells.push(i);
+      } else waterCells.push(i);
     });
     return {
       rows,
@@ -81,9 +91,16 @@ function generateShips(seed: string, n: number, fleet: number[]): Puzzle {
  *  lines of the right sizes and never touch diagonally. */
 function fleetOk(shipSet: Set<number>, n: number, fleet: number[]): boolean {
   for (const i of shipSet) {
-    const r = Math.floor(i / n), c = i % n;
-    for (const [dr, dc] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) {
-      const rr = r + dr, cc = c + dc;
+    const r = Math.floor(i / n),
+      c = i % n;
+    for (const [dr, dc] of [
+      [1, 1],
+      [1, -1],
+      [-1, 1],
+      [-1, -1]
+    ]) {
+      const rr = r + dr,
+        cc = c + dc;
       if (rr >= 0 && rr < n && cc >= 0 && cc < n && shipSet.has(rr * n + cc))
         return false;
     }
@@ -98,9 +115,16 @@ function fleetOk(shipSet: Set<number>, n: number, fleet: number[]): boolean {
     while (stack.length) {
       const i = stack.pop()!;
       comp.push(i);
-      const r = Math.floor(i / n), c = i % n;
-      for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-        const rr = r + dr, cc = c + dc;
+      const r = Math.floor(i / n),
+        c = i % n;
+      for (const [dr, dc] of [
+        [1, 0],
+        [-1, 0],
+        [0, 1],
+        [0, -1]
+      ]) {
+        const rr = r + dr,
+          cc = c + dc;
         const j = rr * n + cc;
         if (rr >= 0 && rr < n && cc >= 0 && cc < n && shipSet.has(j) && !seen.has(j)) {
           seen.add(j);
@@ -108,7 +132,8 @@ function fleetOk(shipSet: Set<number>, n: number, fleet: number[]): boolean {
         }
       }
     }
-    const rs = comp.map((i) => Math.floor(i / n)), cs = comp.map((i) => i % n);
+    const rs = comp.map((i) => Math.floor(i / n)),
+      cs = comp.map((i) => i % n);
     if (new Set(rs).size !== 1 && new Set(cs).size !== 1) return false;
     sizes.push(comp.length);
   }
@@ -140,13 +165,19 @@ export default function Battleships({ onExit }: { onExit: () => void }) {
 
   const ships = useMemo(() => {
     const s = new Set<number>(puzzle.givenShip);
-    saved.marks.forEach((m, i) => { if (m === 1) s.add(i); });
+    saved.marks.forEach((m, i) => {
+      if (m === 1) s.add(i);
+    });
     return s;
   }, [saved.marks, puzzle]);
 
   const solved = useMemo(() => {
-    const rows = Array(n).fill(0), cols = Array(n).fill(0);
-    for (const i of ships) { rows[Math.floor(i / n)]++; cols[i % n]++; }
+    const rows = Array(n).fill(0),
+      cols = Array(n).fill(0);
+    for (const i of ships) {
+      rows[Math.floor(i / n)]++;
+      cols[i % n]++;
+    }
     const countsOk =
       rows.every((v, r) => v === puzzle.rows[r]) &&
       cols.every((v, c) => v === puzzle.cols[c]);
@@ -205,7 +236,8 @@ export default function Battleships({ onExit }: { onExit: () => void }) {
         {...drag}
       >
         {Array.from({ length: G * G }).map((_, k) => {
-          const gr = Math.floor(k / G), gc = k % G;
+          const gr = Math.floor(k / G),
+            gc = k % G;
           if (gr === 0 && gc === 0) return <span key={k} />;
           if (gr === 0)
             return (
@@ -253,7 +285,9 @@ export default function Battleships({ onExit }: { onExit: () => void }) {
       </div>
 
       <div className="lights-meta">
-        <span>■ {ships.size} / {fleet.reduce((a, b) => a + b, 0)}</span>
+        <span>
+          ■ {ships.size} / {fleet.reduce((a, b) => a + b, 0)}
+        </span>
       </div>
 
       {saved.done && (

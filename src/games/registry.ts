@@ -18,10 +18,17 @@ export const CATEGORY_LABEL: Record<Category, string> = {
   classic: "Classics & arcade"
 };
 
-export const CATEGORY_META: Record<Category, { glyph: string; accent: string; tagline: string }> = {
+export const CATEGORY_META: Record<
+  Category,
+  { glyph: string; accent: string; tagline: string }
+> = {
   words: { glyph: "A", accent: "var(--green)", tagline: "Guess, search, unscramble" },
   numbers: { glyph: "9", accent: "var(--blue)", tagline: "Sudoku and its cousins" },
-  logic: { glyph: "▦", accent: "var(--purple)", tagline: "Loops, islands, fleets, stars" },
+  logic: {
+    glyph: "▦",
+    accent: "var(--purple)",
+    tagline: "Loops, islands, fleets, stars"
+  },
   classic: { glyph: "♠", accent: "var(--coral)", tagline: "Cards, dice, and arcade" }
 };
 
@@ -40,6 +47,8 @@ type Loader = () => Promise<{ default: ComponentType<GameProps> }>;
 /** `keywords` are extra lowercase search terms — aliases ("nonogram" for
  *  picross), family names ("solitaire" for every card game), and concepts
  *  the name and tagline don't already contain. */
+// One game per line reads as a table; keep Prettier from unfolding it.
+// prettier-ignore
 const defs = [
   { id: "word", name: "Word Guess", tagline: "Six tries, five letters", accent: "var(--green)", glyph: "A", cat: "words", keywords: "wordle daily", textInput: true, load: () => import("./Wordle") },
   { id: "hangman", name: "Hangman", tagline: "Six lives, one word", accent: "var(--amber)", glyph: "?", cat: "words", keywords: "gallows guess letters", textInput: true, load: () => import("./Hangman") },

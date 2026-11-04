@@ -34,7 +34,14 @@ function boardFor(diff: Diff): Board {
     for (let r = 0; r < 5; r++) for (let c = 0; c <= r; c++) cells.push({ r, c });
     return {
       cells,
-      vectors: [[0, 2], [0, -2], [2, 0], [-2, 0], [2, 2], [-2, -2]],
+      vectors: [
+        [0, 2],
+        [0, -2],
+        [2, 0],
+        [-2, 0],
+        [2, 2],
+        [-2, -2]
+      ],
       emptyAt: 0,
       center: -1,
       winCenter: false,
@@ -49,7 +56,12 @@ function boardFor(diff: Diff): Board {
   const center = cells.findIndex((p) => p.r === 3 && p.c === 3);
   return {
     cells,
-    vectors: [[0, 2], [0, -2], [2, 0], [-2, 0]],
+    vectors: [
+      [0, 2],
+      [0, -2],
+      [2, 0],
+      [-2, 0]
+    ],
     emptyAt: center,
     center,
     winCenter: diff === "hard",
@@ -71,8 +83,9 @@ function fresh(diff: Diff): SavedState {
 }
 
 export default function PegSolitaire({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
-    useGame<SavedState>((_s, d) => fresh(d));
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>(
+    (_s, d) => fresh(d)
+  );
   const board = useMemo(() => boardFor(diff), [diff]);
   const [picked, setPicked] = useState<number | null>(null);
 
@@ -84,8 +97,7 @@ export default function PegSolitaire({ onExit }: { onExit: () => void }) {
 
   // A pre-modes save is a 7×7 pegs array (49 booleans, invalid cells
   // included); its shape no longer matches, so restart cleanly.
-  const pegs =
-    saved.pegs.length === board.cells.length ? saved.pegs : fresh(diff).pegs;
+  const pegs = saved.pegs.length === board.cells.length ? saved.pegs : fresh(diff).pegs;
 
   function jumps(from: number, state: boolean[]): { to: number; over: number }[] {
     const { r, c } = board.cells[from];
@@ -123,8 +135,7 @@ export default function PegSolitaire({ onExit }: { onExit: () => void }) {
     const anyMove = next.some((p, k) => p && jumps(k, next).length > 0);
     const left = next.filter(Boolean).length;
     const done = !anyMove;
-    const won =
-      done && left === 1 && (!board.winCenter || next[board.center]);
+    const won = done && left === 1 && (!board.winCenter || next[board.center]);
     commit(
       { pegs: next, moves: saved.moves + 1, done, won },
       { outcome: done ? (won ? "won" : "lost") : undefined }

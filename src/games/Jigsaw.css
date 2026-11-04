@@ -1,10 +1,18 @@
 /* Jigsaw: styles only this board uses. Loaded with its chunk. */
 
 /* Regions replace the 3×3 rules, so their outlines carry the weight. */
-.jig-cell.jr-t { border-top: 2px solid var(--ink); }
+.jig-cell.jr-t {
+  border-top: 2px solid var(--ink);
+}
 
-.jig-cell.jr-l { border-left: 2px solid var(--ink); }
+.jig-cell.jr-l {
+  border-left: 2px solid var(--ink);
+}
 
-.jig-cell.jr-b { border-bottom: 2px solid var(--ink); }
+.jig-cell.jr-b {
+  border-bottom: 2px solid var(--ink);
+}
 
-.jig-cell.jr-r { border-right: 2px solid var(--ink); }
+.jig-cell.jr-r {
+  border-right: 2px solid var(--ink);
+}

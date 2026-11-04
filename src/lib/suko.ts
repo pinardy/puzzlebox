@@ -9,7 +9,8 @@ export const SUKO_CIRCLES: readonly number[][] = [
 ];
 
 const NEIGHBOURS: readonly number[][] = [...Array(9).keys()].map((i) => {
-  const r = Math.floor(i / 3), c = i % 3;
+  const r = Math.floor(i / 3),
+    c = i % 3;
   const out: number[] = [];
   if (r > 0) out.push(i - 3);
   if (r < 2) out.push(i + 3);
@@ -110,9 +111,7 @@ function growGroups(sizes: number[], rng: () => number): number[][] | null {
     groups[g].push(cell);
   });
   for (let placed = sizes.length; placed < 9; placed++) {
-    const hungry = groups
-      .map((_, g) => g)
-      .filter((g) => groups[g].length < sizes[g]);
+    const hungry = groups.map((_, g) => g).filter((g) => groups[g].length < sizes[g]);
     const opts: [number, number][] = [];
     for (const g of hungry)
       for (const cell of groups[g])
@@ -160,7 +159,9 @@ export function generateSuko(seed: string, diff: string): SukoPuzzle {
     // A fresh arrangement every few tries: some block-sum sets are simply
     // too loose to pin down with this few colour groups.
     const solution: number[] =
-      tries % 4 === 0 || !last ? shuffled([1, 2, 3, 4, 5, 6, 7, 8, 9], rng) : last.solution;
+      tries % 4 === 0 || !last
+        ? shuffled([1, 2, 3, 4, 5, 6, 7, 8, 9], rng)
+        : last.solution;
     const circles = SUKO_CIRCLES.map((cells) =>
       cells.reduce((s, k) => s + solution[k], 0)
     );

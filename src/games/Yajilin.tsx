@@ -45,26 +45,32 @@ export default function Yajilin({ onExit }: { onExit: () => void }) {
   const puzzle = useMemo(() => generateYajilin(`yajilin-${seed}`, n), [seed, n]);
 
   const view = useMemo(() => {
-    const deg = Array.from({ length: n * n }, (_, i) =>
-      cellDegree(n, saved.edges, i)
-    );
+    const deg = Array.from({ length: n * n }, (_, i) => cellDegree(n, saved.edges, i));
     // A cell is wrong when two shaded cells touch, when the loop runs into
     // a grey or shaded cell, or when a clue's ray holds too many shades.
     const bad = new Set<number>();
     for (let i = 0; i < n * n; i++) {
-      const r = Math.floor(i / n), c = i % n;
+      const r = Math.floor(i / n),
+        c = i % n;
       if (saved.shaded[i]) {
         if (deg[i] > 0) bad.add(i);
         for (const j of [c > 0 ? i - 1 : -1, r > 0 ? i - n : -1])
-          if (j >= 0 && saved.shaded[j]) { bad.add(i); bad.add(j); }
+          if (j >= 0 && saved.shaded[j]) {
+            bad.add(i);
+            bad.add(j);
+          }
       } else if (puzzle.clues[i] && deg[i] > 0) bad.add(i);
     }
-    let okClues = 0, total = 0;
+    let okClues = 0,
+      total = 0;
     const clueState = puzzle.clues.map((cl, i) => {
       if (!cl) return "";
       total++;
       const got = rayCount(n, i, cl.dir, saved.shaded);
-      if (got === cl.count) { okClues++; return "ok"; }
+      if (got === cl.count) {
+        okClues++;
+        return "ok";
+      }
       return got > cl.count ? "over" : "";
     });
     const shadedCount = saved.shaded.filter(Boolean).length;
@@ -98,7 +104,8 @@ export default function Yajilin({ onExit }: { onExit: () => void }) {
   // 0..n²-1, horizontal segments follow, then vertical ones. Arrows move
   // to the nearest one on screen; Enter shades a cell or cycles a segment
   // (Shift+Enter cycles a segment back).
-  const N2 = n * n, H = n * (n - 1);
+  const N2 = n * n,
+    H = n * (n - 1);
   const nav = useGridNav((i, back) => {
     if (i < N2) tapCell(i);
     else if (i < N2 + H) tapEdge("h", i - N2, back);
@@ -109,7 +116,7 @@ export default function Yajilin({ onExit }: { onExit: () => void }) {
   function hint() {
     if (saved.done) return;
     const sol = puzzle.solution;
-    const wrong: (["c" | "h" | "v", number])[] = [];
+    const wrong: ["c" | "h" | "v", number][] = [];
     saved.shaded.forEach((on, i) => {
       if (!puzzle.clues[i] && on !== sol.shaded[i]) wrong.push(["c", i]);
     });
@@ -133,7 +140,10 @@ export default function Yajilin({ onExit }: { onExit: () => void }) {
   }
 
   const G = 2 * n - 1;
-  const track = Array(n - 1).fill("1fr 0.55fr").join(" ") + " 1fr";
+  const track =
+    Array(n - 1)
+      .fill("1fr 0.55fr")
+      .join(" ") + " 1fr";
   const edgeMark = (m: number) => (m === 1 ? "line" : m === 2 ? "off" : "");
   const edgeState = (m: number) => (m === 1 ? "line" : m === 2 ? "crossed" : "empty");
   const edgeBad = (m: number, a: number, b: number) =>
@@ -162,8 +172,10 @@ export default function Yajilin({ onExit }: { onExit: () => void }) {
         {...nav}
       >
         {Array.from({ length: G * G }).map((_, k) => {
-          const gr = Math.floor(k / G), gc = k % G;
-          const r = gr >> 1, c = gc >> 1;
+          const gr = Math.floor(k / G),
+            gc = k % G;
+          const r = gr >> 1,
+            c = gc >> 1;
 
           if (gr % 2 === 0 && gc % 2 === 0) {
             const i = r * n + c;

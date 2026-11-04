@@ -70,8 +70,9 @@ const rowOf = (i: number) => [0, 1, 2, 3, 4].map((c) => i * SIZE + c);
 const colOf = (i: number) => [0, 1, 2, 3, 4].map((r) => r * SIZE + i);
 
 export default function PokerSolitaire({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
-    useGame<SavedState>((s) => deal(s));
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>(
+    (s) => deal(s)
+  );
 
   const current = saved.queue.length ? saved.queue[saved.queue.length - 1] : null;
   const nav = useGridNav();
@@ -136,7 +137,9 @@ export default function PokerSolitaire({ onExit }: { onExit: () => void }) {
               data-cell={i}
               card={card}
               role="gridcell"
-              className={card === null && current !== null ? "pk-cell pk-open" : "pk-cell"}
+              className={
+                card === null && current !== null ? "pk-cell pk-open" : "pk-cell"
+              }
               onClick={() => place(i)}
               place={`Row ${Math.floor(i / SIZE) + 1}, column ${(i % SIZE) + 1}`}
             />
@@ -175,7 +178,9 @@ export default function PokerSolitaire({ onExit }: { onExit: () => void }) {
         <span
           key={current ?? "none"}
           role="img"
-          aria-label={current === null ? "No card to place" : `Card to place, ${spoken(current)}`}
+          aria-label={
+            current === null ? "No card to place" : `Card to place, ${spoken(current)}`
+          }
           className={`kl-card${current === null ? " kl-empty" : ""}${
             current !== null && isRed(current) ? " red" : ""
           }`}

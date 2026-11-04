@@ -59,7 +59,10 @@ export default function Waffle({ onExit }: { onExit: () => void }) {
   const [cursor, setCursor] = useState(0);
   const tiles = useRef<(HTMLButtonElement | null)[]>([]);
 
-  const marks = useMemo(() => colorBoard(saved.letters, solution), [saved.letters, solution]);
+  const marks = useMemo(
+    () => colorBoard(saved.letters, solution),
+    [saved.letters, solution]
+  );
   const placed = LETTER_CELLS.filter((c) => saved.letters[c] === solution[c]).length;
   const solved = placed === LETTER_CELLS.length;
   const left = BUDGET - saved.swaps;

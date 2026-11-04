@@ -25,10 +25,30 @@ export interface LitsPuzzle {
 type Cell = [number, number];
 
 const BASES: Record<Letter, Cell[]> = {
-  L: [[0, 0], [1, 0], [2, 0], [2, 1]],
-  I: [[0, 0], [0, 1], [0, 2], [0, 3]],
-  T: [[0, 0], [0, 1], [0, 2], [1, 1]],
-  S: [[0, 1], [0, 2], [1, 0], [1, 1]]
+  L: [
+    [0, 0],
+    [1, 0],
+    [2, 0],
+    [2, 1]
+  ],
+  I: [
+    [0, 0],
+    [0, 1],
+    [0, 2],
+    [0, 3]
+  ],
+  T: [
+    [0, 0],
+    [0, 1],
+    [0, 2],
+    [1, 1]
+  ],
+  S: [
+    [0, 1],
+    [0, 2],
+    [1, 0],
+    [1, 1]
+  ]
 };
 
 // Four rotations times a mirror: reflections count as the same letter, so L
@@ -79,7 +99,8 @@ for (const letter of ["L", "I", "T", "S"] as Letter[]) {
 }
 
 const nbrsOf = (i: number, n: number): number[] => {
-  const r = Math.floor(i / n), c = i % n;
+  const r = Math.floor(i / n),
+    c = i % n;
   const out: number[] = [];
   if (r > 0) out.push(i - n);
   if (r < n - 1) out.push(i + n);
@@ -144,8 +165,14 @@ function fits(
     }
   if (needTouch && !touch) return false;
   for (const i of p.cells) {
-    const r = Math.floor(i / n), c = i % n;
-    for (const [r0, c0] of [[r - 1, c - 1], [r - 1, c], [r, c - 1], [r, c]]) {
+    const r = Math.floor(i / n),
+      c = i % n;
+    for (const [r0, c0] of [
+      [r - 1, c - 1],
+      [r - 1, c],
+      [r, c - 1],
+      [r, c]
+    ]) {
       if (r0 < 0 || c0 < 0 || r0 + 1 >= n || c0 + 1 >= n) continue;
       const q = [r0 * n + c0, r0 * n + c0 + 1, (r0 + 1) * n + c0, (r0 + 1) * n + c0 + 1];
       if (q.every((k) => own.has(k) || letterAt[k])) return false;
@@ -217,7 +244,13 @@ export function generateLits(seed: string, n: number): LitsPuzzle {
   for (let t = 0; t < MAX_TRIES; t++) {
     attempts++;
     const pieces = placePieces(n, rng);
-    if (!linked(pieces.flatMap((p) => p.cells), n)) continue;
+    if (
+      !linked(
+        pieces.flatMap((p) => p.cells),
+        n
+      )
+    )
+      continue;
     if (pieces.length > best.length) best = pieces;
     if (best.length >= want) break;
   }
@@ -246,7 +279,9 @@ export function analyseLits(p: LitsPuzzle, shaded: boolean[]): LitsAnalysis {
   const { n, regions } = p;
   const on = regions.map((cells) => cells.filter((i) => shaded[i]));
   const letters = on.map((cells) => (cells.length === 4 ? classify(cells, n) : null));
-  const badRegion = on.map((cells, id) => cells.length > 4 || (cells.length === 4 && !letters[id]));
+  const badRegion = on.map(
+    (cells, id) => cells.length > 4 || (cells.length === 4 && !letters[id])
+  );
 
   const square = new Set<number>();
   for (let r = 0; r + 1 < n; r++)
@@ -277,9 +312,6 @@ export function analyseLits(p: LitsPuzzle, shaded: boolean[]): LitsAnalysis {
     linked: whole,
     shaded: all.length,
     solved:
-      letters.every((l) => l !== null) &&
-      square.size === 0 &&
-      clash.size === 0 &&
-      whole
+      letters.every((l) => l !== null) && square.size === 0 && clash.size === 0 && whole
   };
 }

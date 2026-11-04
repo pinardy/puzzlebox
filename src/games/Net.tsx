@@ -14,7 +14,10 @@ const HELP =
   "glow once they're connected to the centre.";
 
 // Direction bits: U=1, R=2, D=4, L=8. Rotating clockwise maps U→R→D→L.
-const U = 1, R = 2, D = 4, L = 8;
+const U = 1,
+  R = 2,
+  D = 4,
+  L = 8;
 const rot = (m: number, times: number): number =>
   ((m << times) | (m >> (4 - times))) & 15;
 
@@ -28,7 +31,8 @@ function generateNet(seed: string, n: number): number[] {
   const frontier: [number, number, number, number][] = []; // from, to, bitFrom, bitTo
 
   const pushEdges = (i: number) => {
-    const r = Math.floor(i / n), c = i % n;
+    const r = Math.floor(i / n),
+      c = i % n;
     if (r > 0 && !inTree[i - n]) frontier.push([i, i - n, U, D]);
     if (r < n - 1 && !inTree[i + n]) frontier.push([i, i + n, D, U]);
     if (c > 0 && !inTree[i - 1]) frontier.push([i, i - 1, L, R]);
@@ -63,7 +67,8 @@ function reachable(masks: number[], n: number): Set<number> {
   const stack = [centre];
   while (stack.length) {
     const i = stack.pop()!;
-    const r = Math.floor(i / n), c = i % n;
+    const r = Math.floor(i / n),
+      c = i % n;
     const m = masks[i];
     const tryGo = (j: number, need: number) => {
       if (!seen.has(j) && masks[j] & need) {
@@ -82,7 +87,8 @@ function reachable(masks: number[], n: number): Set<number> {
 /** Solved: no open or mismatched pipe ends, and one connected network. */
 function solved(masks: number[], n: number): boolean {
   for (let i = 0; i < n * n; i++) {
-    const r = Math.floor(i / n), c = i % n;
+    const r = Math.floor(i / n),
+      c = i % n;
     const m = masks[i];
     if (m & U && (r === 0 || !(masks[i - n] & D))) return false;
     if (m & D && (r === n - 1 || !(masks[i + n] & U))) return false;

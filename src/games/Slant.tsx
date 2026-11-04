@@ -66,9 +66,7 @@ export default function Slant({ onExit }: { onExit: () => void }) {
   const nav = useGridNav(cycle);
 
   function hint() {
-    const wrong = [...Array(n * n).keys()].filter(
-      (i) => saved.cells[i] !== solution[i]
-    );
+    const wrong = [...Array(n * n).keys()].filter((i) => saved.cells[i] !== solution[i]);
     if (!wrong.length) return;
     const cells = saved.cells.slice();
     const i = wrong[Math.floor(Math.random() * wrong.length)];
@@ -105,7 +103,8 @@ export default function Slant({ onExit }: { onExit: () => void }) {
       <div className="sl-wrap" style={{ "--n": n } as CSSProperties}>
         <div className="sl-grid" role="grid" aria-label="Slant board" {...nav}>
           {saved.cells.map((v, i) => {
-            const r = Math.floor(i / n), c = i % n;
+            const r = Math.floor(i / n),
+              c = i % n;
             const glyph =
               v === FWD ? "forward slash" : v === BACK ? "backslash" : "blank";
             return (
@@ -150,8 +149,10 @@ export default function Slant({ onExit }: { onExit: () => void }) {
         <div className="sl-clues">
           {clues.map((k, p) => {
             if (k === -1) return null;
-            const r = Math.floor(p / (n + 1)), c = p % (n + 1);
-            const over = degrees[p] > k, done = degrees[p] === k;
+            const r = Math.floor(p / (n + 1)),
+              c = p % (n + 1);
+            const over = degrees[p] > k,
+              done = degrees[p] === k;
             const note = over ? "too many" : done ? "done" : `${degrees[p]} so far`;
             return (
               <span
@@ -165,8 +166,7 @@ export default function Slant({ onExit }: { onExit: () => void }) {
                   } as CSSProperties
                 }
                 aria-label={
-                  `Corner row ${r + 1} column ${c + 1}: ` +
-                  `${k} diagonals, ${note}`
+                  `Corner row ${r + 1} column ${c + 1}: ` + `${k} diagonals, ${note}`
                 }
               >
                 {k}

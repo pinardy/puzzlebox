@@ -22,7 +22,10 @@
   z-index: 1;
 }
 
-.thermo-cell.bulb .th-core { width: 62%; height: 62%; }
+.thermo-cell.bulb .th-core {
+  width: 62%;
+  height: 62%;
+}
 
 .th-arm {
   position: absolute;
@@ -31,13 +34,48 @@
   z-index: 0;
 }
 
-.th-arm.arm-l { left: 0; top: 50%; transform: translateY(-50%); width: 55%; height: 30%; border-right: none; border-left: none; }
+.th-arm.arm-l {
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 55%;
+  height: 30%;
+  border-right: none;
+  border-left: none;
+}
 
-.th-arm.arm-r { right: 0; top: 50%; transform: translateY(-50%); width: 55%; height: 30%; border-left: none; border-right: none; }
+.th-arm.arm-r {
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 55%;
+  height: 30%;
+  border-left: none;
+  border-right: none;
+}
 
-.th-arm.arm-u { top: 0; left: 50%; transform: translateX(-50%); height: 55%; width: 30%; border-bottom: none; border-top: none; }
+.th-arm.arm-u {
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 55%;
+  width: 30%;
+  border-bottom: none;
+  border-top: none;
+}
 
-.th-arm.arm-d { bottom: 0; left: 50%; transform: translateX(-50%); height: 55%; width: 30%; border-top: none; border-bottom: none; }
+.th-arm.arm-d {
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 55%;
+  width: 30%;
+  border-top: none;
+  border-bottom: none;
+}
 
 .thermo-cell.filled .th-core,
-.thermo-cell.filled .th-arm { background: var(--coral); border-color: var(--coral); }
+.thermo-cell.filled .th-arm {
+  background: var(--coral);
+  border-color: var(--coral);
+}

@@ -38,8 +38,12 @@ function generateAnagram(seed: string, diff: Diff): Puzzle {
 }
 
 export default function Anagram({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, newPuzzle }= useGame<SavedState>(() => ({ tries: 0, hints: 0, done: false, won: false })
-  );
+  const { seed, diff, saved, commit, newPuzzle } = useGame<SavedState>(() => ({
+    tries: 0,
+    hints: 0,
+    done: false,
+    won: false
+  }));
   const { word, scrambled } = useMemo(() => generateAnagram(seed, diff), [seed, diff]);
   const L = word.length;
   const won = saved.won ?? saved.done; // pre-mode saves couldn't lose
@@ -122,7 +126,8 @@ export default function Anagram({ onExit }: { onExit: () => void }) {
       <GameHeader title="Anagram" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
         Unscramble the letters into a word.
-        {diff === "hard" && !saved.done &&
+        {diff === "hard" &&
+          !saved.done &&
           ` ${MAX_TRIES_HARD - saved.tries} attempt${
             MAX_TRIES_HARD - saved.tries === 1 ? "" : "s"
           } left.`}

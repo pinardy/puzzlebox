@@ -55,7 +55,8 @@ function deal(seed: string): SavedState {
 }
 
 export default function Clock({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle }= useGame<SavedState>((s) => deal(s)
+  const { seed, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>((s) =>
+    deal(s)
   );
 
   /** Lay the held card on its hour, then pick up that pile's next card. */

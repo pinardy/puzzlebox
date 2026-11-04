@@ -25,7 +25,10 @@ function runsOf(line: number[]): number[] {
   let n = 0;
   for (const v of line) {
     if (v === 1) n++;
-    else if (n) { runs.push(n); n = 0; }
+    else if (n) {
+      runs.push(n);
+      n = 0;
+    }
   }
   if (n) runs.push(n);
   return runs.length ? runs : [0];
@@ -35,11 +38,8 @@ function buildTarget(seed: string, size: number): number[] {
   // Reject boards that are too sparse or too dense to be interesting.
   const rng = makeRng(seed);
   for (;;) {
-    const cells = Array.from({ length: size * size }, () =>
-      rng() < 0.55 ? 1 : 0
-    );
-    const fill =
-      cells.reduce((a: number, b) => a + b, 0) / cells.length;
+    const cells = Array.from({ length: size * size }, () => (rng() < 0.55 ? 1 : 0));
+    const fill = cells.reduce((a: number, b) => a + b, 0) / cells.length;
     if (fill > 0.4 && fill < 0.68) return cells;
   }
 }
@@ -76,15 +76,17 @@ export default function Picross({ onExit }: { onExit: () => void }) {
     Array.from({ length: size }, (_, r) => (saved.marks[r * size + c] === 1 ? 1 : 0));
 
   const rowDone = useMemo(
-    () => rowClues.map(
-      (clue, r) => JSON.stringify(runsOf(playerRow(r))) === JSON.stringify(clue)
-    ),
+    () =>
+      rowClues.map(
+        (clue, r) => JSON.stringify(runsOf(playerRow(r))) === JSON.stringify(clue)
+      ),
     [saved.marks, rowClues] // eslint-disable-line react-hooks/exhaustive-deps
   );
   const colDone = useMemo(
-    () => colClues.map(
-      (clue, c) => JSON.stringify(runsOf(playerCol(c))) === JSON.stringify(clue)
-    ),
+    () =>
+      colClues.map(
+        (clue, c) => JSON.stringify(runsOf(playerCol(c))) === JSON.stringify(clue)
+      ),
     [saved.marks, colClues] // eslint-disable-line react-hooks/exhaustive-deps
   );
 

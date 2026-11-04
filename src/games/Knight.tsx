@@ -15,15 +15,23 @@ const HELP =
   "yourself in a corner.";
 
 const JUMPS = [
-  [1, 2], [2, 1], [2, -1], [1, -2],
-  [-1, -2], [-2, -1], [-2, 1], [-1, 2]
+  [1, 2],
+  [2, 1],
+  [2, -1],
+  [1, -2],
+  [-1, -2],
+  [-2, -1],
+  [-2, 1],
+  [-1, 2]
 ];
 
 function movesFrom(i: number, n: number): number[] {
-  const r = Math.floor(i / n), c = i % n;
+  const r = Math.floor(i / n),
+    c = i % n;
   const out: number[] = [];
   for (const [dr, dc] of JUMPS) {
-    const rr = r + dr, cc = c + dc;
+    const rr = r + dr,
+      cc = c + dc;
     if (rr >= 0 && rr < n && cc >= 0 && cc < n) out.push(rr * n + cc);
   }
   return out;
@@ -32,7 +40,12 @@ function movesFrom(i: number, n: number): number[] {
 /** Finish the tour from here, trying the most constrained square first
  *  (Warnsdorff). Used both to pick a fair starting square and to power
  *  the hint. */
-function completeTour(visited: boolean[], cur: number, left: number, n: number): number[] | null {
+function completeTour(
+  visited: boolean[],
+  cur: number,
+  left: number,
+  n: number
+): number[] | null {
   let nodes = 0;
   const path: number[] = [];
   const walk = (at: number, remaining: number): boolean => {

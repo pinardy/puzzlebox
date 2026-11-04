@@ -24,9 +24,17 @@
   cursor: pointer;
 }
 
-.m24-tile.picked { outline: 3px solid var(--green); outline-offset: 2px; transform: translateY(-4px); }
+.m24-tile.picked {
+  outline: 3px solid var(--green);
+  outline-offset: 2px;
+  transform: translateY(-4px);
+}
 
-.m24-tile.win { background: var(--green); border-color: var(--green); color: #fff; }
+.m24-tile.win {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
 
 .m24-ops {
   display: flex;
@@ -42,6 +50,13 @@
   font-size: 24px;
 }
 
-.m24-op.active { background: var(--green); border-color: var(--green); color: #fff; }
+.m24-op.active {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
 
-.m24-op:disabled { opacity: 0.35; box-shadow: none; }
+.m24-op:disabled {
+  opacity: 0.35;
+  box-shadow: none;
+}

@@ -15,11 +15,16 @@ const HELP =
 
 function press(cells: boolean[], idx: number): boolean[] {
   const out = cells.slice();
-  const r = Math.floor(idx / N), c = idx % N;
+  const r = Math.floor(idx / N),
+    c = idx % N;
   const flip = (rr: number, cc: number) => {
     if (rr >= 0 && rr < N && cc >= 0 && cc < N) out[rr * N + cc] = !out[rr * N + cc];
   };
-  flip(r, c); flip(r - 1, c); flip(r + 1, c); flip(r, c - 1); flip(r, c + 1);
+  flip(r, c);
+  flip(r - 1, c);
+  flip(r + 1, c);
+  flip(r, c - 1);
+  flip(r, c + 1);
   return out;
 }
 
@@ -94,13 +99,19 @@ export default function LightsOut({ onExit }: { onExit: () => void }) {
       done: false
     }));
   const scrambles = SCRAMBLES[diff];
-  const initial = useMemo(() => buildBoard(`lights-${seed}`, scrambles), [seed, scrambles]);
+  const initial = useMemo(
+    () => buildBoard(`lights-${seed}`, scrambles),
+    [seed, scrambles]
+  );
 
   function tap(idx: number) {
     if (saved.done) return;
     const cells = press(saved.cells, idx);
     const done = cells.every((c) => !c);
-    commit({ cells, moves: saved.moves + 1, done }, { outcome: done ? "won" : undefined });
+    commit(
+      { cells, moves: saved.moves + 1, done },
+      { outcome: done ? "won" : undefined }
+    );
   }
 
   const nav = useGridNav();

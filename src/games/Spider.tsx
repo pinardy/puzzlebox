@@ -70,8 +70,9 @@ function clearRuns(next: SavedState, suitOf: (id: number) => number): void {
 type Sel = { pile: number; index: number } | null;
 
 export default function Spider({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
-    useGame<SavedState>((s) => deal(s));
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>(
+    (s) => deal(s)
+  );
   const [sel, setSel] = useState<Sel>(null);
   const nSuits = SUIT_COUNT[diff];
   const suitOf = (id: number) => Math.floor(id / 13) % nSuits;
@@ -158,8 +159,8 @@ export default function Spider({ onExit }: { onExit: () => void }) {
     <div className="game game-spider" style={{ "--cols": 10 } as CSSProperties}>
       <GameHeader title="Spider" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
-        {nSuits === 1 ? "One suit" : nSuits === 2 ? "Two suits" : "Four suits"}.
-        Build same-suit K→A runs to clear them; complete all eight.
+        {nSuits === 1 ? "One suit" : nSuits === 2 ? "Two suits" : "Four suits"}. Build
+        same-suit K→A runs to clear them; complete all eight.
       </p>
       <GameTools
         diff={diff}
@@ -222,7 +223,9 @@ export default function Spider({ onExit }: { onExit: () => void }) {
       </div>
 
       <div className="lights-meta">
-        <span>Moves: {saved.moves} · runs {saved.completed}/8</span>
+        <span>
+          Moves: {saved.moves} · runs {saved.completed}/8
+        </span>
       </div>
 
       {saved.done && (

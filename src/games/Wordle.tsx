@@ -61,13 +61,14 @@ function hardModeViolation(
 }
 
 export default function Wordle({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, newPuzzle } =
-    useGame<SavedState>((_s, d) => ({
+  const { seed, diff, saved, commit, commitHint, newPuzzle } = useGame<SavedState>(
+    (_s, d) => ({
       guesses: [],
       revealed: Array(LEN[d]).fill(null),
       done: false,
       won: false
-    }));
+    })
+  );
   const cols = LEN[diff];
   const answer = useMemo(() => answerFor(seed, diff), [seed, diff]);
   // Slots saved before hints existed lack `revealed`.
@@ -129,8 +130,7 @@ export default function Wordle({ onExit }: { onExit: () => void }) {
       if (saved.done) return;
       if (k === "enter") submit();
       else if (k === "back") setCurrent((c) => c.slice(0, -1));
-      else if (/^[A-Z]$/.test(k) && current.length < cols)
-        setCurrent((c) => c + k);
+      else if (/^[A-Z]$/.test(k) && current.length < cols) setCurrent((c) => c + k);
     },
     [saved.done, submit, current.length, cols]
   );
@@ -278,7 +278,9 @@ export default function Wordle({ onExit }: { onExit: () => void }) {
         <Result
           key={seed}
           won={saved.won}
-          message={saved.won ? winMessage(saved.guesses.length) : `The word was ${answer}`}
+          message={
+            saved.won ? winMessage(saved.guesses.length) : `The word was ${answer}`
+          }
           onNew={() => startNew()}
           onExit={onExit}
         />

@@ -65,8 +65,8 @@ export default function Stats({
 
       {played === 0 ? (
         <p className="stats-empty">
-          Nothing solved yet. Finish a puzzle and this page fills up with your
-          streaks, your best times, and the games you keep coming back to.
+          Nothing solved yet. Finish a puzzle and this page fills up with your streaks,
+          your best times, and the games you keep coming back to.
         </p>
       ) : (
         <>

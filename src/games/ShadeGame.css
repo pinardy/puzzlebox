@@ -27,9 +27,13 @@
   font-size: clamp(9px, 2.6vw, 13px);
 }
 
-.shade-cell.shade-on { background: var(--ink); }
+.shade-cell.shade-on {
+  background: var(--ink);
+}
 
-.shade-cell.shade-off { color: var(--ink-soft); }
+.shade-cell.shade-off {
+  color: var(--ink-soft);
+}
 
 .shade-cell.shade-clue {
   background: var(--paper);
@@ -38,4 +42,6 @@
 }
 
 /* Dark theme tweaks for the new boards. */
-:root[data-theme="dark"] .shade-cell.shade-clue { background: #202b39; }
+:root[data-theme="dark"] .shade-cell.shade-clue {
+  background: #202b39;
+}

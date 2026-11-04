@@ -9,4 +9,6 @@
   width: min(100%, 420px);
 }
 
-.mc-cell { width: 100%; }
+.mc-cell {
+  width: 100%;
+}

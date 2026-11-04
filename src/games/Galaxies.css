@@ -26,9 +26,13 @@
   cursor: pointer;
 }
 
-.gal-cell.cage-t { border-top: 2px solid var(--ink); }
+.gal-cell.cage-t {
+  border-top: 2px solid var(--ink);
+}
 
-.gal-cell.cage-l { border-left: 2px solid var(--ink); }
+.gal-cell.cage-l {
+  border-left: 2px solid var(--ink);
+}
 
 .gal-dot {
   position: absolute;
@@ -50,7 +54,9 @@
 }
 
 @media (min-width: 700px) {
-  .gal-wrap { width: min(100%, 500px); }
+  .gal-wrap {
+    width: min(100%, 500px);
+  }
   .gal-wrap {
     margin-top: auto;
     margin-bottom: auto;

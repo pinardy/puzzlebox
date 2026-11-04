@@ -178,9 +178,7 @@ export function GameHeader({
         <button
           className={`new-btn${confirming ? " confirming" : ""}`}
           onClick={armOrDeal}
-          aria-label={
-            confirming ? "Tap again to discard this puzzle" : "New puzzle"
-          }
+          aria-label={confirming ? "Tap again to discard this puzzle" : "New puzzle"}
         >
           {confirming ? "Discard?" : "New"}
         </button>

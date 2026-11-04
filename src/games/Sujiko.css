@@ -23,9 +23,15 @@
   cursor: pointer;
 }
 
-.sj-cell.given { color: var(--ink); cursor: default; }
+.sj-cell.given {
+  color: var(--ink);
+  cursor: default;
+}
 
-.sj-cell.selected { outline: 3px solid var(--blue); outline-offset: -1px; }
+.sj-cell.selected {
+  outline: 3px solid var(--blue);
+  outline-offset: -1px;
+}
 
 .sj-sum {
   position: absolute;
@@ -44,6 +50,12 @@
   pointer-events: none;
 }
 
-.sj-sum.ok { border-color: var(--green); color: var(--green); }
+.sj-sum.ok {
+  border-color: var(--green);
+  color: var(--green);
+}
 
-.sj-sum.bad { border-color: var(--rose); color: var(--rose); }
+.sj-sum.bad {
+  border-color: var(--rose);
+  color: var(--rose);
+}

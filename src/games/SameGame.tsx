@@ -42,16 +42,28 @@ function deal(seed: string, diff: Diff): SavedState {
   };
 }
 
-function groupAt(cells: (number | null)[], w: number, h: number, start: number): number[] {
+function groupAt(
+  cells: (number | null)[],
+  w: number,
+  h: number,
+  start: number
+): number[] {
   const color = cells[start];
   if (color === null) return [];
   const seen = new Set([start]);
   const stack = [start];
   while (stack.length) {
     const i = stack.pop()!;
-    const r = Math.floor(i / w), c = i % w;
-    for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-      const rr = r + dr, cc = c + dc;
+    const r = Math.floor(i / w),
+      c = i % w;
+    for (const [dr, dc] of [
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1]
+    ]) {
+      const rr = r + dr,
+        cc = c + dc;
       const j = rr * w + cc;
       if (rr >= 0 && rr < h && cc >= 0 && cc < w && cells[j] === color && !seen.has(j)) {
         seen.add(j);
@@ -65,7 +77,8 @@ function groupAt(cells: (number | null)[], w: number, h: number, start: number):
 function anyGroup(cells: (number | null)[], w: number, h: number): boolean {
   for (let i = 0; i < w * h; i++) {
     if (cells[i] === null) continue;
-    const r = Math.floor(i / w), c = i % w;
+    const r = Math.floor(i / w),
+      c = i % w;
     if (c < w - 1 && cells[i + 1] === cells[i]) return true;
     if (r < h - 1 && cells[i + w] === cells[i]) return true;
   }
@@ -91,8 +104,9 @@ function settle(cells: (number | null)[], w: number, h: number): (number | null)
 }
 
 export default function SameGame({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
-    useGame<SavedState>((s, d) => deal(s, d));
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>(
+    (s, d) => deal(s, d)
+  );
   const { w, h } = saved;
 
   const remaining = useMemo(
@@ -124,9 +138,7 @@ export default function SameGame({ onExit }: { onExit: () => void }) {
   return (
     <div className="game game-samegame">
       <GameHeader title="SameGame" onExit={onExit} onNew={() => newPuzzle()} />
-      <p className="game-hint">
-        Pop groups of two or more. Big groups score (n−2)².
-      </p>
+      <p className="game-hint">Pop groups of two or more. Big groups score (n−2)².</p>
       <GameTools
         diff={diff}
         onDiff={newPuzzle}
@@ -136,7 +148,9 @@ export default function SameGame({ onExit }: { onExit: () => void }) {
       />
 
       <div className="lights-meta">
-        <span>Score: {saved.score} · {remaining} tiles</span>
+        <span>
+          Score: {saved.score} · {remaining} tiles
+        </span>
       </div>
 
       <div

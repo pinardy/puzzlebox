@@ -42,8 +42,9 @@ function deal(seed: string): SavedState {
 type Sel = { pile: number; index: number } | null;
 
 export default function Yukon({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle } =
-    useGame<SavedState>((s) => deal(s));
+  const { seed, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>((s) =>
+    deal(s)
+  );
   const [sel, setSel] = useState<Sel>(null);
 
   function play(next: SavedState) {
@@ -104,10 +105,7 @@ export default function Yukon({ onExit }: { onExit: () => void }) {
       }
       const moving = saved.tableau[sel.pile][sel.index];
       const top = cards.length ? cards[cards.length - 1] : null;
-      const fits =
-        top === null
-          ? rank(moving) === 13
-          : downAltColour(moving, top);
+      const fits = top === null ? rank(moving) === 13 : downAltColour(moving, top);
       if (!fits) {
         setSel(null);
         return;
@@ -143,12 +141,7 @@ export default function Yukon({ onExit }: { onExit: () => void }) {
       <div className="kl-top">
         <span className="kl-gap" />
         {saved.foundations.map((f, s) => (
-          <Foundation
-            key={s}
-            suit={s}
-            top={f}
-            onClick={tryFoundation}
-          />
+          <Foundation key={s} suit={s} top={f} onClick={tryFoundation} />
         ))}
       </div>
 

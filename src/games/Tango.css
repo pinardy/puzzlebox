@@ -23,16 +23,27 @@
   place-items: center;
 }
 
-.tango-cell.given { background: #f1f3f6; cursor: default; }
+.tango-cell.given {
+  background: #f1f3f6;
+  cursor: default;
+}
 
-.tango-cell.sun { color: var(--amber); }
+.tango-cell.sun {
+  color: var(--amber);
+}
 
-.tango-cell.moon { color: var(--indigo); }
+.tango-cell.moon {
+  color: var(--indigo);
+}
 
-.tango-cell.conflict { background: #fbe6ef; }
+.tango-cell.conflict {
+  background: #fbe6ef;
+}
 
 @media (min-width: 700px) {
-  .tango-grid { width: min(100%, 470px); }
+  .tango-grid {
+    width: min(100%, 470px);
+  }
   .tango-grid {
     margin-top: auto;
     margin-bottom: auto;

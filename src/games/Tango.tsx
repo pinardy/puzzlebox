@@ -46,8 +46,7 @@ export default function Tango({ onExit }: { onExit: () => void }) {
     return bad;
   }, [board]);
 
-  const solved =
-    board.every((v) => v !== 0) && board.every((v, i) => v === solution[i]);
+  const solved = board.every((v) => v !== 0) && board.every((v, i) => v === solution[i]);
   useEffect(() => {
     if (solved) finish();
   }, [solved, finish]);
@@ -77,8 +76,8 @@ export default function Tango({ onExit }: { onExit: () => void }) {
     <div className="game game-tango">
       <GameHeader title="Suns & Moons" onExit={onExit} onNew={() => newPuzzle()} />
       <p className="game-hint">
-        Three of each per row and column, never three in a row. Tap to cycle
-        ☀ → ☾ → empty.
+        Three of each per row and column, never three in a row. Tap to cycle ☀ → ☾ →
+        empty.
       </p>
       <GameTools
         diff={diff}

@@ -1,12 +1,24 @@
 /* Waffle: styles only this board uses. Loaded with its chunk. */
 
-.wf-meta { margin-top: 4px; }
+.wf-meta {
+  margin-top: 4px;
+}
 
-.wf-left { display: inline-flex; align-items: baseline; gap: 5px; }
+.wf-left {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+}
 
-.wf-left b { font-family: var(--display); font-size: 24px; line-height: 1; }
+.wf-left b {
+  font-family: var(--display);
+  font-size: 24px;
+  line-height: 1;
+}
 
-.wf-left.low b { color: var(--rose); }
+.wf-left.low b {
+  color: var(--rose);
+}
 
 .wf-grid {
   align-self: center;
@@ -17,7 +29,9 @@
   margin-top: 10px;
 }
 
-.wf-hole { aspect-ratio: 1; }
+.wf-hole {
+  aspect-ratio: 1;
+}
 
 .wf-cell {
   position: relative;
@@ -33,14 +47,22 @@
   font-weight: 700;
   color: var(--ink);
   cursor: pointer;
-  transition: background 160ms, border-color 160ms, color 160ms, transform 120ms;
+  transition:
+    background 160ms,
+    border-color 160ms,
+    color 160ms,
+    transform 120ms;
 }
 
 /* Feedback fills use --ok/--near, so the colour-blind palette flag swaps
    them for free. Both fills are theme-independent, which is why the letter
    colour on them is a literal rather than a variable: white reads on the
    green, dark ink on the much lighter amber, in either theme. */
-.wf-cell.is-misplaced { background: var(--near); border-color: var(--near); color: #1b2733; }
+.wf-cell.is-misplaced {
+  background: var(--near);
+  border-color: var(--near);
+  color: #1b2733;
+}
 
 .wf-cell.is-absent {
   background: var(--paper);
@@ -70,7 +92,9 @@
   border: 2px solid currentColor;
 }
 
-.wf-cell.is-correct::after { background: currentColor; }
+.wf-cell.is-correct::after {
+  background: currentColor;
+}
 
 .wf-cell.held {
   outline: 3px solid var(--blue);
@@ -80,10 +104,24 @@
   z-index: 1;
 }
 
-.wf-cell:focus-visible { outline: 3px solid var(--indigo); outline-offset: 2px; }
+.wf-cell:focus-visible {
+  outline: 3px solid var(--indigo);
+  outline-offset: 2px;
+}
 
-.wf-cell:active { transform: translateY(1px); }
+.wf-cell:active {
+  transform: translateY(1px);
+}
 
-.wf-answer { margin: 12px 0 0; font-size: 13px; color: var(--ink-soft); text-align: center; }
+.wf-answer {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: var(--ink-soft);
+  text-align: center;
+}
 
-.wf-answer b { font-family: var(--mono); color: var(--ink); letter-spacing: 0.04em; }
+.wf-answer b {
+  font-family: var(--mono);
+  color: var(--ink);
+  letter-spacing: 0.04em;
+}

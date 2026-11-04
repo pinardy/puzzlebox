@@ -114,8 +114,7 @@ export default function Sujiko({ onExit }: { onExit: () => void }) {
     if (saved.done || givens[idx] !== 0) return;
     const entries = saved.entries.slice();
     // Each digit is unique: placing one clears it from wherever it was.
-    if (val !== 0)
-      for (let i = 0; i < 9; i++) if (entries[i] === val) entries[i] = 0;
+    if (val !== 0) for (let i = 0; i < 9; i++) if (entries[i] === val) entries[i] = 0;
     entries[idx] = entries[idx] === val ? 0 : val;
     commit({ ...saved, entries });
   }
@@ -188,7 +187,11 @@ export default function Sujiko({ onExit }: { onExit: () => void }) {
             className={`sj-sum ${quadState[k]}`}
             role="gridcell"
             aria-label={`${CORNER[k]} circle: ${s}${
-              quadState[k] === "ok" ? ", correct" : quadState[k] === "bad" ? ", wrong" : ""
+              quadState[k] === "ok"
+                ? ", correct"
+                : quadState[k] === "bad"
+                  ? ", wrong"
+                  : ""
             }`}
             style={{
               left: `${(k % 2) * 33.33 + 33.33}%`,

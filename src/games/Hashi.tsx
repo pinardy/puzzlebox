@@ -64,10 +64,7 @@ export default function Hashi({ onExit }: { onExit: () => void }) {
     return d;
   }, [saved.edges]);
 
-  const solved = useMemo(
-    () => hashiSolved(puzzle, saved.edges),
-    [puzzle, saved.edges]
-  );
+  const solved = useMemo(() => hashiSolved(puzzle, saved.edges), [puzzle, saved.edges]);
   useEffect(() => {
     if (solved) finish();
   }, [solved, finish]);
@@ -196,8 +193,12 @@ export default function Hashi({ onExit }: { onExit: () => void }) {
             >
               {bridge
                 ? bridge.horizontal
-                  ? bridge.count === 2 ? "═" : "─"
-                  : bridge.count === 2 ? "║" : "│"
+                  ? bridge.count === 2
+                    ? "═"
+                    : "─"
+                  : bridge.count === 2
+                    ? "║"
+                    : "│"
                 : ""}
             </button>
           );
@@ -206,7 +207,9 @@ export default function Hashi({ onExit }: { onExit: () => void }) {
 
       <div className="lights-meta">
         <span>
-          {sel !== null ? "Now tap an island in line with it" : "Tap an island to start a bridge"}
+          {sel !== null
+            ? "Now tap an island in line with it"
+            : "Tap an island to start a bridge"}
         </span>
         <button
           className="mini-btn"

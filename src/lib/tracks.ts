@@ -109,10 +109,12 @@ function findPath(
     if (i === to) {
       if (path.length >= minLen) return true;
     } else if (left-- > 0) {
-      const r = Math.floor(i / n), c = i % n;
+      const r = Math.floor(i / n),
+        c = i % n;
       for (const d of shuffled(DIRS, rng)) {
         const [dr, dc] = STEP[d];
-        const rr = r + dr, cc = c + dc;
+        const rr = r + dr,
+          cc = c + dc;
         if (rr < 0 || rr >= n || cc < 0 || cc >= n) continue;
         const j = rr * n + cc;
         if (seen[j]) continue;
@@ -212,10 +214,12 @@ export function mismatched(board: number[], p: TracksPuzzle): Set<number> {
   const bad = new Set<number>();
   for (let i = 0; i < n * n; i++) {
     if (!board[i]) continue;
-    const r = Math.floor(i / n), c = i % n;
+    const r = Math.floor(i / n),
+      c = i % n;
     for (const d of bits(board[i])) {
       const [dr, dc] = STEP[d];
-      const rr = r + dr, cc = c + dc;
+      const rr = r + dr,
+        cc = c + dc;
       if (rr < 0 || rr >= n || cc < 0 || cc >= n) {
         const legal =
           (i === entry.cell && d === entry.out) || (i === exit.cell && d === exit.out);
@@ -253,10 +257,12 @@ export function checkTracks(board: number[], p: TracksPuzzle): boolean {
 
   let offBoard = 0;
   for (const i of cells) {
-    const r = Math.floor(i / n), c = i % n;
+    const r = Math.floor(i / n),
+      c = i % n;
     for (const d of bits(board[i])) {
       const [dr, dc] = STEP[d];
-      const rr = r + dr, cc = c + dc;
+      const rr = r + dr,
+        cc = c + dc;
       if (rr < 0 || rr >= n || cc < 0 || cc >= n) {
         const legal =
           (i === entry.cell && d === entry.out) || (i === exit.cell && d === exit.out);
@@ -276,7 +282,8 @@ export function checkTracks(board: number[], p: TracksPuzzle): boolean {
   const stack = [cells[0]];
   while (stack.length) {
     const i = stack.pop()!;
-    const r = Math.floor(i / n), c = i % n;
+    const r = Math.floor(i / n),
+      c = i % n;
     for (const d of bits(board[i])) {
       const [dr, dc] = STEP[d];
       const j = (r + dr) * n + (c + dc);

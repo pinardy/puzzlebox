@@ -40,7 +40,8 @@ function generateKenKen(seed: string, n: number): Puzzle {
     const want = 2 + Math.floor(rng() * 2); // 2–3 cells; singles only when boxed in
     while (cells.length < want) {
       const frontier = cells.flatMap((i) => {
-        const r = Math.floor(i / n), c = i % n;
+        const r = Math.floor(i / n),
+          c = i % n;
         const out: number[] = [];
         if (r > 0 && cageOf[i - n] === -1) out.push(i - n);
         if (r < n - 1 && cageOf[i + n] === -1) out.push(i + n);
@@ -63,10 +64,19 @@ function generateKenKen(seed: string, n: number): Puzzle {
       const [a, b] = vals;
       const div = a % b === 0 ? a / b : b % a === 0 ? b / a : 0;
       const roll = rng();
-      if (div > 1 && roll < 0.35) { op = "÷"; target = div; }
-      else if (roll < 0.65) { op = "−"; target = Math.abs(a - b); }
-      else if (roll < 0.85) { op = "+"; target = a + b; }
-      else { op = "×"; target = a * b; }
+      if (div > 1 && roll < 0.35) {
+        op = "÷";
+        target = div;
+      } else if (roll < 0.65) {
+        op = "−";
+        target = Math.abs(a - b);
+      } else if (roll < 0.85) {
+        op = "+";
+        target = a + b;
+      } else {
+        op = "×";
+        target = a * b;
+      }
     } else if (rng() < 0.5) {
       op = "+";
       target = vals.reduce((x, y) => x + y, 0);
@@ -83,10 +93,14 @@ function cageSatisfied(cage: Cage, board: number[]): boolean | null {
   const vals = cage.cells.map((i) => board[i]);
   if (vals.some((v) => v === 0)) return null; // incomplete
   switch (cage.op) {
-    case "=": return vals[0] === cage.target;
-    case "+": return vals.reduce((a, b) => a + b, 0) === cage.target;
-    case "×": return vals.reduce((a, b) => a * b, 1) === cage.target;
-    case "−": return Math.abs(vals[0] - vals[1]) === cage.target;
+    case "=":
+      return vals[0] === cage.target;
+    case "+":
+      return vals.reduce((a, b) => a + b, 0) === cage.target;
+    case "×":
+      return vals.reduce((a, b) => a * b, 1) === cage.target;
+    case "−":
+      return Math.abs(vals[0] - vals[1]) === cage.target;
     case "÷": {
       const [a, b] = vals;
       return a === b * cage.target || b === a * cage.target;
@@ -133,16 +147,17 @@ export default function KenKen({ onExit }: { onExit: () => void }) {
     for (let i = 0; i < n * n; i++) {
       const v = board[i];
       if (v === 0) continue;
-      const r = Math.floor(i / n), c = i % n;
+      const r = Math.floor(i / n),
+        c = i % n;
       for (let k = 0; k < n; k++) {
-        const row = r * n + k, col = k * n + c;
+        const row = r * n + k,
+          col = k * n + c;
         if (row !== i && board[row] === v) bad.add(i);
         if (col !== i && board[col] === v) bad.add(i);
       }
     }
     for (const cage of cages)
-      if (cageSatisfied(cage, board) === false)
-        cage.cells.forEach((i) => bad.add(i));
+      if (cageSatisfied(cage, board) === false) cage.cells.forEach((i) => bad.add(i));
     return bad;
   }, [board, cages, n]);
 
@@ -191,8 +206,8 @@ export default function KenKen({ onExit }: { onExit: () => void }) {
     <div className="game game-kenken">
       <GameHeader title="KenKen" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
-        1–{n} once per row and column; each outlined cage must make its
-        number with its operation.
+        1–{n} once per row and column; each outlined cage must make its number with its
+        operation.
       </p>
       <GameTools
         diff={diff}
@@ -210,7 +225,8 @@ export default function KenKen({ onExit }: { onExit: () => void }) {
         aria-label="KenKen board"
       >
         {board.map((v, i) => {
-          const r = Math.floor(i / n), c = i % n;
+          const r = Math.floor(i / n),
+            c = i % n;
           const clue = clueCell.get(i);
           return (
             <button

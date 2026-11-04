@@ -9,7 +9,10 @@
   margin-top: 6px;
 }
 
-.golf-col { position: relative; flex: 1; }
+.golf-col {
+  position: relative;
+  flex: 1;
+}
 
 .golf-card {
   position: absolute;
@@ -18,4 +21,6 @@
   left: 0;
 }
 
-.golf-card:disabled { cursor: default; }
+.golf-card:disabled {
+  cursor: default;
+}

@@ -33,13 +33,15 @@ function deal(seed: string): SavedState {
 }
 
 export default function Golf({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
-    useGame<SavedState>((s) => deal(s));
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>(
+    (s) => deal(s)
+  );
 
   const wasteTop = saved.waste[saved.waste.length - 1];
 
   const playable = (card: number): boolean => {
-    const a = rank(card), b = rank(wasteTop);
+    const a = rank(card),
+      b = rank(wasteTop);
     if (diff === "hard" && b === 13) return false; // kings are dead ends
     const d = Math.abs(a - b);
     return d === 1 || (diff === "easy" && d === 12); // easy wraps A–K
@@ -131,7 +133,9 @@ export default function Golf({ onExit }: { onExit: () => void }) {
           card={null}
           faceDown={saved.stock.length > 0}
           onClick={tapStock}
-          aria-label={saved.stock.length ? `Stock, ${nCards(saved.stock.length)}` : "Stock, empty"}
+          aria-label={
+            saved.stock.length ? `Stock, ${nCards(saved.stock.length)}` : "Stock, empty"
+          }
         >
           {saved.stock.length || "—"}
         </PlayingCard>

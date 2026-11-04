@@ -24,9 +24,13 @@
   color: var(--ink-soft);
 }
 
-.akari-cell.lit { background: #fdf6da; }
+.akari-cell.lit {
+  background: #fdf6da;
+}
 
-.akari-cell.conflict { background: #fbe6ef; }
+.akari-cell.conflict {
+  background: #fbe6ef;
+}
 
 .akari-wall {
   display: grid;
@@ -40,15 +44,24 @@
 }
 
 @media (min-width: 700px) {
-  .akari-grid { width: min(100%, 500px); }
+  .akari-grid {
+    width: min(100%, 500px);
+  }
   .akari-grid {
     margin-top: auto;
     margin-bottom: auto;
   }
 }
 
-:root[data-theme="dark"] .akari-cell.lit { background: #3a3420; }
+:root[data-theme="dark"] .akari-cell.lit {
+  background: #3a3420;
+}
 
-:root[data-theme="dark"] .akari-cell.conflict { background: #45222f; }
+:root[data-theme="dark"] .akari-cell.conflict {
+  background: #45222f;
+}
 
-:root[data-theme="dark"] .akari-wall { background: #0b0e12; border-color: #2b3540; }
+:root[data-theme="dark"] .akari-wall {
+  background: #0b0e12;
+  border-color: #2b3540;
+}

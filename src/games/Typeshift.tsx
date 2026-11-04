@@ -40,10 +40,7 @@ export default function Typeshift({ onExit }: { onExit: () => void }) {
   }
 
   const word = saved.at.map((i, c) => cols[c][i] ?? "").join("");
-  const remaining = cols.reduce(
-    (n, col, c) => n + col.length - saved.used[c].length,
-    0
-  );
+  const remaining = cols.reduce((n, col, c) => n + col.length - saved.used[c].length, 0);
 
   function say(msg: string) {
     setToast(msg);
@@ -78,9 +75,7 @@ export default function Typeshift({ onExit }: { onExit: () => void }) {
     const next: SavedState = {
       ...saved,
       found: [...saved.found, word],
-      used: saved.used.map((u, c) =>
-        u.includes(saved.at[c]) ? u : [...u, saved.at[c]]
-      )
+      used: saved.used.map((u, c) => (u.includes(saved.at[c]) ? u : [...u, saved.at[c]]))
     };
     const left = cols.reduce((n, col, c) => n + col.length - next.used[c].length, 0);
     if (left === 0) next.done = true;

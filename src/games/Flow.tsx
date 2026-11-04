@@ -13,7 +13,15 @@ const HELP =
   "Join each pair of matching dots with a pipe by dragging between them. " +
   "Pipes can't cross or share squares, and when everything is connected " +
   "every square must be covered.";
-const COLORS = ["#e05252", "#3b6fe0", "#2e9e6b", "#e0a23b", "#7857c9", "#e06fb2", "#8a5a2b"];
+const COLORS = [
+  "#e05252",
+  "#3b6fe0",
+  "#2e9e6b",
+  "#e0a23b",
+  "#7857c9",
+  "#e06fb2",
+  "#8a5a2b"
+];
 
 interface Puzzle {
   ends: [number, number][];
@@ -66,7 +74,10 @@ export default function Flow({ onExit }: { onExit: () => void }) {
 
   const endColor = useMemo(() => {
     const map = new Map<number, number>();
-    ends.forEach(([a, b], c) => { map.set(a, c); map.set(b, c); });
+    ends.forEach(([a, b], c) => {
+      map.set(a, c);
+      map.set(b, c);
+    });
     return map;
   }, [ends]);
 
@@ -82,8 +93,11 @@ export default function Flow({ onExit }: { onExit: () => void }) {
     for (const cells of Object.values(paths)) cells.forEach((i) => covered.add(i));
     const complete = ends.every(([a, b], c) => {
       const p = paths[c];
-      return p && p.length > 1 &&
-        ((p[0] === a && p[p.length - 1] === b) || (p[0] === b && p[p.length - 1] === a));
+      return (
+        p &&
+        p.length > 1 &&
+        ((p[0] === a && p[p.length - 1] === b) || (p[0] === b && p[p.length - 1] === a))
+      );
     });
     return complete && covered.size === n * n;
   }
@@ -129,8 +143,7 @@ export default function Flow({ onExit }: { onExit: () => void }) {
     if (idx === head) return null;
     const [a, b] = ends[c];
     const connectsBoth =
-      p.length > 1 &&
-      ((p[0] === a && head === b) || (p[0] === b && head === a));
+      p.length > 1 && ((p[0] === a && head === b) || (p[0] === b && head === a));
     if (connectsBoth) return null;
 
     const at = p.indexOf(idx);
@@ -148,7 +161,8 @@ export default function Flow({ onExit }: { onExit: () => void }) {
   function hint() {
     if (saved.done) return;
     const same = (p: number[] | undefined, q: number[]) =>
-      !!p && p.length === q.length &&
+      !!p &&
+      p.length === q.length &&
       (p.every((v, k) => v === q[k]) || p.every((v, k) => v === q[q.length - 1 - k]));
     const todo = answer.flatMap((q, c) => (same(saved.paths[c], q) ? [] : [c]));
     if (!todo.length) return;
@@ -254,10 +268,15 @@ export default function Flow({ onExit }: { onExit: () => void }) {
       </div>
 
       <div className="lights-meta">
-        <span>{covered} / {n * n} filled</span>
+        <span>
+          {covered} / {n * n} filled
+        </span>
         <button
           className="mini-btn"
-          onClick={() => { apply({}); active.current = null; }}
+          onClick={() => {
+            apply({});
+            active.current = null;
+          }}
         >
           Clear
         </button>

@@ -42,8 +42,13 @@ interface SavedState {
 type Sel = { kind: "card"; card: number } | { kind: "gap"; at: number } | null;
 
 export default function Gaps({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle }= useGame<SavedState>((s) => ({ board: deal(s), redeals: 0, moves: 0, done: false, won: false })
-  );
+  const { seed, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>((s) => ({
+    board: deal(s),
+    redeals: 0,
+    moves: 0,
+    done: false,
+    won: false
+  }));
   const [sel, setSel] = useState<Sel>(null);
   const nav = useGridNav();
 

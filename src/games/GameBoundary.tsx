@@ -64,8 +64,8 @@ export class GameBoundary extends Component<
           </span>
           <h3>This board couldn't be opened</h3>
           <p>
-            The saved puzzle is from an older version of the game, so it
-            can't be resumed. Your stats and every other game are untouched.
+            The saved puzzle is from an older version of the game, so it can't be resumed.
+            Your stats and every other game are untouched.
           </p>
           <div className="result-actions">
             <button className="result-primary" onClick={this.retry}>

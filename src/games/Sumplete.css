@@ -46,19 +46,33 @@
   color: var(--ink-soft);
 }
 
-.sp-target.row { padding: 0 4px 0 7px; }
+.sp-target.row {
+  padding: 0 4px 0 7px;
+}
 
-.sp-target.col { padding: 7px 0 0; }
+.sp-target.col {
+  padding: 7px 0 0;
+}
 
-.sp-target.ok { color: var(--ok); }
+.sp-target.ok {
+  color: var(--ok);
+}
 
-.sp-target.over { color: var(--rose); }
+.sp-target.over {
+  color: var(--rose);
+}
 
 /* Never colour alone: a tick for a matched line, a bang for an overshot
    one (which can only be fixed by crossing more out). */
-.sp-target.ok::after { content: "✓"; font-size: 0.8em; }
+.sp-target.ok::after {
+  content: "✓";
+  font-size: 0.8em;
+}
 
-.sp-target.over::after { content: "!"; font-size: 0.9em; }
+.sp-target.over::after {
+  content: "!";
+  font-size: 0.9em;
+}
 
 .sp-corner {
   display: grid;
@@ -69,4 +83,7 @@
   color: var(--ink-soft);
 }
 
-:root[data-theme="dark"] .sp-cell.out { background: #202b39; border-color: #202b39; }
+:root[data-theme="dark"] .sp-cell.out {
+  background: #202b39;
+  border-color: #202b39;
+}

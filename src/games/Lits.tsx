@@ -75,8 +75,8 @@ export default function Lits({ onExit }: { onExit: () => void }) {
     <div className="game game-lits">
       <GameHeader title="LITS" onExit={onExit} onNew={() => newPuzzle()} />
       <p className="game-hint">
-        One L, I, T or S tetromino per region — all shading linked, no 2×2, no
-        matching letters touching.
+        One L, I, T or S tetromino per region — all shading linked, no 2×2, no matching
+        letters touching.
       </p>
       <GameTools
         diff={diff}
@@ -104,7 +104,8 @@ export default function Lits({ onExit }: { onExit: () => void }) {
         {...nav}
       >
         {Array.from({ length: n * n }, (_, i) => {
-          const r = Math.floor(i / n), c = i % n;
+          const r = Math.floor(i / n),
+            c = i % n;
           const id = regionOf[i];
           const letter = view.letters[id];
           const on = saved.shaded[i];

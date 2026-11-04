@@ -79,10 +79,30 @@ export default function MagicSquare({ onExit }: { onExit: () => void }) {
     const at = (r: number, c: number) => board[r * n + c];
     const idx = [...Array(n).keys()];
     return {
-      rows: idx.map((r) => lineOf(idx.map((c) => at(r, c)), total, `Row ${r + 1}`)),
-      cols: idx.map((c) => lineOf(idx.map((r) => at(r, c)), total, `Column ${c + 1}`)),
-      down: lineOf(idx.map((k) => at(k, k)), total, "Diagonal down"),
-      up: lineOf(idx.map((k) => at(k, n - 1 - k)), total, "Diagonal up")
+      rows: idx.map((r) =>
+        lineOf(
+          idx.map((c) => at(r, c)),
+          total,
+          `Row ${r + 1}`
+        )
+      ),
+      cols: idx.map((c) =>
+        lineOf(
+          idx.map((r) => at(r, c)),
+          total,
+          `Column ${c + 1}`
+        )
+      ),
+      down: lineOf(
+        idx.map((k) => at(k, k)),
+        total,
+        "Diagonal down"
+      ),
+      up: lineOf(
+        idx.map((k) => at(k, n - 1 - k)),
+        total,
+        "Diagonal up"
+      )
     };
   }, [board, n, total]);
 
@@ -140,9 +160,7 @@ export default function MagicSquare({ onExit }: { onExit: () => void }) {
   return (
     <div className="game game-magic">
       <GameHeader title="Magic Square" onExit={onExit} onNew={() => startNew()} />
-      <p className="game-hint">
-        Every row, column and diagonal must add up to {total}.
-      </p>
+      <p className="game-hint">Every row, column and diagonal must add up to {total}.</p>
       <GameTools
         diff={diff}
         onDiff={startNew}
@@ -162,7 +180,8 @@ export default function MagicSquare({ onExit }: { onExit: () => void }) {
         </div>
         <div className="ms-grid" role="grid" aria-label="Magic square board">
           {board.map((v, i) => {
-            const r = Math.floor(i / n), c = i % n;
+            const r = Math.floor(i / n),
+              c = i % n;
             const given = givens[i] !== 0;
             return (
               <button
@@ -202,20 +221,22 @@ export default function MagicSquare({ onExit }: { onExit: () => void }) {
       </div>
 
       <div className="ms-tray" role="group" aria-label="Numbers to place">
-        {[...Array(n * n).keys()].map((k) => k + 1).map((v) => {
-          const used = placed.has(v);
-          return (
-            <button
-              key={v}
-              className={`ms-chip ${used ? "used" : ""}`}
-              disabled={used || selected === null || givens[selected] !== 0}
-              onClick={() => selected !== null && setCell(selected, v)}
-              aria-label={`Place ${v}${used ? ", already on the board" : ""}`}
-            >
-              {v}
-            </button>
-          );
-        })}
+        {[...Array(n * n).keys()]
+          .map((k) => k + 1)
+          .map((v) => {
+            const used = placed.has(v);
+            return (
+              <button
+                key={v}
+                className={`ms-chip ${used ? "used" : ""}`}
+                disabled={used || selected === null || givens[selected] !== 0}
+                onClick={() => selected !== null && setCell(selected, v)}
+                aria-label={`Place ${v}${used ? ", already on the board" : ""}`}
+              >
+                {v}
+              </button>
+            );
+          })}
       </div>
 
       {saved.done && (

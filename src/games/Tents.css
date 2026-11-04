@@ -11,18 +11,31 @@
   cursor: pointer;
 }
 
-.tents-cell.tree { background: #e6f2e2; cursor: default; }
+.tents-cell.tree {
+  background: #e6f2e2;
+  cursor: default;
+}
 
-.tents-cell.tent { background: #fdf3d9; }
+.tents-cell.tent {
+  background: #fdf3d9;
+}
 
-.tents-cell.grass { color: var(--ink-soft); }
+.tents-cell.grass {
+  color: var(--ink-soft);
+}
 
-.tents-cell.conflict { background: #fbe6ef; }
+.tents-cell.conflict {
+  background: #fbe6ef;
+}
 
 :root[data-theme="dark"] .tents-cell.conflict {
   background: #45222f;
 }
 
-:root[data-theme="dark"] .tents-cell.tree { background: #223226; }
+:root[data-theme="dark"] .tents-cell.tree {
+  background: #223226;
+}
 
-:root[data-theme="dark"] .tents-cell.tent { background: #3a3420; }
+:root[data-theme="dark"] .tents-cell.tent {
+  background: #3a3420;
+}

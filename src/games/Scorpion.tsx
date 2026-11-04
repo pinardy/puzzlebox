@@ -44,9 +44,7 @@ function clearRuns(next: SavedState): void {
     const pile = next.cols[p];
     if (pile.length < 13) continue;
     const tail = pile.slice(-13);
-    const isRun = tail.every(
-      (c, i) => rank(c) === 13 - i && suit(c) === suit(tail[0])
-    );
+    const isRun = tail.every((c, i) => rank(c) === 13 - i && suit(c) === suit(tail[0]));
     const allUp = pile.length - 13 >= next.faceDown[p];
     if (isRun && allUp) {
       pile.splice(-13);
@@ -59,8 +57,9 @@ function clearRuns(next: SavedState): void {
 type Sel = { pile: number; index: number } | null;
 
 export default function Scorpion({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle } =
-    useGame<SavedState>((s) => deal(s));
+  const { seed, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>((s) =>
+    deal(s)
+  );
   const [sel, setSel] = useState<Sel>(null);
 
   function play(next: SavedState) {
@@ -101,10 +100,7 @@ export default function Scorpion({ onExit }: { onExit: () => void }) {
       }
       const moving = saved.cols[sel.pile][sel.index];
       const top = cards.length ? cards[cards.length - 1] : null;
-      const fits =
-        top === null
-          ? rank(moving) === 13
-          : downInSuit(moving, top);
+      const fits = top === null ? rank(moving) === 13 : downInSuit(moving, top);
       if (!fits) {
         setSel(null);
         return;
@@ -195,7 +191,9 @@ export default function Scorpion({ onExit }: { onExit: () => void }) {
       </div>
 
       <div className="lights-meta">
-        <span>Moves: {saved.moves} · runs {saved.completed}/4</span>
+        <span>
+          Moves: {saved.moves} · runs {saved.completed}/4
+        </span>
       </div>
 
       {saved.done && (

@@ -9,6 +9,10 @@
   margin-top: 8px;
 }
 
-.hangman-lives .lost { color: var(--grid-line); }
+.hangman-lives .lost {
+  color: var(--grid-line);
+}
 
-.hangman-word { margin: auto 0; }
+.hangman-word {
+  margin: auto 0;
+}

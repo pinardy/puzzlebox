@@ -54,7 +54,8 @@ function shade(
   let nodes = 0;
 
   const runSpansThree = (i: number, horiz: boolean): boolean => {
-    const r = Math.floor(i / n), c = i % n;
+    const r = Math.floor(i / n),
+      c = i % n;
     const rooms = new Set([roomOf[i]]);
     for (let k = 1; ; k++) {
       const rr = horiz ? r : r - k;
@@ -71,7 +72,8 @@ function shade(
   /** An unshaded cell whose every neighbour is shaded can never join the
    *  connected group, so the branch is already dead. */
   const sealed = (j: number): boolean => {
-    const r = Math.floor(j / n), c = j % n;
+    const r = Math.floor(j / n),
+      c = j % n;
     for (const k of [
       r > 0 ? j - n : -1,
       r < n - 1 ? j + n : -1,
@@ -89,7 +91,8 @@ function shade(
     const stack = [start];
     while (stack.length) {
       const j = stack.pop()!;
-      const r = Math.floor(j / n), c = j % n;
+      const r = Math.floor(j / n),
+        c = j % n;
       for (const k of [
         r > 0 ? j - n : -1,
         r < n - 1 ? j + n : -1,
@@ -107,7 +110,8 @@ function shade(
   const walk = (i: number): boolean => {
     if (++nodes > 60000) return false;
     if (i === N) return allConnected();
-    const r = Math.floor(i / n), c = i % n;
+    const r = Math.floor(i / n),
+      c = i % n;
     for (const v of rng() < bias ? [1, 0] : [0, 1]) {
       if (v === 1) {
         if (c > 0 && cell[i - 1] === 1) continue;
@@ -156,8 +160,7 @@ export function generateHeyawake(
     const counts = rooms.map((rm) => {
       let k = 0;
       for (let r = rm.r0; r < rm.r0 + rm.h; r++)
-        for (let c = rm.c0; c < rm.c0 + rm.w; c++)
-          if (solution[r * n + c]) k++;
+        for (let c = rm.c0; c < rm.c0 + rm.w; c++) if (solution[r * n + c]) k++;
       return k;
     });
     // Always number the single-cell rooms — they read as givens — plus a

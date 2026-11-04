@@ -21,7 +21,8 @@ function scramble(seed: string, n: number): number[] {
   let blank = n * n - 1;
   let prev = -1;
   for (let k = 0; k < n * n * 12; k++) {
-    const r = Math.floor(blank / n), c = blank % n;
+    const r = Math.floor(blank / n),
+      c = blank % n;
     const opts = [
       r > 0 ? blank - n : -1,
       r < n - 1 ? blank + n : -1,
@@ -44,19 +45,22 @@ interface SavedState {
 }
 
 export default function Fifteen({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
-    useGame<SavedState>((s, d) => ({
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>(
+    (s, d) => ({
       cells: scramble(`fifteen-${s}`, SIZE[d]),
       moves: 0,
       done: false
-    }));
+    })
+  );
   const n = SIZE[diff];
 
   function tap(idx: number) {
     if (saved.done || saved.cells[idx] === 0) return;
     const blank = saved.cells.indexOf(0);
-    const rI = Math.floor(idx / n), cI = idx % n;
-    const rB = Math.floor(blank / n), cB = blank % n;
+    const rI = Math.floor(idx / n),
+      cI = idx % n;
+    const rB = Math.floor(blank / n),
+      cB = blank % n;
     if (rI !== rB && cI !== cB) return;
 
     // Slide the whole segment between the tapped tile and the blank.
@@ -77,15 +81,12 @@ export default function Fifteen({ onExit }: { onExit: () => void }) {
   const nav = useGridNav();
   const blank = saved.cells.indexOf(0);
   const canSlide = (i: number) =>
-    i !== blank &&
-    (Math.floor(i / n) === Math.floor(blank / n) || i % n === blank % n);
+    i !== blank && (Math.floor(i / n) === Math.floor(blank / n) || i % n === blank % n);
 
   return (
     <div className="game game-fifteen">
       <GameHeader title="Fifteen" onExit={onExit} onNew={() => newPuzzle()} />
-      <p className="game-hint">
-        Slide tiles into the gap until they read 1–{n * n - 1}.
-      </p>
+      <p className="game-hint">Slide tiles into the gap until they read 1–{n * n - 1}.</p>
       <GameTools
         diff={diff}
         onDiff={newPuzzle}

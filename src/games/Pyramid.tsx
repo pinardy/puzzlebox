@@ -20,9 +20,14 @@ const REDEALS: Record<Diff, number> = { easy: 2, medium: 1, hard: 0 };
  *  below it. Spot index = r*(r+1)/2 + i. */
 const ROW_OF: number[] = [];
 const COL_OF: number[] = [];
-for (let r = 0; r < 7; r++) for (let i = 0; i <= r; i++) { ROW_OF.push(r); COL_OF.push(i); }
+for (let r = 0; r < 7; r++)
+  for (let i = 0; i <= r; i++) {
+    ROW_OF.push(r);
+    COL_OF.push(i);
+  }
 const coverOf = (s: number): [number, number] | null => {
-  const r = ROW_OF[s], i = COL_OF[s];
+  const r = ROW_OF[s],
+    i = COL_OF[s];
   if (r === 6) return null;
   const base = ((r + 1) * (r + 2)) / 2;
   return [base + i, base + i + 1];
@@ -58,8 +63,9 @@ const exposed = (removed: boolean[], s: number): boolean => {
 };
 
 export default function Pyramid({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
-    useGame<SavedState>((s, d) => deal(s, d));
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>(
+    (s, d) => deal(s, d)
+  );
   const [selected, setSelected] = useState<"waste" | number | null>(null);
 
   const wasteTop = saved.waste.length ? saved.waste[saved.waste.length - 1] : null;
@@ -90,8 +96,7 @@ export default function Pyramid({ onExit }: { onExit: () => void }) {
     const pool = top !== null ? [...open, top] : open;
     if (pool.includes(13)) return;
     for (let a = 0; a < pool.length; a++)
-      for (let b = a + 1; b < pool.length; b++)
-        if (pool[a] + pool[b] === 13) return;
+      for (let b = a + 1; b < pool.length; b++) if (pool[a] + pool[b] === 13) return;
     // Exposed pyramid pairs are checked above; the same-rank double-count
     // (a card pairing with itself) can't happen since a+b uses two entries.
     next.done = true;

@@ -25,9 +25,14 @@
   cursor: pointer;
 }
 
-.fifteen-tile:active { transform: translateY(2px); box-shadow: none; }
+.fifteen-tile:active {
+  transform: translateY(2px);
+  box-shadow: none;
+}
 
-.fifteen-tile.home { color: var(--blue); }
+.fifteen-tile.home {
+  color: var(--blue);
+}
 
 .fifteen-tile.blank {
   background: transparent;
@@ -37,7 +42,9 @@
 }
 
 @media (min-width: 700px) {
-  .fifteen-grid { width: min(100%, 440px); }
+  .fifteen-grid {
+    width: min(100%, 440px);
+  }
   .fifteen-grid {
     margin-top: auto;
     margin-bottom: auto;

@@ -19,12 +19,14 @@ const HELP =
   "Enter digs and Shift+Enter flags.";
 
 function neighbours(idx: number, n: number): number[] {
-  const r = Math.floor(idx / n), c = idx % n;
+  const r = Math.floor(idx / n),
+    c = idx % n;
   const out: number[] = [];
   for (let dr = -1; dr <= 1; dr++)
     for (let dc = -1; dc <= 1; dc++) {
       if (dr === 0 && dc === 0) continue;
-      const rr = r + dr, cc = c + dc;
+      const rr = r + dr,
+        cc = c + dc;
       if (rr >= 0 && rr < n && cc >= 0 && cc < n) out.push(rr * n + cc);
     }
   return out;
@@ -71,18 +73,13 @@ export default function Mines({ onExit }: { onExit: () => void }) {
   const longPressed = useRef(false);
 
   const isMine = useMemo(
-    () =>
-      saved.firstTap === null
-        ? null
-        : layMines(seed, n, mineCount, saved.firstTap),
+    () => (saved.firstTap === null ? null : layMines(seed, n, mineCount, saved.firstTap)),
     [saved.firstTap, seed, n, mineCount]
   );
 
   const counts = useMemo(() => {
     if (!isMine) return null;
-    return isMine.map((_, i) =>
-      neighbours(i, n).filter((j) => isMine[j]).length
-    );
+    return isMine.map((_, i) => neighbours(i, n).filter((j) => isMine[j]).length);
   }, [isMine, n]);
 
   useEffect(() => {
@@ -91,13 +88,19 @@ export default function Mines({ onExit }: { onExit: () => void }) {
     if (allClear) finish(true, { won: true });
   }, [saved.revealed, isMine, finish]);
 
-  function floodReveal(start: number, mines: boolean[], cnts: number[], revealed: boolean[]) {
+  function floodReveal(
+    start: number,
+    mines: boolean[],
+    cnts: number[],
+    revealed: boolean[]
+  ) {
     const stack = [start];
     while (stack.length) {
       const i = stack.pop()!;
       if (revealed[i] || mines[i]) continue;
       revealed[i] = true;
-      if (cnts[i] === 0) for (const j of neighbours(i, n)) if (!revealed[j]) stack.push(j);
+      if (cnts[i] === 0)
+        for (const j of neighbours(i, n)) if (!revealed[j]) stack.push(j);
     }
   }
 
@@ -145,9 +148,7 @@ export default function Mines({ onExit }: { onExit: () => void }) {
     // First tap: fix the mine layout with a safe zone, then flood.
     if (saved.firstTap === null) {
       const mines = layMines(seed, n, mineCount, idx);
-      const cnts = mines.map((_, i) =>
-        neighbours(i, n).filter((j) => mines[j]).length
-      );
+      const cnts = mines.map((_, i) => neighbours(i, n).filter((j) => mines[j]).length);
       const revealed = saved.revealed.slice();
       floodReveal(idx, mines, cnts, revealed);
       commit({ ...saved, firstTap: idx, revealed });
@@ -200,7 +201,9 @@ export default function Mines({ onExit }: { onExit: () => void }) {
       />
 
       <div className="lights-meta">
-        <span>🚩 {flagsUsed} / {mineCount}</span>
+        <span>
+          🚩 {flagsUsed} / {mineCount}
+        </span>
       </div>
 
       <div

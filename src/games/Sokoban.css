@@ -29,16 +29,29 @@
   cursor: default;
 }
 
-.soko-cell.goal { background: #f3ecd9; }
-
-.soko-cell.box.on-goal { background: #dff0d3; }
-
-@media (min-width: 700px) {
-  .soko-grid { width: min(100%, 500px); }
+.soko-cell.goal {
+  background: #f3ecd9;
 }
 
-:root[data-theme="dark"] .soko-cell.wall { background: #0b0e12; border-color: #2b3540; }
+.soko-cell.box.on-goal {
+  background: #dff0d3;
+}
 
-:root[data-theme="dark"] .soko-cell.goal { background: #3a3420; }
+@media (min-width: 700px) {
+  .soko-grid {
+    width: min(100%, 500px);
+  }
+}
 
-:root[data-theme="dark"] .soko-cell.box.on-goal { background: #26331e; }
+:root[data-theme="dark"] .soko-cell.wall {
+  background: #0b0e12;
+  border-color: #2b3540;
+}
+
+:root[data-theme="dark"] .soko-cell.goal {
+  background: #3a3420;
+}
+
+:root[data-theme="dark"] .soko-cell.box.on-goal {
+  background: #26331e;
+}

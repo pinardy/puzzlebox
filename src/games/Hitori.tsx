@@ -16,7 +16,8 @@ const HELP =
   "stay connected. Circle cells you're sure survive. Drag to shade a run.";
 
 const orthOf = (i: number, n: number): number[] => {
-  const r = Math.floor(i / n), c = i % n;
+  const r = Math.floor(i / n),
+    c = i % n;
   const out: number[] = [];
   if (r > 0) out.push(i - n);
   if (r < n - 1) out.push(i + n);
@@ -51,10 +52,12 @@ function generateHitori(
   }
 
   for (const i of shaded) {
-    const r = Math.floor(i / n), c = i % n;
+    const r = Math.floor(i / n),
+      c = i % n;
     const mates: number[] = [];
     for (let k = 0; k < n; k++) {
-      const row = r * n + k, col = k * n + c;
+      const row = r * n + k,
+        col = k * n + c;
       if (row !== i && !shaded.has(row)) mates.push(row);
       if (col !== i && !shaded.has(col)) mates.push(col);
     }
@@ -87,7 +90,11 @@ export default function Hitori({ onExit }: { onExit: () => void }) {
     const bad = new Set<number>();
     for (let i = 0; i < n * n; i++) {
       if (saved.marks[i] !== 1) continue;
-      for (const j of orthOf(i, n)) if (saved.marks[j] === 1) { bad.add(i); bad.add(j); }
+      for (const j of orthOf(i, n))
+        if (saved.marks[j] === 1) {
+          bad.add(i);
+          bad.add(j);
+        }
     }
     return bad;
   }, [saved.marks, n]);
@@ -98,9 +105,11 @@ export default function Hitori({ onExit }: { onExit: () => void }) {
     if (shadedCount === 0) return false;
     for (let i = 0; i < n * n; i++) {
       if (saved.marks[i] === 1) continue;
-      const r = Math.floor(i / n), c = i % n;
+      const r = Math.floor(i / n),
+        c = i % n;
       for (let k = 0; k < n; k++) {
-        const row = r * n + k, col = k * n + c;
+        const row = r * n + k,
+          col = k * n + c;
         if (row !== i && saved.marks[row] !== 1 && grid[row] === grid[i]) return false;
         if (col !== i && saved.marks[col] !== 1 && grid[col] === grid[i]) return false;
       }
@@ -138,8 +147,7 @@ export default function Hitori({ onExit }: { onExit: () => void }) {
     <div className="game game-hitori">
       <GameHeader title="Hitori" onExit={onExit} onNew={() => newPuzzle()} />
       <p className="game-hint">
-        Shade duplicates away. Tap: shade → circle → clear; drag to shade a
-        run.
+        Shade duplicates away. Tap: shade → circle → clear; drag to shade a run.
       </p>
       <GameTools
         diff={diff}

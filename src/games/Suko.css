@@ -33,9 +33,15 @@
   cursor: pointer;
 }
 
-.sk-cell.selected { outline: 3px solid var(--ink); outline-offset: -3px; }
+.sk-cell.selected {
+  outline: 3px solid var(--ink);
+  outline-offset: -3px;
+}
 
-.sk-val { line-height: 1; transform: translateY(-4px); }
+.sk-val {
+  line-height: 1;
+  transform: translateY(-4px);
+}
 
 .sk-tag {
   position: absolute;
@@ -68,13 +74,26 @@
   pointer-events: none;
 }
 
-.sk-sum b { font-size: clamp(14px, 4.4vw, 18px); font-weight: 800; }
+.sk-sum b {
+  font-size: clamp(14px, 4.4vw, 18px);
+  font-weight: 800;
+}
 
-.sk-sum i { font-style: normal; font-size: 9px; height: 10px; }
+.sk-sum i {
+  font-style: normal;
+  font-size: 9px;
+  height: 10px;
+}
 
-.sk-sum.ok { border-color: var(--ok); color: var(--ok); }
+.sk-sum.ok {
+  border-color: var(--ok);
+  color: var(--ok);
+}
 
-.sk-sum.bad { border-color: var(--rose); color: var(--rose); }
+.sk-sum.bad {
+  border-color: var(--rose);
+  color: var(--rose);
+}
 
 /* Spoken label only — the circle itself is far too small to carry it. */
 .sk-sum em {
@@ -106,19 +125,36 @@
   color: var(--ink);
 }
 
-.sk-key b { font-family: var(--body); font-size: 12px; letter-spacing: 0.06em; }
+.sk-key b {
+  font-family: var(--body);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+}
 
-.sk-key i { font-style: normal; font-size: 11px; }
+.sk-key i {
+  font-style: normal;
+  font-size: 11px;
+}
 
-.sk-key.ok { border-color: var(--ok); }
+.sk-key.ok {
+  border-color: var(--ok);
+}
 
-.sk-key.bad { border-color: var(--rose); }
+.sk-key.bad {
+  border-color: var(--rose);
+}
 
-.sk-g0 { background: #dbe7fb; }
+.sk-g0 {
+  background: #dbe7fb;
+}
 
-.sk-g1 { background: #d5efe8; }
+.sk-g1 {
+  background: #d5efe8;
+}
 
-.sk-g2 { background: #f6e6c7; }
+.sk-g2 {
+  background: #f6e6c7;
+}
 
 .sk-tray {
   display: flex;
@@ -143,16 +179,34 @@
   padding: 0 6px;
 }
 
-.sk-chip:active { transform: translateY(2px); box-shadow: none; }
+.sk-chip:active {
+  transform: translateY(2px);
+  box-shadow: none;
+}
 
-.sk-chip.used { opacity: 0.45; text-decoration: line-through; }
+.sk-chip.used {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
 
-.sk-chip:disabled { opacity: 0.35; box-shadow: none; cursor: default; }
+.sk-chip:disabled {
+  opacity: 0.35;
+  box-shadow: none;
+  cursor: default;
+}
 
-.sk-chip.erase { font-size: 14px; }
+.sk-chip.erase {
+  font-size: 14px;
+}
 
-:root[data-theme="dark"] .sk-g0 { background: #22344c; }
+:root[data-theme="dark"] .sk-g0 {
+  background: #22344c;
+}
 
-:root[data-theme="dark"] .sk-g1 { background: #1b3a36; }
+:root[data-theme="dark"] .sk-g1 {
+  background: #1b3a36;
+}
 
-:root[data-theme="dark"] .sk-g2 { background: #3a3220; }
+:root[data-theme="dark"] .sk-g2 {
+  background: #3a3220;
+}

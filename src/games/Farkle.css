@@ -10,7 +10,10 @@
   color: var(--ink-soft);
 }
 
-.fk-status b { color: var(--ink); font-family: var(--mono); }
+.fk-status b {
+  color: var(--ink);
+  font-family: var(--mono);
+}
 
 .fk-farkle {
   margin: 0;
@@ -19,7 +22,11 @@
   color: var(--rose);
 }
 
-.fk-actions { display: flex; gap: 10px; justify-content: center; }
+.fk-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
 
 .fk-btn {
   border: 1.5px solid var(--ink);
@@ -33,11 +40,21 @@
   cursor: pointer;
 }
 
-.fk-btn:active { transform: translateY(2px); box-shadow: none; }
+.fk-btn:active {
+  transform: translateY(2px);
+  box-shadow: none;
+}
 
-.fk-btn:disabled { opacity: 0.45; box-shadow: none; cursor: default; }
+.fk-btn:disabled {
+  opacity: 0.45;
+  box-shadow: none;
+  cursor: default;
+}
 
-.fk-btn.result-primary { background: var(--ink); color: var(--paper); }
+.fk-btn.result-primary {
+  background: var(--ink);
+  color: var(--paper);
+}
 
 .fk-legend {
   margin: 0;

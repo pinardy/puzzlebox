@@ -133,8 +133,7 @@ export default function Cryptogram({ onExit }: { onExit: () => void }) {
     <div className="game game-crypto">
       <GameHeader title="Cryptogram" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
-        Crack the substitution cipher: tap a letter, then guess what it stands
-        for.
+        Crack the substitution cipher: tap a letter, then guess what it stands for.
       </p>
       <GameTools
         diff={diff}

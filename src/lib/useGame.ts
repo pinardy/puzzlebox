@@ -96,7 +96,10 @@ export function useGame<T>(fresh: (seed: string, diff: Diff) => T, stateV?: numb
   const finish = useCallback((won = true, patch?: Partial<T>) => {
     const { saved, commit } = latest.current;
     if ((saved as { done?: boolean }).done) return;
-    commit({ ...saved, ...patch, done: true }, { undoable: false, outcome: won ? "won" : "lost" });
+    commit(
+      { ...saved, ...patch, done: true },
+      { undoable: false, outcome: won ? "won" : "lost" }
+    );
   }, []);
 
   function undo() {

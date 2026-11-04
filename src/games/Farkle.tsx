@@ -81,8 +81,7 @@ function fresh(seed: string): SavedState {
 }
 
 export default function Farkle({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, newPuzzle }= useGame<SavedState>((s) => fresh(s)
-  );
+  const { seed, diff, saved, commit, newPuzzle } = useGame<SavedState>((s) => fresh(s));
   const [picked, setPicked] = useState<boolean[]>([]);
   const target = TARGET[diff];
 
@@ -230,8 +229,8 @@ export default function Farkle({ onExit }: { onExit: () => void }) {
       </div>
 
       <p className="fk-legend">
-        1 = 100 · 5 = 50 · three of a kind = face×100 (1s = 1000), each extra
-        die doubles · straight or three pairs = 1500
+        1 = 100 · 5 = 50 · three of a kind = face×100 (1s = 1000), each extra die doubles
+        · straight or three pairs = 1500
       </p>
 
       {saved.done && (

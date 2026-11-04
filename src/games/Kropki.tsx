@@ -34,13 +34,13 @@ function dotFor(a: number, b: number, rng: () => number): Dot {
 function generateKropki(seed: string, n: number): Puzzle {
   const sol = generateLatin(`kropki-${seed}`, n);
   const rng = makeRng(`kropki-dots-${seed}`);
-  const h: Dot[] = [], v: Dot[] = [];
+  const h: Dot[] = [],
+    v: Dot[] = [];
   for (let r = 0; r < n; r++)
     for (let c = 0; c < n - 1; c++)
       h.push(dotFor(sol[r * n + c], sol[r * n + c + 1], rng));
   for (let r = 0; r < n - 1; r++)
-    for (let c = 0; c < n; c++)
-      v.push(dotFor(sol[r * n + c], sol[(r + 1) * n + c], rng));
+    for (let c = 0; c < n; c++) v.push(dotFor(sol[r * n + c], sol[(r + 1) * n + c], rng));
   return { h, v };
 }
 
@@ -79,25 +79,31 @@ export default function Kropki({ onExit }: { onExit: () => void }) {
     for (let i = 0; i < n * n; i++) {
       const val = board[i];
       if (val === 0) continue;
-      const r = Math.floor(i / n), c = i % n;
+      const r = Math.floor(i / n),
+        c = i % n;
       for (let k = 0; k < n; k++) {
-        const row = r * n + k, col = k * n + c;
+        const row = r * n + k,
+          col = k * n + c;
         if (row !== i && board[row] === val) bad.add(i);
         if (col !== i && board[col] === val) bad.add(i);
       }
     }
     for (let r = 0; r < n; r++)
       for (let c = 0; c < n - 1; c++) {
-        const a = r * n + c, b = a + 1;
+        const a = r * n + c,
+          b = a + 1;
         if (board[a] && board[b] && !pairOk(board[a], board[b], h[r * (n - 1) + c])) {
-          bad.add(a); bad.add(b);
+          bad.add(a);
+          bad.add(b);
         }
       }
     for (let r = 0; r < n - 1; r++)
       for (let c = 0; c < n; c++) {
-        const a = r * n + c, b = a + n;
+        const a = r * n + c,
+          b = a + n;
         if (board[a] && board[b] && !pairOk(board[a], board[b], v[r * n + c])) {
-          bad.add(a); bad.add(b);
+          bad.add(a);
+          bad.add(b);
         }
       }
     return bad;
@@ -137,13 +143,17 @@ export default function Kropki({ onExit }: { onExit: () => void }) {
   useGridKeys({ cols: n, rows: n, max: n, selected, setSelected, setCell });
 
   const G = 2 * n - 1;
-  const track = Array(n - 1).fill("1fr 0.3fr").join(" ") + " 1fr";
+  const track =
+    Array(n - 1)
+      .fill("1fr 0.3fr")
+      .join(" ") + " 1fr";
   const dotChar = (d: Dot) => (d === "black" ? "●" : d === "white" ? "○" : "");
   const dotName = (d: Dot) =>
     d === "black" ? "black dot, one is double the other" : "white dot, consecutive";
   /** The dots touching a cell, in words, for its accessible name. */
   const dotsAround = (i: number): string | null => {
-    const r = Math.floor(i / n), c = i % n;
+    const r = Math.floor(i / n),
+      c = i % n;
     const out: string[] = [];
     const say = (d: Dot, where: string) => {
       if (d) out.push(`${d} dot ${where}`);
@@ -167,8 +177,8 @@ export default function Kropki({ onExit }: { onExit: () => void }) {
     <div className="game game-kropki">
       <GameHeader title="Kropki" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
-        ○ joins consecutive numbers, ● joins a number and its double — and no
-        dot means neither.
+        ○ joins consecutive numbers, ● joins a number and its double — and no dot means
+        neither.
       </p>
       <GameTools
         diff={diff}
@@ -186,7 +196,8 @@ export default function Kropki({ onExit }: { onExit: () => void }) {
         aria-label="Kropki board"
       >
         {Array.from({ length: G * G }).map((_, k) => {
-          const gr = Math.floor(k / G), gc = k % G;
+          const gr = Math.floor(k / G),
+            gc = k % G;
           if (gr % 2 === 0 && gc % 2 === 0) {
             const i = (gr / 2) * n + gc / 2;
             return (
@@ -214,8 +225,7 @@ export default function Kropki({ onExit }: { onExit: () => void }) {
           }
           if (gr % 2 === 0 && gc % 2 === 1)
             return dot(k, h[(gr / 2) * (n - 1) + (gc - 1) / 2]);
-          if (gr % 2 === 1 && gc % 2 === 0)
-            return dot(k, v[((gr - 1) / 2) * n + gc / 2]);
+          if (gr % 2 === 1 && gc % 2 === 0) return dot(k, v[((gr - 1) / 2) * n + gc / 2]);
           return <span key={k} />;
         })}
       </div>

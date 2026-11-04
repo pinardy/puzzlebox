@@ -23,8 +23,14 @@
   cursor: pointer;
 }
 
-.sg-cell.empty { background: transparent; box-shadow: none; cursor: default; }
+.sg-cell.empty {
+  background: transparent;
+  box-shadow: none;
+  cursor: default;
+}
 
 @media (min-width: 700px) {
-  .sg-grid { width: min(100%, 500px); }
+  .sg-grid {
+    width: min(100%, 500px);
+  }
 }

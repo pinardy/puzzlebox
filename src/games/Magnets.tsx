@@ -34,12 +34,11 @@ interface SavedState {
 }
 
 export default function Magnets({ onExit }: { onExit: () => void }) {
-  const {
-    seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle
-  }= useGame<SavedState>((_s, d) => ({
-    board: Array<Sign>(SIZE[d] * SIZE[d]).fill(0),
-    done: false
-  }));
+  const { seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle } =
+    useGame<SavedState>((_s, d) => ({
+      board: Array<Sign>(SIZE[d] * SIZE[d]).fill(0),
+      done: false
+    }));
   const n = SIZE[diff];
   const puzzle = useMemo(
     () => generateMagnets(`magnets-${seed}`, n, HIDDEN[diff]),
@@ -55,10 +54,7 @@ export default function Magnets({ onExit }: { onExit: () => void }) {
     [puzzle, saved.board]
   );
 
-  const solved = useMemo(
-    () => magnetsSolved(puzzle, saved.board),
-    [puzzle, saved.board]
-  );
+  const solved = useMemo(() => magnetsSolved(puzzle, saved.board), [puzzle, saved.board]);
   useEffect(() => {
     if (solved) finish();
   }, [solved, finish]);
@@ -112,8 +108,7 @@ export default function Magnets({ onExit }: { onExit: () => void }) {
     <div className="game game-magnets">
       <GameHeader title="Magnets" onExit={onExit} onNew={() => newPuzzle()} />
       <p className="game-hint">
-        Fill each slab with a + / − pair or leave it blank — like poles never
-        touch.
+        Fill each slab with a + / − pair or leave it blank — like poles never touch.
       </p>
       <GameTools
         diff={diff}
@@ -139,7 +134,8 @@ export default function Magnets({ onExit }: { onExit: () => void }) {
         {...nav}
       >
         {Array.from({ length: G * G }, (_, k) => {
-          const gr = Math.floor(k / G), gc = k % G;
+          const gr = Math.floor(k / G),
+            gc = k % G;
           const edgeR = gr === 0 || gr === G - 1;
           const edgeC = gc === 0 || gc === G - 1;
           if (edgeR && edgeC) {
@@ -165,7 +161,9 @@ export default function Magnets({ onExit }: { onExit: () => void }) {
               : clue(k, puzzle.rowMinus[r], got.rowMinus[r], `Row ${r + 1} minus`);
           }
 
-          const r = gr - 1, c = gc - 1, i = r * n + c;
+          const r = gr - 1,
+            c = gc - 1,
+            i = r * n + c;
           const id = puzzle.dominoOf[i];
           const s = saved.board[i];
           return (

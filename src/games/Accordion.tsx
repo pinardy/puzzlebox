@@ -31,15 +31,14 @@ const matches = (a: number[], b: number[]) =>
   suit(top(a)) === suit(top(b)) || rank(top(a)) === rank(top(b));
 
 export default function Accordion({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle } =
-    useGame<SavedState>((s) => deal(s));
+  const { seed, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>((s) =>
+    deal(s)
+  );
   const [sel, setSel] = useState<number | null>(null);
 
   /** A pile can move left one or left three, onto a matching top card. */
   const targetsOf = (i: number): number[] =>
-    [i - 1, i - 3].filter(
-      (j) => j >= 0 && matches(saved.piles[i], saved.piles[j])
-    );
+    [i - 1, i - 3].filter((j) => j >= 0 && matches(saved.piles[i], saved.piles[j]));
 
   const anyMove = useMemo(
     () => saved.piles.some((_, i) => targetsOf(i).length > 0),
@@ -63,9 +62,11 @@ export default function Accordion({ onExit }: { onExit: () => void }) {
     if (piles.length === 1) {
       next.done = true;
       next.won = true;
-    } else if (!piles.some((_, i) =>
-      [i - 1, i - 3].some((j) => j >= 0 && matches(piles[i], piles[j]))
-    )) {
+    } else if (
+      !piles.some((_, i) =>
+        [i - 1, i - 3].some((j) => j >= 0 && matches(piles[i], piles[j]))
+      )
+    ) {
       next.done = true;
     }
     commit(next, { outcome: next.done ? (next.won ? "won" : "lost") : undefined });

@@ -27,33 +27,69 @@
   z-index: 0;
 }
 
-.net-arm.arm-u { top: 0; left: 50%; transform: translateX(-50%); width: 22%; height: 52%; }
+.net-arm.arm-u {
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 22%;
+  height: 52%;
+}
 
-.net-arm.arm-d { bottom: 0; left: 50%; transform: translateX(-50%); width: 22%; height: 52%; }
+.net-arm.arm-d {
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 22%;
+  height: 52%;
+}
 
-.net-arm.arm-l { left: 0; top: 50%; transform: translateY(-50%); height: 22%; width: 52%; }
+.net-arm.arm-l {
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 22%;
+  width: 52%;
+}
 
-.net-arm.arm-r { right: 0; top: 50%; transform: translateY(-50%); height: 22%; width: 52%; }
+.net-arm.arm-r {
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 22%;
+  width: 52%;
+}
 
 .net-core {
   position: absolute;
-  top: 50%; left: 50%;
+  top: 50%;
+  left: 50%;
   transform: translate(-50%, -50%);
-  width: 26%; height: 26%;
+  width: 26%;
+  height: 26%;
   border-radius: 25%;
   background: var(--ink-soft);
   z-index: 1;
 }
 
-.net-core.terminal { width: 44%; height: 44%; border-radius: 50%; }
+.net-core.terminal {
+  width: 44%;
+  height: 44%;
+  border-radius: 50%;
+}
 
 .net-cell.lit .net-arm,
-.net-cell.lit .net-core { background: var(--teal); }
+.net-cell.lit .net-core {
+  background: var(--teal);
+}
 
-.net-cell.centre .net-core { background: var(--amber); }
+.net-cell.centre .net-core {
+  background: var(--amber);
+}
 
 @media (min-width: 700px) {
-  .net-grid { width: min(100%, 500px); }
+  .net-grid {
+    width: min(100%, 500px);
+  }
   .net-grid {
     margin-top: auto;
     margin-bottom: auto;

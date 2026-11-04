@@ -45,8 +45,7 @@ export default function Hanoi({ onExit }: { onExit: () => void }) {
 
   // A save from before disk count was difficulty-driven may not match.
   useEffect(() => {
-    if (saved.pegs.flat().length !== disks)
-      commit(fresh(disks), { undoable: false });
+    if (saved.pegs.flat().length !== disks) commit(fresh(disks), { undoable: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [disks]);
 
@@ -81,7 +80,10 @@ export default function Hanoi({ onExit }: { onExit: () => void }) {
     pegs[mv[1]].push(pegs[mv[0]].pop()!);
     setPicked(null);
     const done = pegs[2].length === disks;
-    commitHint({ pegs, moves: saved.moves + 1, done }, { outcome: done ? "won" : undefined });
+    commitHint(
+      { pegs, moves: saved.moves + 1, done },
+      { outcome: done ? "won" : undefined }
+    );
   }
 
   // Digits 1–3 tap a peg; Tab / Enter work on the peg buttons as usual.
@@ -103,8 +105,8 @@ export default function Hanoi({ onExit }: { onExit: () => void }) {
     <div className="game game-hanoi">
       <GameHeader title="Towers of Hanoi" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
-        Rebuild the tower on the right peg — never a bigger disk on a smaller
-        one. Optimal: {optimal} moves.
+        Rebuild the tower on the right peg — never a bigger disk on a smaller one.
+        Optimal: {optimal} moves.
       </p>
       <GameTools
         diff={diff}

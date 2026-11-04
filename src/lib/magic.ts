@@ -26,12 +26,7 @@ interface Search {
  *  column or diagonal is computed rather than guessed, and any partial
  *  line that already overshoots the total is dead, since every remaining
  *  cell must still add at least one. */
-function solve(
-  n: number,
-  givens: number[],
-  orders: number[][],
-  limit: number
-): Search {
+function solve(n: number, givens: number[], orders: number[][], limit: number): Search {
   const total = magicTotal(n);
   const max = n * n;
   const grid = Array(max).fill(0);
@@ -63,9 +58,12 @@ function solve(
       capped = true;
       return;
     }
-    const r = (i / n) | 0, c = i % n;
-    const rowEnd = c === n - 1, colEnd = r === n - 1;
-    const onDiag = r === c, onAnti = r + c === n - 1;
+    const r = (i / n) | 0,
+      c = i % n;
+    const rowEnd = c === n - 1,
+      colEnd = r === n - 1;
+    const onDiag = r === c,
+      onAnti = r + c === n - 1;
 
     // A line with only this cell left over fixes the value outright; two
     // such lines crossing here must agree or the branch is dead.
@@ -91,7 +89,8 @@ function solve(
     for (const v of cands) {
       if (v < 1 || v > max || used[v]) continue;
       if (given !== 0 && v !== given) continue;
-      const rest = n - 1 - r, restRow = n - 1 - c;
+      const rest = n - 1 - r,
+        restRow = n - 1 - c;
       if (rowSum[r] + v + lo[restRow] > total) continue;
       if (rowSum[r] + v + hi[restRow] < total) continue;
       if (colSum[c] + v + lo[rest] > total) continue;
@@ -178,11 +177,16 @@ export function generateMagic(seed: string, n: number, target: number): MagicPuz
 function construct(n: number): number[] {
   const grid = Array(n * n).fill(0);
   if (n % 2 === 1) {
-    let r = 0, c = (n - 1) >> 1;
+    let r = 0,
+      c = (n - 1) >> 1;
     for (let v = 1; v <= n * n; v++) {
       grid[r * n + c] = v;
-      const nr = (r - 1 + n) % n, nc = (c + 1) % n;
-      if (grid[nr * n + nc] === 0) { r = nr; c = nc; } else r = (r + 1) % n;
+      const nr = (r - 1 + n) % n,
+        nc = (c + 1) % n;
+      if (grid[nr * n + nc] === 0) {
+        r = nr;
+        c = nc;
+      } else r = (r + 1) % n;
     }
     return grid;
   }

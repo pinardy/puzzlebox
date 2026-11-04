@@ -18,9 +18,13 @@
   cursor: pointer;
 }
 
-.hw-cell.on { background: var(--ink); }
+.hw-cell.on {
+  background: var(--ink);
+}
 
-.hw-cell.conflict { background: var(--rose); }
+.hw-cell.conflict {
+  background: var(--rose);
+}
 
 .hw-clue {
   position: absolute;
@@ -33,14 +37,26 @@
   color: var(--ink);
 }
 
-.hw-cell.on .hw-clue { color: var(--paper); }
+.hw-cell.on .hw-clue {
+  color: var(--paper);
+}
 
-.hw-cell.settled .hw-clue { color: var(--green); }
+.hw-cell.settled .hw-clue {
+  color: var(--green);
+}
 
-.hw-cell.room-t { border-top: 2px solid var(--ink); }
+.hw-cell.room-t {
+  border-top: 2px solid var(--ink);
+}
 
-.hw-cell.room-l { border-left: 2px solid var(--ink); }
+.hw-cell.room-l {
+  border-left: 2px solid var(--ink);
+}
 
-.hw-cell.room-b { border-bottom: 2px solid var(--ink); }
+.hw-cell.room-b {
+  border-bottom: 2px solid var(--ink);
+}
 
-.hw-cell.room-r { border-right: 2px solid var(--ink); }
+.hw-cell.room-r {
+  border-right: 2px solid var(--ink);
+}

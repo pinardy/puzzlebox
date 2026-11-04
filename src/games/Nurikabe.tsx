@@ -32,7 +32,11 @@ export default function Nurikabe({ onExit }: { onExit: () => void }) {
   const [mode, setMode] = useState<1 | 2>(1); // fill | dot
 
   const solved = useMemo(
-    () => nurikabeSolved(puzzle, saved.marks.map((m) => m === 1)),
+    () =>
+      nurikabeSolved(
+        puzzle,
+        saved.marks.map((m) => m === 1)
+      ),
     [puzzle, saved.marks]
   );
   useEffect(() => {

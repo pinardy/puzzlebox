@@ -91,9 +91,7 @@ export default function TrainTracks({ onExit }: { onExit: () => void }) {
   const nav = useGridNav((i, back) => cycle(i, back ? -1 : 1));
 
   function hint() {
-    const wrong = [...board.keys()].filter(
-      (i) => !givens[i] && board[i] !== solution[i]
-    );
+    const wrong = [...board.keys()].filter((i) => !givens[i] && board[i] !== solution[i]);
     if (!wrong.length) return;
     const cells = saved.cells.slice();
     const i = wrong[Math.floor(Math.random() * wrong.length)];

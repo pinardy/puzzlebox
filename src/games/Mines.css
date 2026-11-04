@@ -26,30 +26,58 @@
   place-items: center;
 }
 
-.mine-cell.open { background: var(--card); box-shadow: none; cursor: default; }
+.mine-cell.open {
+  background: var(--card);
+  box-shadow: none;
+  cursor: default;
+}
 
-.mine-cell.boom { background: var(--rose); color: #fff; }
+.mine-cell.boom {
+  background: var(--rose);
+  color: #fff;
+}
 
-.mine-cell.c1 { color: var(--blue); }
+.mine-cell.c1 {
+  color: var(--blue);
+}
 
-.mine-cell.c2 { color: var(--green); }
+.mine-cell.c2 {
+  color: var(--green);
+}
 
-.mine-cell.c3 { color: var(--rose); }
+.mine-cell.c3 {
+  color: var(--rose);
+}
 
-.mine-cell.c4 { color: var(--purple); }
+.mine-cell.c4 {
+  color: var(--purple);
+}
 
-.mine-cell.c5 { color: #a3552b; }
+.mine-cell.c5 {
+  color: #a3552b;
+}
 
-.mine-cell.c6 { color: var(--teal); }
+.mine-cell.c6 {
+  color: var(--teal);
+}
 
-.mine-cell.c7 { color: var(--ink); }
+.mine-cell.c7 {
+  color: var(--ink);
+}
 
-.mine-cell.c8 { color: var(--ink-soft); }
+.mine-cell.c8 {
+  color: var(--ink-soft);
+}
 
-.tool-btn.mines-flag.active { background: var(--purple); border-color: var(--purple); }
+.tool-btn.mines-flag.active {
+  background: var(--purple);
+  border-color: var(--purple);
+}
 
 @media (min-width: 700px) {
-  .mines-grid { width: min(100%, 560px); }
+  .mines-grid {
+    width: min(100%, 560px);
+  }
   .mines-grid {
     margin-top: auto;
     margin-bottom: auto;

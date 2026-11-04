@@ -39,7 +39,9 @@
 }
 
 @media (min-width: 700px) {
-  .flow-grid { width: min(100%, 500px); }
+  .flow-grid {
+    width: min(100%, 500px);
+  }
   .flow-grid {
     margin-top: auto;
     margin-bottom: auto;

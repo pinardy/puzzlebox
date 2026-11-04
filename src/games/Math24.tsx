@@ -16,7 +16,10 @@ type Frac = { n: number; d: number };
 
 const gcd = (a: number, b: number): number => (b ? gcd(b, a % b) : a);
 const frac = (n: number, d: number): Frac => {
-  if (d < 0) { n = -n; d = -d; }
+  if (d < 0) {
+    n = -n;
+    d = -d;
+  }
   const g = gcd(Math.abs(n), d) || 1;
   return { n: n / g, d: d / g };
 };
@@ -27,10 +30,14 @@ const OPS: Op[] = ["+", "−", "×", "÷"];
 
 function apply(a: Frac, b: Frac, op: Op): Frac | null {
   switch (op) {
-    case "+": return frac(a.n * b.d + b.n * a.d, a.d * b.d);
-    case "−": return frac(a.n * b.d - b.n * a.d, a.d * b.d);
-    case "×": return frac(a.n * b.n, a.d * b.d);
-    case "÷": return b.n === 0 ? null : frac(a.n * b.d, a.d * b.n);
+    case "+":
+      return frac(a.n * b.d + b.n * a.d, a.d * b.d);
+    case "−":
+      return frac(a.n * b.d - b.n * a.d, a.d * b.d);
+    case "×":
+      return frac(a.n * b.n, a.d * b.d);
+    case "÷":
+      return b.n === 0 ? null : frac(a.n * b.d, a.d * b.n);
   }
 }
 
@@ -66,8 +73,20 @@ function nextStep(nums: Frac[]): { i: number; j: number; op: Op } | null {
   return null;
 }
 
-const OP_NAME: Record<Op, string> = { "+": "plus", "−": "minus", "×": "times", "÷": "divided by" };
-const OP_KEYS: Record<string, Op> = { "+": "+", "-": "−", "*": "×", x: "×", X: "×", "/": "÷" };
+const OP_NAME: Record<Op, string> = {
+  "+": "plus",
+  "−": "minus",
+  "×": "times",
+  "÷": "divided by"
+};
+const OP_KEYS: Record<string, Op> = {
+  "+": "+",
+  "-": "−",
+  "*": "×",
+  x: "×",
+  X: "×",
+  "/": "÷"
+};
 
 function generate24(seed: string, diff: Diff): number[] {
   const rng = makeRng(`math24-${seed}`);
@@ -76,9 +95,11 @@ function generate24(seed: string, diff: Diff): number[] {
     const nums = Array.from({ length: 4 }, () => 1 + Math.floor(rng() * max));
     const paths = solutions(nums.map((v) => frac(v, 1)));
     const fits =
-      diff === "easy" ? paths >= 10 :
-      diff === "medium" ? paths >= 1 :
-      paths >= 1 && paths <= 6;
+      diff === "easy"
+        ? paths >= 10
+        : diff === "medium"
+          ? paths >= 1
+          : paths >= 1 && paths <= 6;
     if (fits) return nums;
   }
 }

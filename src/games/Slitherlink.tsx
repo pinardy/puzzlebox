@@ -31,10 +31,7 @@ export default function Slitherlink({ onExit }: { onExit: () => void }) {
   const n = SIZE[diff];
   const puzzle = useMemo(() => generateSlither(`slither-${seed}`, n), [seed, n]);
 
-  const solved = useMemo(
-    () => slitherSolved(puzzle, saved.edges),
-    [puzzle, saved.edges]
-  );
+  const solved = useMemo(() => slitherSolved(puzzle, saved.edges), [puzzle, saved.edges]);
   useEffect(() => {
     if (solved) finish();
   }, [solved, finish]);
@@ -51,7 +48,8 @@ export default function Slitherlink({ onExit }: { onExit: () => void }) {
   // ones offset by H. The squares (offset by H + V) are stops too, so the
   // arrows step edge → square → edge across the board and reach both kinds
   // of edge; Enter cycles the focused edge, Shift+Enter cycles it back.
-  const H = (n + 1) * n, V = n * (n + 1);
+  const H = (n + 1) * n,
+    V = n * (n + 1);
   const nav = useGridNav((i, back) => {
     if (i < H) tapEdge("h", i, back);
     else if (i < H + V) tapEdge("v", i - H, back);
@@ -104,12 +102,14 @@ export default function Slitherlink({ onExit }: { onExit: () => void }) {
         {...nav}
       >
         {Array.from({ length: G * G }).map((_, k) => {
-          const gr = Math.floor(k / G), gc = k % G;
+          const gr = Math.floor(k / G),
+            gc = k % G;
           if (gr % 2 === 0 && gc % 2 === 0)
             return <span key={k} className="slither-dot" aria-hidden="true" />;
           if (gr % 2 === 0) {
             const idx = (gr / 2) * n + (gc - 1) / 2;
-            const row = gr / 2, col = (gc - 1) / 2 + 1;
+            const row = gr / 2,
+              col = (gc - 1) / 2 + 1;
             return (
               <button
                 key={k}
@@ -126,7 +126,8 @@ export default function Slitherlink({ onExit }: { onExit: () => void }) {
           }
           if (gc % 2 === 0) {
             const idx = ((gr - 1) / 2) * (n + 1) + gc / 2;
-            const row = (gr - 1) / 2 + 1, col = gc / 2;
+            const row = (gr - 1) / 2 + 1,
+              col = gc / 2;
             return (
               <button
                 key={k}
@@ -159,7 +160,11 @@ export default function Slitherlink({ onExit }: { onExit: () => void }) {
       </div>
 
       <div className="lights-meta">
-        <span>{saved.edges.h.filter((m) => m === 1).length + saved.edges.v.filter((m) => m === 1).length} edges drawn</span>
+        <span>
+          {saved.edges.h.filter((m) => m === 1).length +
+            saved.edges.v.filter((m) => m === 1).length}{" "}
+          edges drawn
+        </span>
         <button className="mini-btn" onClick={() => commit(fresh(n))}>
           Clear
         </button>

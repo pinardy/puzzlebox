@@ -86,11 +86,7 @@ const build = (
  *  yields an answer list inside [minWords, maxWords]. Nearly every set hits
  *  the band on the first or second draw; the closest miss is kept so an
  *  unlucky run still returns a real puzzle instead of spinning. */
-export function generateBee(
-  seed: string,
-  minWords: number,
-  maxWords: number
-): BeePuzzle {
+export function generateBee(seed: string, minWords: number, maxWords: number): BeePuzzle {
   const rng = makeRng(seed);
   let best: BeePuzzle | null = null;
   let bestMiss = Infinity;

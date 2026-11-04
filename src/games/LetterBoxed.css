@@ -20,7 +20,11 @@
   box-shadow: var(--shadow);
 }
 
-.lb-chip-all { color: var(--green); border-color: var(--green); letter-spacing: 0.4px; }
+.lb-chip-all {
+  color: var(--green);
+  border-color: var(--green);
+  letter-spacing: 0.4px;
+}
 
 .lb-box {
   position: relative;
@@ -29,9 +33,18 @@
   aspect-ratio: 1;
 }
 
-.lb-lines { position: absolute; inset: 0; width: 100%; height: 100%; }
+.lb-lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
 
-.lb-frame { fill: var(--card); stroke: var(--ink); stroke-width: 1.2; }
+.lb-frame {
+  fill: var(--card);
+  stroke: var(--ink);
+  stroke-width: 1.2;
+}
 
 .lb-hop {
   stroke: var(--blue);
@@ -40,7 +53,11 @@
   opacity: 0.85;
 }
 
-.lb-hop.bad { stroke: var(--rose); stroke-width: 2; stroke-dasharray: 3 2; }
+.lb-hop.bad {
+  stroke: var(--rose);
+  stroke-width: 2;
+  stroke-dasharray: 3 2;
+}
 
 .lb-dot {
   position: absolute;
@@ -60,7 +77,11 @@
   cursor: pointer;
 }
 
-.lb-dot.spent { border-style: dashed; color: var(--ink-soft); background: var(--paper); }
+.lb-dot.spent {
+  border-style: dashed;
+  color: var(--ink-soft);
+  background: var(--paper);
+}
 
 .lb-dot.in-word {
   color: var(--paper);
@@ -87,11 +108,19 @@
   letter-spacing: 1px;
 }
 
-.lb-current i { font-size: 13px; font-weight: 400; color: var(--ink-soft); }
+.lb-current i {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--ink-soft);
+}
 
-.lb-current .lb-locked { color: var(--ink-soft); }
+.lb-current .lb-locked {
+  color: var(--ink-soft);
+}
 
-.lb-enter { font-weight: 700; }
+.lb-enter {
+  font-weight: 700;
+}
 
 .lb-tip {
   margin: 0;
@@ -111,7 +140,9 @@
   padding-bottom: 4px;
 }
 
-.lb-played:empty { display: none; }
+.lb-played:empty {
+  display: none;
+}
 
 .lb-word {
   font-family: var(--mono);
@@ -124,6 +155,10 @@
 }
 
 /* A spent dot reads as sunken: below --card in light, below it in dark too. */
-:root[data-theme="dark"] .lb-dot.spent { background: #101419; }
+:root[data-theme="dark"] .lb-dot.spent {
+  background: #101419;
+}
 
-:root[data-theme="dark"] .lb-hop { opacity: 1; }
+:root[data-theme="dark"] .lb-hop {
+  opacity: 1;
+}

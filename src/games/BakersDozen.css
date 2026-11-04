@@ -1,7 +1,13 @@
 /* BakersDozen: styles only this board uses. Loaded with its chunk. */
 
-.game-bakers .kl-card { font-size: clamp(8px, 2.1vw, 12px); }
+.game-bakers .kl-card {
+  font-size: clamp(8px, 2.1vw, 12px);
+}
 
-.bd-tableau .kl-card.kl-stacked { top: calc(var(--stack) * clamp(12px, 3.2vw, 18px)); }
+.bd-tableau .kl-card.kl-stacked {
+  top: calc(var(--stack) * clamp(12px, 3.2vw, 18px));
+}
 
-.game-bakers .kl-pile { min-height: 110px; }
+.game-bakers .kl-pile {
+  min-height: 110px;
+}

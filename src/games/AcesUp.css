@@ -8,6 +8,13 @@
   margin-top: 8px;
 }
 
-.au-pile { min-height: 190px; }
+.au-pile {
+  min-height: 190px;
+}
 
-.au-slot { position: absolute; top: 0; left: 0; width: 100%; }
+.au-slot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+}

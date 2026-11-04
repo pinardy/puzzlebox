@@ -25,13 +25,27 @@
   color: var(--grid-line);
 }
 
-.yj-cell.on { color: var(--coral); }
+.yj-cell.on {
+  color: var(--coral);
+}
 
-.yj-cell.shade { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.yj-cell.shade {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
 
-.yj-cell.bad { border-color: var(--rose); box-shadow: inset 0 0 0 2px var(--rose); color: var(--rose); }
+.yj-cell.bad {
+  border-color: var(--rose);
+  box-shadow: inset 0 0 0 2px var(--rose);
+  color: var(--rose);
+}
 
-.yj-cell.shade.bad { background: var(--rose); border-color: var(--rose); color: #fff; }
+.yj-cell.shade.bad {
+  background: var(--rose);
+  border-color: var(--rose);
+  color: #fff;
+}
 
 .yj-clue {
   display: flex;
@@ -45,17 +59,30 @@
   font-size: clamp(9px, 2.7vw, 14px);
 }
 
-.yj-arrow { font-family: var(--body); }
+.yj-arrow {
+  font-family: var(--body);
+}
 
-.yj-num { font-variant-numeric: tabular-nums; }
+.yj-num {
+  font-variant-numeric: tabular-nums;
+}
 
-.yj-clue.ok { box-shadow: inset 0 0 0 2px var(--green); }
+.yj-clue.ok {
+  box-shadow: inset 0 0 0 2px var(--green);
+}
 
-.yj-clue.ok .yj-num { text-decoration: line-through; color: var(--green); }
+.yj-clue.ok .yj-num {
+  text-decoration: line-through;
+  color: var(--green);
+}
 
-.yj-clue.over { box-shadow: inset 0 0 0 2px var(--rose); }
+.yj-clue.over {
+  box-shadow: inset 0 0 0 2px var(--rose);
+}
 
-.yj-clue.over .yj-num { color: var(--rose); }
+.yj-clue.over .yj-num {
+  color: var(--rose);
+}
 
 /* The segment buttons sit in the narrow tracks between cells; the negative
    margin steals a few pixels back from each neighbour so the tap target
@@ -74,9 +101,13 @@
   font-size: clamp(9px, 2.4vw, 12px);
 }
 
-.yj-edge.h { margin: 0 -3px; }
+.yj-edge.h {
+  margin: 0 -3px;
+}
 
-.yj-edge.v { margin: -3px 0; }
+.yj-edge.v {
+  margin: -3px 0;
+}
 
 .yj-edge::before {
   content: "";
@@ -85,30 +116,61 @@
   border-radius: 2px;
 }
 
-.yj-edge.h::before { left: 0; right: 0; height: 2px; }
+.yj-edge.h::before {
+  left: 0;
+  right: 0;
+  height: 2px;
+}
 
-.yj-edge.v::before { top: 0; bottom: 0; width: 2px; }
+.yj-edge.v::before {
+  top: 0;
+  bottom: 0;
+  width: 2px;
+}
 
-.yj-edge.line::before { background: var(--coral); }
+.yj-edge.line::before {
+  background: var(--coral);
+}
 
-.yj-edge.h.line::before { height: 6px; }
+.yj-edge.h.line::before {
+  height: 6px;
+}
 
-.yj-edge.v.line::before { width: 6px; }
+.yj-edge.v.line::before {
+  width: 6px;
+}
 
-.yj-edge.line.bad::before { background: var(--rose); }
+.yj-edge.line.bad::before {
+  background: var(--rose);
+}
 
-.yj-edge.off::before { background: transparent; }
+.yj-edge.off::before {
+  background: transparent;
+}
 
-:root[data-theme="dark"] .yj-clue { background: #2a3340; }
+:root[data-theme="dark"] .yj-clue {
+  background: #2a3340;
+}
 
-:root[data-theme="dark"] .yj-clue.ok .yj-num { color: #5fd39b; }
+:root[data-theme="dark"] .yj-clue.ok .yj-num {
+  color: #5fd39b;
+}
 
-:root[data-theme="dark"] .yj-clue.over .yj-num { color: #f5799f; }
+:root[data-theme="dark"] .yj-clue.over .yj-num {
+  color: #f5799f;
+}
 
 @media (min-width: 700px) {
-  .yj-grid { width: min(100%, 520px); margin-top: auto; margin-bottom: auto; }
+  .yj-grid {
+    width: min(100%, 520px);
+    margin-top: auto;
+    margin-bottom: auto;
+  }
 }
 
 /* Thin edges: draw the keyboard ring around the edge, above its
    neighbours, rather than inset where it would vanish. */
-.game-yajilin .yj-edge:focus-visible { outline-offset: 0; z-index: 2; }
+.game-yajilin .yj-edge:focus-visible {
+  outline-offset: 0;
+  z-index: 2;
+}

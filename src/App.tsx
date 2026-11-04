@@ -57,9 +57,7 @@ type View = "hub" | "stats" | "daily" | GameId;
 
 /** Narrow screens get a two-level hub: categories first, then games. */
 function useIsWide(): boolean {
-  const [wide, setWide] = useState(
-    () => window.matchMedia("(min-width: 700px)").matches
-  );
+  const [wide, setWide] = useState(() => window.matchMedia("(min-width: 700px)").matches);
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 700px)");
     const h = (e: MediaQueryListEvent) => setWide(e.matches);
@@ -68,7 +66,6 @@ function useIsWide(): boolean {
   }, []);
   return wide;
 }
-
 
 /** The view lives in location.hash (#/game/sudoku, #/cat/words), so the
  *  browser back button navigates in-app instead of leaving the PWA, and
@@ -133,9 +130,7 @@ function Card({
         </span>
         <span className="card-meta">
           <span className="card-state">{STATE_LABEL[progress]}</span>
-          {stats.won > 0 && (
-            <span className="card-solved">✓ {stats.won} solved</span>
-          )}
+          {stats.won > 0 && <span className="card-solved">✓ {stats.won} solved</span>}
         </span>
       </button>
       {onFav && (
@@ -143,9 +138,7 @@ function Card({
           className={`fav-btn${fav ? " on" : ""}`}
           onClick={onFav}
           aria-pressed={fav}
-          aria-label={
-            fav ? `Unpin ${card.name}` : `Pin ${card.name} to favourites`
-          }
+          aria-label={fav ? `Unpin ${card.name}` : `Pin ${card.name} to favourites`}
         >
           {fav ? "★" : "☆"}
         </button>
@@ -189,9 +182,7 @@ export default function App() {
   const [online, setOnline] = useState(navigator.onLine);
   const [query, setQuery] = useState("");
   const [sound, setSound] = useState(soundEnabled);
-  const [colorblind, setColorblind] = useState(() =>
-    load("pref:colorblind", false)
-  );
+  const [colorblind, setColorblind] = useState(() => load("pref:colorblind", false));
   const { theme, toggle: toggleTheme } = useTheme();
   const [haptics, setHaptics] = useState(hapticsEnabled);
   const [showTimer, setShowTimer] = useState(() => load("pref:timer", false));
@@ -345,12 +336,7 @@ export default function App() {
       <GameShell game={id} daily={date} key={view}>
         {/* A board that can't be opened — an old save, a generator that
             throws — offers a way out instead of a blank screen. */}
-        <GameBoundary
-          game={id}
-          slot={date ? DAILY_SLOT : id}
-          title={title}
-          onExit={exit}
-        >
+        <GameBoundary game={id} slot={date ? DAILY_SLOT : id} title={title} onExit={exit}>
           <Suspense fallback={<div className="game" />}>
             <Game onExit={exit} />
           </Suspense>
@@ -392,10 +378,7 @@ export default function App() {
 
   const favCards = GAMES.filter((c) => favorites.includes(c.id));
   // Anything already pinned or mid-game is shown above; don't list it twice.
-  const shownAbove = new Set<GameId>([
-    ...favorites,
-    ...inProgress.map((c) => c.id)
-  ]);
+  const shownAbove = new Set<GameId>([...favorites, ...inProgress.map((c) => c.id)]);
   const recentCards = recents
     .filter((id) => !shownAbove.has(id))
     .map((id) => GAMES.find((c) => c.id === id))
@@ -432,11 +415,7 @@ export default function App() {
     return (
       <div className="hub">
         <header className="cat-head">
-          <button
-            className="back-btn"
-            onClick={exit}
-            aria-label="Back to categories"
-          >
+          <button className="back-btn" onClick={exit} aria-label="Back to categories">
             ←
           </button>
           <h2>{CATEGORY_LABEL[openCat]}</h2>
@@ -490,9 +469,7 @@ export default function App() {
             className="icon-btn"
             onClick={toggleTheme}
             aria-label={
-              theme === "dark"
-                ? "Switch to the light theme"
-                : "Switch to the dark theme"
+              theme === "dark" ? "Switch to the light theme" : "Switch to the dark theme"
             }
             aria-pressed={theme === "dark"}
           >
@@ -518,11 +495,7 @@ export default function App() {
           >
             {sound ? "🔊" : "🔇"}
           </button>
-          <button
-            className="icon-btn"
-            onClick={surprise}
-            aria-label="Open a random game"
-          >
+          <button className="icon-btn" onClick={surprise} aria-label="Open a random game">
             ⚄
           </button>
         </div>
@@ -633,7 +606,9 @@ export default function App() {
                 {CATEGORIES.map((cat) => {
                   const meta = CATEGORY_META[cat];
                   const games = GAMES.filter((c) => c.cat === cat);
-                  const started = games.filter((c) => progressOf(c.id) === "started").length;
+                  const started = games.filter(
+                    (c) => progressOf(c.id) === "started"
+                  ).length;
                   return (
                     <button
                       key={cat}
@@ -649,9 +624,7 @@ export default function App() {
                         <span className="card-tag">{meta.tagline}</span>
                       </span>
                       <span className="card-meta">
-                        <span className="card-state">
-                          {games.length} games →
-                        </span>
+                        <span className="card-state">{games.length} games →</span>
                         {started > 0 && (
                           <span className="card-solved">{started} in progress</span>
                         )}

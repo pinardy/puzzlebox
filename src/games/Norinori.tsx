@@ -20,7 +20,8 @@ interface Puzzle {
 }
 
 const nbrsOf = (i: number, n: number): number[] => {
-  const r = Math.floor(i / n), c = i % n;
+  const r = Math.floor(i / n),
+    c = i % n;
   const out: number[] = [];
   if (r > 0) out.push(i - n);
   if (r < n - 1) out.push(i + n);
@@ -124,8 +125,7 @@ export default function Norinori({ onExit }: { onExit: () => void }) {
     <div className="game game-norinori">
       <GameHeader title="Norinori" onExit={onExit} onNew={() => newPuzzle()} />
       <p className="game-hint">
-        Two shaded squares per region; every shaded square touches exactly
-        one more.
+        Two shaded squares per region; every shaded square touches exactly one more.
       </p>
       <GameTools
         diff={diff}
@@ -143,7 +143,8 @@ export default function Norinori({ onExit }: { onExit: () => void }) {
         {...nav}
       >
         {Array.from({ length: n * n }, (_, i) => {
-          const r = Math.floor(i / n), c = i % n;
+          const r = Math.floor(i / n),
+            c = i % n;
           const id = regionOf[i];
           return (
             <button

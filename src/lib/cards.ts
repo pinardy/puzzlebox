@@ -12,7 +12,21 @@ export const isRed = (id: number) => suit(id) === 1 || suit(id) === 2;
 export const label = (id: number) => `${RANKS[rank(id) - 1]}${SUITS[suit(id)]}`;
 export const rankName = (r: number) => RANKS[r - 1];
 
-const SPOKEN_RANK = ["ace", "2", "3", "4", "5", "6", "7", "8", "9", "10", "jack", "queen", "king"];
+const SPOKEN_RANK = [
+  "ace",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+  "10",
+  "jack",
+  "queen",
+  "king"
+];
 /** A rank as a screen reader should say it: "queen", "7". */
 export const spokenRank = (r: number) => SPOKEN_RANK[r - 1];
 export const SUIT_NAMES = ["spades", "hearts", "diamonds", "clubs"];
@@ -41,8 +55,7 @@ export const nextRank = (r: number) => (r % 13) + 1;
 export const stepsAbove = (r: number, base: number) => (r - base + 13) % 13;
 
 /** Tableau building rules shared by the variants. */
-export const downAnySuit = (card: number, onto: number) =>
-  rank(card) === rank(onto) - 1;
+export const downAnySuit = (card: number, onto: number) => rank(card) === rank(onto) - 1;
 export const downInSuit = (card: number, onto: number) =>
   rank(card) === rank(onto) - 1 && suit(card) === suit(onto);
 export const downAltColour = (card: number, onto: number) =>

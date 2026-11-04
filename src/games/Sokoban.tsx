@@ -32,7 +32,8 @@ function generateSokoban(seed: string, n: number, boxCount: number): Level {
   for (;;) {
     const walls = Array(n * n).fill(false);
     for (let i = 0; i < n * n; i++) {
-      const r = Math.floor(i / n), c = i % n;
+      const r = Math.floor(i / n),
+        c = i % n;
       if (r === 0 || r === n - 1 || c === 0 || c === n - 1) walls[i] = true;
       else if (rng() < 0.12) walls[i] = true;
     }
@@ -41,8 +42,7 @@ function generateSokoban(seed: string, n: number, boxCount: number): Level {
 
     // Goals (initial box spots), then the player somewhere else.
     const spots = new Set<number>();
-    while (spots.size < boxCount + 1)
-      spots.add(floor[Math.floor(rng() * floor.length)]);
+    while (spots.size < boxCount + 1) spots.add(floor[Math.floor(rng() * floor.length)]);
     const picked = [...spots];
     const goals = picked.slice(0, boxCount);
     let player = picked[boxCount];
@@ -80,11 +80,12 @@ interface SavedState {
 }
 
 export default function Sokoban({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
-    useGame<SavedState>((s, d) => {
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>(
+    (s, d) => {
       const lvl = generateSokoban(`sokoban-${s}`, SIZE[d], BOXES[d]);
       return { player: lvl.startPlayer, boxes: lvl.startBoxes, moves: 0, done: false };
-    });
+    }
+  );
   const n = SIZE[diff];
   const level = useMemo(
     () => generateSokoban(`sokoban-${seed}`, n, BOXES[diff]),
@@ -117,7 +118,10 @@ export default function Sokoban({ onExit }: { onExit: () => void }) {
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       const d = (
-        { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -n, ArrowDown: n } as Record<string, number>
+        { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -n, ArrowDown: n } as Record<
+          string,
+          number
+        >
       )[e.key];
       if (d !== undefined) {
         e.preventDefault();
@@ -137,8 +141,7 @@ export default function Sokoban({ onExit }: { onExit: () => void }) {
     <div className="game game-sokoban">
       <GameHeader title="Sokoban" onExit={onExit} onNew={() => newPuzzle()} />
       <p className="game-hint">
-        Push every crate onto a circle. Tap next to the worker, swipe, or use
-        arrows.
+        Push every crate onto a circle. Tap next to the worker, swipe, or use arrows.
       </p>
       <GameTools
         diff={diff}
@@ -150,8 +153,8 @@ export default function Sokoban({ onExit }: { onExit: () => void }) {
 
       <div className="lights-meta" aria-live="polite">
         <span>
-          Moves: {saved.moves} · 📦{" "}
-          {saved.boxes.filter((b) => goalSet.has(b)).length}/{saved.boxes.length}
+          Moves: {saved.moves} · 📦 {saved.boxes.filter((b) => goalSet.has(b)).length}/
+          {saved.boxes.length}
         </span>
       </div>
 
@@ -202,11 +205,19 @@ export default function Sokoban({ onExit }: { onExit: () => void }) {
       </div>
 
       <div className="t2048-pad">
-        <button className="mini-btn" onClick={() => move(-n)} aria-label="Up">↑</button>
+        <button className="mini-btn" onClick={() => move(-n)} aria-label="Up">
+          ↑
+        </button>
         <div>
-          <button className="mini-btn" onClick={() => move(-1)} aria-label="Left">←</button>
-          <button className="mini-btn" onClick={() => move(n)} aria-label="Down">↓</button>
-          <button className="mini-btn" onClick={() => move(1)} aria-label="Right">→</button>
+          <button className="mini-btn" onClick={() => move(-1)} aria-label="Left">
+            ←
+          </button>
+          <button className="mini-btn" onClick={() => move(n)} aria-label="Down">
+            ↓
+          </button>
+          <button className="mini-btn" onClick={() => move(1)} aria-label="Right">
+            →
+          </button>
         </div>
       </div>
 

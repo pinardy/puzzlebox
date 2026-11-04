@@ -74,19 +74,14 @@ function buildWords(rng: () => number): string[] {
     // The bottom row is only playable where some down word can end there.
     const tails = partial.map((l) => new Set(l.map((w) => w[4])));
     const a2opts = ACROSS_POOL.filter(
-      (w) =>
-        w !== a0 &&
-        w !== a1 &&
-        CROSS_COLS.every((c, k) => tails[k].has(w[c]))
+      (w) => w !== a0 && w !== a1 && CROSS_COLS.every((c, k) => tails[k].has(w[c]))
     );
     if (!a2opts.length) continue;
     const a2 = pick(a2opts, rng);
     const used = new Set([a0, a1, a2]);
     const downs: string[] = [];
     for (let k = 0; k < 3; k++) {
-      const opts = partial[k].filter(
-        (w) => w[4] === a2[CROSS_COLS[k]] && !used.has(w)
-      );
+      const opts = partial[k].filter((w) => w[4] === a2[CROSS_COLS[k]] && !used.has(w));
       if (!opts.length) break;
       const w = pick(opts, rng);
       used.add(w);

@@ -53,7 +53,12 @@ function occupancy(cars: Car[], pos: number[]): Int8Array {
 
 /** Minimum moves to free the red car (one move = one car sliding any
  *  distance), or null if unsolvable / the search cap is hit. */
-function solve(cars: Car[], startPos: number[], moveCap: number, stateCap: number): number | null {
+function solve(
+  cars: Car[],
+  startPos: number[],
+  moveCap: number,
+  stateCap: number
+): number | null {
   const key = (p: number[]) => p.join(",");
   const seen = new Set([key(startPos)]);
   let frontier = [startPos];
@@ -166,7 +171,10 @@ function generateUnblock(seed: string, diff: Diff): Layout {
   if (best) return best;
   // Vanishingly unlikely; a trivial fallback keeps the type honest.
   return {
-    cars: [{ h: true, len: 2, fix: 2 }, { h: false, len: 3, fix: 4 }],
+    cars: [
+      { h: true, len: 2, fix: 2 },
+      { h: false, len: 3, fix: 4 }
+    ],
     start: [0, 0],
     par: 2
   };
@@ -179,12 +187,13 @@ interface SavedState {
 }
 
 export default function Unblock({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
-    useGame<SavedState>((s, d) => ({
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>(
+    (s, d) => ({
       pos: generateUnblock(s, d).start,
       moves: 0,
       done: false
-    }));
+    })
+  );
   const layout = useMemo(() => generateUnblock(seed, diff), [seed, diff]);
   const { cars, par } = layout;
 
@@ -199,7 +208,8 @@ export default function Unblock({ onExit }: { onExit: () => void }) {
   function slideRange(k: number): [number, number] {
     const grid = occupancy(cars, pos);
     const car = cars[k];
-    let min = pos[k], max = pos[k];
+    let min = pos[k],
+      max = pos[k];
     while (min > 0) {
       const probe = min - 1;
       const r = car.h ? car.fix : probe;
@@ -298,7 +308,12 @@ export default function Unblock({ onExit }: { onExit: () => void }) {
         <span>Par {par}</span>
       </div>
 
-      <div className="ub-board drag-paint" ref={boardRef} role="group" aria-label="Unblock board">
+      <div
+        className="ub-board drag-paint"
+        ref={boardRef}
+        role="group"
+        aria-label="Unblock board"
+      >
         <span className="ub-exit" aria-hidden="true">
           ➜
         </span>
@@ -339,9 +354,7 @@ export default function Unblock({ onExit }: { onExit: () => void }) {
               }}
               onKeyDown={(e) => {
                 const dir = (
-                  car.h
-                    ? { ArrowLeft: -1, ArrowRight: 1 }
-                    : { ArrowUp: -1, ArrowDown: 1 }
+                  car.h ? { ArrowLeft: -1, ArrowRight: 1 } : { ArrowUp: -1, ArrowDown: 1 }
                 ) as Record<string, -1 | 1>;
                 const d = dir[e.key];
                 if (d === undefined) return;

@@ -25,16 +25,27 @@
   place-items: center;
 }
 
-.ws-cell.anchor { background: var(--teal); color: #fff; }
+.ws-cell.anchor {
+  background: var(--teal);
+  color: #fff;
+}
 
-.ws-cell.found { background: #d7efe9; color: var(--teal); font-weight: 700; }
+.ws-cell.found {
+  background: #d7efe9;
+  color: var(--teal);
+  font-weight: 700;
+}
 
 @media (min-width: 700px) {
-  .ws-grid { width: min(100%, 560px); }
+  .ws-grid {
+    width: min(100%, 560px);
+  }
   .ws-grid {
     margin-top: auto;
     margin-bottom: auto;
   }
 }
 
-:root[data-theme="dark"] .ws-cell.found { background: #1e3a34; }
+:root[data-theme="dark"] .ws-cell.found {
+  background: #1e3a34;
+}

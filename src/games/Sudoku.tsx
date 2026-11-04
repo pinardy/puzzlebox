@@ -28,13 +28,15 @@ function fresh(): SavedState {
 }
 
 function peers(idx: number): number[] {
-  const r = Math.floor(idx / 9), c = idx % 9;
+  const r = Math.floor(idx / 9),
+    c = idx % 9;
   const out = new Set<number>();
   for (let k = 0; k < 9; k++) {
     out.add(r * 9 + k);
     out.add(k * 9 + c);
   }
-  const br = Math.floor(r / 3) * 3, bc = Math.floor(c / 3) * 3;
+  const br = Math.floor(r / 3) * 3,
+    bc = Math.floor(c / 3) * 3;
   for (let dr = 0; dr < 3; dr++)
     for (let dc = 0; dc < 3; dc++) out.add((br + dr) * 9 + (bc + dc));
   out.delete(idx);
@@ -144,8 +146,7 @@ export default function Sudoku({ onExit }: { onExit: () => void }) {
           const c = i % 9;
           const sameVal = selVal !== 0 && v === selVal;
           const inLine =
-            selected !== null &&
-            (Math.floor(selected / 9) === r || selected % 9 === c);
+            selected !== null && (Math.floor(selected / 9) === r || selected % 9 === c);
           return (
             <button
               key={i}

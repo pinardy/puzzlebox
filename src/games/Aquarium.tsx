@@ -36,7 +36,8 @@ function generateAquarium(seed: string, n: number): Puzzle {
     const want = 3 + Math.floor(rng() * 5); // 3–7 cells
     while (cells.length < want) {
       const frontier = cells.flatMap((i) => {
-        const r = Math.floor(i / n), c = i % n;
+        const r = Math.floor(i / n),
+          c = i % n;
         const out: number[] = [];
         if (r > 0 && regionOf[i - n] === -1) out.push(i - n);
         if (r < n - 1 && regionOf[i + n] === -1) out.push(i + n);
@@ -52,7 +53,8 @@ function generateAquarium(seed: string, n: number): Puzzle {
     regions.push(cells);
   }
 
-  const rows = Array(n).fill(0), cols = Array(n).fill(0);
+  const rows = Array(n).fill(0),
+    cols = Array(n).fill(0);
   const wetCells: boolean[] = Array(n * n).fill(false);
   for (const cells of regions) {
     const regionRows = [...new Set(cells.map((i) => Math.floor(i / n)))].sort(
@@ -87,7 +89,8 @@ export default function Aquarium({ onExit }: { onExit: () => void }) {
   const puzzle = useMemo(() => generateAquarium(`aquarium-${seed}`, n), [seed, n]);
 
   const counts = useMemo(() => {
-    const rows = Array(n).fill(0), cols = Array(n).fill(0);
+    const rows = Array(n).fill(0),
+      cols = Array(n).fill(0);
     saved.marks.forEach((m, i) => {
       if (m === 1) {
         rows[Math.floor(i / n)]++;
@@ -102,9 +105,7 @@ export default function Aquarium({ onExit }: { onExit: () => void }) {
   const conflicts = useMemo(() => {
     const bad = new Set<number>();
     const byRegion = new Map<number, number[]>();
-    puzzle.regionOf.forEach((g, i) =>
-      byRegion.set(g, [...(byRegion.get(g) ?? []), i])
-    );
+    puzzle.regionOf.forEach((g, i) => byRegion.set(g, [...(byRegion.get(g) ?? []), i]));
     for (const cells of byRegion.values()) {
       const byRow = new Map<number, number[]>();
       for (const i of cells) {
@@ -184,7 +185,8 @@ export default function Aquarium({ onExit }: { onExit: () => void }) {
         {...drag}
       >
         {Array.from({ length: G * G }).map((_, k) => {
-          const gr = Math.floor(k / G), gc = k % G;
+          const gr = Math.floor(k / G),
+            gc = k % G;
           if (gr === 0 && gc === 0) return <span key={k} />;
           if (gr === 0)
             return (
@@ -207,7 +209,8 @@ export default function Aquarium({ onExit }: { onExit: () => void }) {
               </span>
             );
           const i = (gr - 1) * n + (gc - 1);
-          const r = gr - 1, c = gc - 1;
+          const r = gr - 1,
+            c = gc - 1;
           const m = saved.marks[i];
           return (
             <button

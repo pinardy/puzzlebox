@@ -34,8 +34,9 @@ function deal(seed: string): SavedState {
 }
 
 export default function BakersDozen({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle } =
-    useGame<SavedState>((s) => deal(s));
+  const { seed, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>((s) =>
+    deal(s)
+  );
   const [sel, setSel] = useState<number | null>(null);
 
   function clone(): SavedState {
@@ -108,9 +109,7 @@ export default function BakersDozen({ onExit }: { onExit: () => void }) {
   return (
     <div className="game game-bakers" style={{ "--cols": 13 } as CSSProperties}>
       <GameHeader title="Baker's Dozen" onExit={onExit} onNew={startNew} />
-      <p className="game-hint">
-        Build down by rank, any suit. Empty columns stay empty.
-      </p>
+      <p className="game-hint">Build down by rank, any suit. Empty columns stay empty.</p>
       <GameTools help={HELP} onUndo={undo} canUndo={canUndo && !saved.done} />
 
       <div className="kl-top">
@@ -150,7 +149,9 @@ export default function BakersDozen({ onExit }: { onExit: () => void }) {
       </div>
 
       <div className="lights-meta">
-        <span>Moves: {saved.moves} · {left} cards left</span>
+        <span>
+          Moves: {saved.moves} · {left} cards left
+        </span>
       </div>
 
       {saved.done && (

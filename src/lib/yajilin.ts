@@ -36,7 +36,8 @@ export const freshEdges = (n: number): EdgeState => ({
 });
 
 const nbrs = (i: number, n: number): number[] => {
-  const r = Math.floor(i / n), c = i % n;
+  const r = Math.floor(i / n),
+    c = i % n;
   const out: number[] = [];
   if (r > 0) out.push(i - n);
   if (r < n - 1) out.push(i + n);
@@ -47,7 +48,8 @@ const nbrs = (i: number, n: number): number[] => {
 
 /** How many loop segments meet at this cell. */
 export function cellDegree(n: number, edges: EdgeState, i: number): number {
-  const r = Math.floor(i / n), c = i % n;
+  const r = Math.floor(i / n),
+    c = i % n;
   let d = 0;
   if (c > 0 && edges.h[r * (n - 1) + c - 1] === 1) d++;
   if (c < n - 1 && edges.h[r * (n - 1) + c] === 1) d++;
@@ -64,7 +66,9 @@ export function rayCount(
   shaded: readonly boolean[]
 ): number {
   const [dr, dc] = STEP[dir];
-  let r = Math.floor(i / n) + dr, c = (i % n) + dc, k = 0;
+  let r = Math.floor(i / n) + dr,
+    c = (i % n) + dc,
+    k = 0;
   while (r >= 0 && r < n && c >= 0 && c < n) {
     if (shaded[r * n + c]) k++;
     r += dr;
@@ -84,7 +88,8 @@ interface Loop {
  *  a path for an edge keeps the figure a single closed loop, so the result
  *  is always one cycle — it just gets longer. */
 function growLoop(n: number, rng: () => number): Loop {
-  const r0 = Math.floor(rng() * (n - 1)), c0 = Math.floor(rng() * (n - 1));
+  const r0 = Math.floor(rng() * (n - 1)),
+    c0 = Math.floor(rng() * (n - 1));
   const h = Array(n * (n - 1)).fill(0);
   const v = Array((n - 1) * n).fill(0);
   h[r0 * (n - 1) + c0] = 1;
@@ -103,17 +108,20 @@ function growLoop(n: number, rng: () => number): Loop {
     const opts: { kind: "h" | "v"; r: number; c: number; d: number }[] = [];
     for (let r = 0; r < n; r++)
       for (let c = 0; c < n - 1; c++)
-        if (h[r * (n - 1) + c] === 1) for (const d of [-1, 1]) opts.push({ kind: "h", r, c, d });
+        if (h[r * (n - 1) + c] === 1)
+          for (const d of [-1, 1]) opts.push({ kind: "h", r, c, d });
     for (let r = 0; r < n - 1; r++)
       for (let c = 0; c < n; c++)
-        if (v[r * n + c] === 1) for (const d of [-1, 1]) opts.push({ kind: "v", r, c, d });
+        if (v[r * n + c] === 1)
+          for (const d of [-1, 1]) opts.push({ kind: "v", r, c, d });
 
     let bumped = false;
     for (const o of shuffled(opts, rng)) {
       if (o.kind === "h") {
         const rr = o.r + o.d;
         if (rr < 0 || rr >= n) continue;
-        const x = rr * n + o.c, y = rr * n + o.c + 1;
+        const x = rr * n + o.c,
+          y = rr * n + o.c + 1;
         if (cells.has(x) || cells.has(y)) continue;
         const vr = Math.min(o.r, rr);
         h[o.r * (n - 1) + o.c] = 0;
@@ -125,7 +133,8 @@ function growLoop(n: number, rng: () => number): Loop {
       } else {
         const cc = o.c + o.d;
         if (cc < 0 || cc >= n) continue;
-        const x = o.r * n + cc, y = (o.r + 1) * n + cc;
+        const x = o.r * n + cc,
+          y = (o.r + 1) * n + cc;
         if (cells.has(x) || cells.has(y)) continue;
         const hc = Math.min(o.c, cc);
         v[o.r * n + o.c] = 0;
@@ -144,7 +153,8 @@ function growLoop(n: number, rng: () => number): Loop {
 }
 
 const rayLength = (n: number, i: number, dir: Dir): number => {
-  const r = Math.floor(i / n), c = i % n;
+  const r = Math.floor(i / n),
+    c = i % n;
   return dir === 0 ? r : dir === 1 ? n - 1 - r : dir === 2 ? c : n - 1 - c;
 };
 
@@ -221,9 +231,11 @@ function fallback(n: number): YajilinPuzzle {
 
   const { h, v } = freshEdges(n);
   for (let k = 0; k < path.length; k++) {
-    const a = path[k], b = path[(k + 1) % path.length];
+    const a = path[k],
+      b = path[(k + 1) % path.length];
     const [lo, hi] = a < b ? [a, b] : [b, a];
-    const r = Math.floor(lo / n), c = lo % n;
+    const r = Math.floor(lo / n),
+      c = lo % n;
     if (hi - lo === 1) h[r * (n - 1) + c] = 1;
     else v[r * n + c] = 1;
   }
@@ -283,7 +295,11 @@ export function yajilinSolved(
   const stack = [lines[0][0]];
   while (stack.length) {
     const i = stack.pop()!;
-    for (const j of adj[i]) if (!seen.has(j)) { seen.add(j); stack.push(j); }
+    for (const j of adj[i])
+      if (!seen.has(j)) {
+        seen.add(j);
+        stack.push(j);
+      }
   }
   if (seen.size !== live) return false;
 

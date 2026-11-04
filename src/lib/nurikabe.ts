@@ -24,7 +24,8 @@ export function generateNurikabe(seed: string, n: number): NurikabePuzzle {
     const sizes: number[] = [];
 
     const neighbours = (i: number): number[] => {
-      const r = Math.floor(i / n), c = i % n;
+      const r = Math.floor(i / n),
+        c = i % n;
       const out: number[] = [];
       if (r > 0) out.push(i - n);
       if (r < n - 1) out.push(i + n);
@@ -49,7 +50,12 @@ export function generateNurikabe(seed: string, n: number): NurikabePuzzle {
       for (let r = 0; r < n - 1; r++)
         for (let c = 0; c < n - 1; c++) {
           const i = r * n + c;
-          if (isle[i] === -1 && isle[i + 1] === -1 && isle[i + n] === -1 && isle[i + n + 1] === -1)
+          if (
+            isle[i] === -1 &&
+            isle[i + 1] === -1 &&
+            isle[i + n] === -1 &&
+            isle[i + n + 1] === -1
+          )
             return [i, i + 1, i + n, i + n + 1];
         }
       return null;
@@ -81,7 +87,10 @@ export function generateNurikabe(seed: string, n: number): NurikabePuzzle {
         }
         if (whitened) break;
       }
-      if (!whitened) { ok = false; break; }
+      if (!whitened) {
+        ok = false;
+        break;
+      }
     }
     if (!ok) continue;
 
@@ -104,7 +113,14 @@ export function generateNurikabe(seed: string, n: number): NurikabePuzzle {
   // Practically unreachable on a 7×7 board; a fixed fallback keeps the
   // return type honest.
   const sea = Array.from({ length: n * n }, (_, i) => i !== 0 && i !== n * n - 1);
-  return { n, clues: new Map([[0, 1], [n * n - 1, 1]]), sea };
+  return {
+    n,
+    clues: new Map([
+      [0, 1],
+      [n * n - 1, 1]
+    ]),
+    sea
+  };
 }
 
 /** Does the filled (sea) set solve the puzzle? Unfilled cells are treated
@@ -137,9 +153,16 @@ export function nurikabeSolved(p: NurikabePuzzle, filled: boolean[]): boolean {
     while (stack.length) {
       const j = stack.pop()!;
       region.push(j);
-      const r = Math.floor(j / n), c = j % n;
-      for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-        const rr = r + dr, cc = c + dc;
+      const r = Math.floor(j / n),
+        c = j % n;
+      for (const [dr, dc] of [
+        [1, 0],
+        [-1, 0],
+        [0, 1],
+        [0, -1]
+      ]) {
+        const rr = r + dr,
+          cc = c + dc;
         const k = rr * n + cc;
         if (rr >= 0 && rr < n && cc >= 0 && cc < n && !filled[k] && !seen.has(k)) {
           seen.add(k);

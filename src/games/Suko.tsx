@@ -40,11 +40,23 @@ export default function Suko({ onExit }: { onExit: () => void }) {
   const board = saved.entries;
 
   const circleMark = useMemo(
-    () => SUKO_CIRCLES.map((q, k) => markOf(q.map((c) => board[c]), circles[k])),
+    () =>
+      SUKO_CIRCLES.map((q, k) =>
+        markOf(
+          q.map((c) => board[c]),
+          circles[k]
+        )
+      ),
     [board, circles]
   );
   const groupMark = useMemo(
-    () => groups.map((g, k) => markOf(g.map((c) => board[c]), groupSums[k])),
+    () =>
+      groups.map((g, k) =>
+        markOf(
+          g.map((c) => board[c]),
+          groupSums[k]
+        )
+      ),
     [board, groups, groupSums]
   );
 

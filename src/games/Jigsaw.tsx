@@ -63,9 +63,7 @@ export default function Jigsaw({ onExit }: { onExit: () => void }) {
     };
     if (pencil && val !== 0) {
       const n = next.notes[idx];
-      next.notes[idx] = n.includes(val)
-        ? n.filter((x) => x !== val)
-        : [...n, val].sort();
+      next.notes[idx] = n.includes(val) ? n.filter((x) => x !== val) : [...n, val].sort();
     } else {
       next.entries[idx] = next.entries[idx] === val ? 0 : val;
       next.notes[idx] = [];
@@ -109,9 +107,7 @@ export default function Jigsaw({ onExit }: { onExit: () => void }) {
   return (
     <div className="game game-jigsaw">
       <GameHeader title="Jigsaw Sudoku" onExit={onExit} onNew={() => startNew()} />
-      <p className="game-hint">
-        1–9 once per row, column, and jigsaw region.
-      </p>
+      <p className="game-hint">1–9 once per row, column, and jigsaw region.</p>
       <GameTools
         diff={diff}
         onDiff={startNew}
@@ -124,10 +120,10 @@ export default function Jigsaw({ onExit }: { onExit: () => void }) {
       <div className="sudoku-grid" role="grid" aria-label="Jigsaw sudoku board">
         {board.map((v, i) => {
           const given = puzzle[i] !== 0;
-          const r = Math.floor(i / 9), c = i % 9;
+          const r = Math.floor(i / 9),
+            c = i % 9;
           const sameVal = selVal !== 0 && v === selVal;
-          const inRegion =
-            selected !== null && regionOf[selected] === regionOf[i];
+          const inRegion = selected !== null && regionOf[selected] === regionOf[i];
           return (
             <button
               key={i}

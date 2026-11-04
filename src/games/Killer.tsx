@@ -45,12 +45,17 @@ function generateKiller(seed: string, givenCount: number): Puzzle {
     const want = 2 + Math.floor(rng() * 3); // 2–4; singles only when boxed in
     while (cells.length < want) {
       const frontier = cells.flatMap((i) => {
-        const r = Math.floor(i / 9), c = i % 9;
+        const r = Math.floor(i / 9),
+          c = i % 9;
         const out: number[] = [];
-        if (r > 0 && cageOf[i - 9] === -1 && !digits.has(solution[i - 9])) out.push(i - 9);
-        if (r < 8 && cageOf[i + 9] === -1 && !digits.has(solution[i + 9])) out.push(i + 9);
-        if (c > 0 && cageOf[i - 1] === -1 && !digits.has(solution[i - 1])) out.push(i - 1);
-        if (c < 8 && cageOf[i + 1] === -1 && !digits.has(solution[i + 1])) out.push(i + 1);
+        if (r > 0 && cageOf[i - 9] === -1 && !digits.has(solution[i - 9]))
+          out.push(i - 9);
+        if (r < 8 && cageOf[i + 9] === -1 && !digits.has(solution[i + 9]))
+          out.push(i + 9);
+        if (c > 0 && cageOf[i - 1] === -1 && !digits.has(solution[i - 1]))
+          out.push(i - 1);
+        if (c < 8 && cageOf[i + 1] === -1 && !digits.has(solution[i + 1]))
+          out.push(i + 1);
         return out;
       });
       if (!frontier.length) break;
@@ -83,13 +88,15 @@ function fresh(): SavedState {
 }
 
 function peers(idx: number): number[] {
-  const r = Math.floor(idx / 9), c = idx % 9;
+  const r = Math.floor(idx / 9),
+    c = idx % 9;
   const out = new Set<number>();
   for (let k = 0; k < 9; k++) {
     out.add(r * 9 + k);
     out.add(k * 9 + c);
   }
-  const br = Math.floor(r / 3) * 3, bc = Math.floor(c / 3) * 3;
+  const br = Math.floor(r / 3) * 3,
+    bc = Math.floor(c / 3) * 3;
   for (let dr = 0; dr < 3; dr++)
     for (let dc = 0; dc < 3; dc++) out.add((br + dr) * 9 + (bc + dc));
   out.delete(idx);
@@ -121,10 +128,7 @@ export default function Killer({ onExit }: { onExit: () => void }) {
             bad.add(cage.cells[a]);
             bad.add(cage.cells[b]);
           }
-      if (
-        vals.every((v) => v !== 0) &&
-        vals.reduce((x, y) => x + y, 0) !== cage.sum
-      )
+      if (vals.every((v) => v !== 0) && vals.reduce((x, y) => x + y, 0) !== cage.sum)
         cage.cells.forEach((i) => bad.add(i));
     }
     return bad;
@@ -196,8 +200,8 @@ export default function Killer({ onExit }: { onExit: () => void }) {
     <div className="game game-killer">
       <GameHeader title="Killer Sudoku" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
-        Rows, columns, and boxes hold 1–9 once; each dotted cage adds to its
-        number, no repeats inside.
+        Rows, columns, and boxes hold 1–9 once; each dotted cage adds to its number, no
+        repeats inside.
       </p>
       <GameTools
         diff={diff}
@@ -218,8 +222,7 @@ export default function Killer({ onExit }: { onExit: () => void }) {
           const clue = clueCell.get(i);
           const sameVal = selVal !== 0 && v === selVal;
           const inLine =
-            selected !== null &&
-            (Math.floor(selected / 9) === r || selected % 9 === c);
+            selected !== null && (Math.floor(selected / 9) === r || selected % 9 === c);
           return (
             <button
               key={i}

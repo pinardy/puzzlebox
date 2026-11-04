@@ -62,7 +62,8 @@ function hasPair(grid: (number | null)[]): boolean {
 }
 
 export default function MonteCarlo({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle }= useGame<SavedState>((s) => deal(s)
+  const { seed, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>((s) =>
+    deal(s)
   );
   const [sel, setSel] = useState<number | null>(null);
   const nav = useGridNav();
@@ -87,7 +88,11 @@ export default function MonteCarlo({ onExit }: { onExit: () => void }) {
       return;
     }
     if (sel !== null && targets.has(i)) {
-      const next: SavedState = { ...saved, grid: saved.grid.slice(), stock: saved.stock.slice() };
+      const next: SavedState = {
+        ...saved,
+        grid: saved.grid.slice(),
+        stock: saved.stock.slice()
+      };
       next.grid[sel] = null;
       next.grid[i] = null;
       next.removed += 2;

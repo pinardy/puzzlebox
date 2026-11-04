@@ -37,8 +37,9 @@ function deal(seed: string): SavedState {
 const top = (p: number[]) => (p.length ? p[p.length - 1] : null);
 
 export default function AcesUp({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle } =
-    useGame<SavedState>((s) => deal(s));
+  const { seed, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>((s) =>
+    deal(s)
+  );
   const [sel, setSel] = useState<number | null>(null);
 
   /** A top card dies if another pile shows a higher card of its suit. */
@@ -73,8 +74,7 @@ export default function AcesUp({ onExit }: { onExit: () => void }) {
         )
     );
     const canMove =
-      next.piles.some((p) => p.length === 0) &&
-      next.piles.some((p) => p.length > 1);
+      next.piles.some((p) => p.length === 0) && next.piles.some((p) => p.length > 1);
     if (!canKill && !canMove) {
       next.done = true;
       return "lost";
@@ -82,7 +82,11 @@ export default function AcesUp({ onExit }: { onExit: () => void }) {
   }
 
   function clone(): SavedState {
-    return { ...saved, piles: saved.piles.map((p) => p.slice()), stock: saved.stock.slice() };
+    return {
+      ...saved,
+      piles: saved.piles.map((p) => p.slice()),
+      stock: saved.stock.slice()
+    };
   }
 
   function tapPile(i: number) {
@@ -142,7 +146,9 @@ export default function AcesUp({ onExit }: { onExit: () => void }) {
           faceDown={saved.stock.length > 0}
           onClick={tapStock}
           aria-label={
-            saved.stock.length ? `Stock, ${saved.stock.length} cards, deal four` : "Stock, empty"
+            saved.stock.length
+              ? `Stock, ${saved.stock.length} cards, deal four`
+              : "Stock, empty"
           }
         >
           {saved.stock.length || "—"}
@@ -174,7 +180,9 @@ export default function AcesUp({ onExit }: { onExit: () => void }) {
                   card={card}
                   selected={sel === i && k === pile.length - 1}
                   className={
-                    k === pile.length - 1 && doomed[i] ? "kl-stacked tp-hot" : "kl-stacked"
+                    k === pile.length - 1 && doomed[i]
+                      ? "kl-stacked tp-hot"
+                      : "kl-stacked"
                   }
                   style={{ "--stack": k } as CSSProperties}
                   place={stackPlace(`Pile ${i + 1}`, k, pile.length)}

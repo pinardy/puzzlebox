@@ -39,8 +39,7 @@ interface SavedState {
 }
 
 /** Words in the order a hunter wants to read them back: longest first. */
-const byValue = (a: string, b: string) =>
-  b.length - a.length || a.localeCompare(b);
+const byValue = (a: string, b: string) => b.length - a.length || a.localeCompare(b);
 
 export default function Boggle({ onExit }: { onExit: () => void }) {
   const { seed, diff, saved, commit, finish, commitHint, undo, canUndo, newPuzzle } =
@@ -67,7 +66,7 @@ export default function Boggle({ onExit }: { onExit: () => void }) {
   const entry = trace.length ? traceWord : typed;
   // A typed word is shown on the board too, whenever it has a path there.
   const shown = useMemo(
-    () => (trace.length ? trace : typed ? findPath(board.cells, n, typed) ?? [] : []),
+    () => (trace.length ? trace : typed ? (findPath(board.cells, n, typed) ?? []) : []),
     [trace, typed, board, n]
   );
   const score = useMemo(
@@ -177,8 +176,7 @@ export default function Boggle({ onExit }: { onExit: () => void }) {
     <div className="game game-boggle">
       <GameHeader title="Boggle" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
-        Tap neighbouring letters to spell a word, then Enter. Reach{" "}
-        {board.target} points.
+        Tap neighbouring letters to spell a word, then Enter. Reach {board.target} points.
       </p>
       <GameTools
         diff={diff}
@@ -194,8 +192,7 @@ export default function Boggle({ onExit }: { onExit: () => void }) {
           {score} / {board.target} pts
         </span>
         <span>
-          {saved.found.length} word{saved.found.length === 1 ? "" : "s"} · {pct}% of
-          board
+          {saved.found.length} word{saved.found.length === 1 ? "" : "s"} · {pct}% of board
         </span>
       </div>
 

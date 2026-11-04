@@ -19,8 +19,10 @@ export function growBlob(rng: () => number, n: number): Set<number> {
     // two are not — that pinches the boundary into a figure-eight.
     for (let r = 0; r < n - 1; r++)
       for (let c = 0; c < n - 1; c++) {
-        const a = blob.has(r * n + c), b = blob.has(r * n + c + 1);
-        const d = blob.has((r + 1) * n + c), e = blob.has((r + 1) * n + c + 1);
+        const a = blob.has(r * n + c),
+          b = blob.has(r * n + c + 1);
+        const d = blob.has((r + 1) * n + c),
+          e = blob.has((r + 1) * n + c + 1);
         if ((a && e && !b && !d) || (b && d && !a && !e)) return false;
       }
     // Complement (plus the outside) stays connected — no holes.
@@ -29,15 +31,28 @@ export function growBlob(rng: () => number, n: number): Set<number> {
     for (let r = 0; r < n; r++)
       for (const c of [0, n - 1]) {
         for (const i of [r * n + c, c * n + r])
-          if (!blob.has(i) && !out.has(i)) { out.add(i); stack.push(i); }
+          if (!blob.has(i) && !out.has(i)) {
+            out.add(i);
+            stack.push(i);
+          }
       }
     while (stack.length) {
       const i = stack.pop()!;
-      const r = Math.floor(i / n), c = i % n;
-      for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-        const rr = r + dr, cc = c + dc;
+      const r = Math.floor(i / n),
+        c = i % n;
+      for (const [dr, dc] of [
+        [1, 0],
+        [-1, 0],
+        [0, 1],
+        [0, -1]
+      ]) {
+        const rr = r + dr,
+          cc = c + dc;
         const j = rr * n + cc;
-        if (inGrid(rr, cc) && !blob.has(j) && !out.has(j)) { out.add(j); stack.push(j); }
+        if (inGrid(rr, cc) && !blob.has(j) && !out.has(j)) {
+          out.add(j);
+          stack.push(j);
+        }
       }
     }
     return out.size === n * n - blob.size;
@@ -48,8 +63,14 @@ export function growBlob(rng: () => number, n: number): Set<number> {
   for (let tries = 0; tries < 400 && blob.size < target; tries++) {
     const frontier = shuffled(
       [...blob].flatMap((i) => {
-        const r = Math.floor(i / n), c = i % n;
-        return [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]]
+        const r = Math.floor(i / n),
+          c = i % n;
+        return [
+          [r - 1, c],
+          [r + 1, c],
+          [r, c - 1],
+          [r, c + 1]
+        ]
           .filter(([rr, cc]) => inGrid(rr, cc) && !blob.has(rr * n + cc))
           .map(([rr, cc]) => rr * n + cc);
       }),
@@ -58,7 +79,10 @@ export function growBlob(rng: () => number, n: number): Set<number> {
     let grown = false;
     for (const cand of frontier) {
       blob.add(cand);
-      if (validAfterAdd(blob)) { grown = true; break; }
+      if (validAfterAdd(blob)) {
+        grown = true;
+        break;
+      }
       blob.delete(cand);
     }
     if (!grown) break;
@@ -80,15 +104,22 @@ export function generateSlither(seed: string, n: number): SlitherPuzzle {
     for (let c = 0; c < n; c++) {
       const me = inBlob(r, c);
       let count = 0;
-      for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]])
+      for (const [dr, dc] of [
+        [1, 0],
+        [-1, 0],
+        [0, 1],
+        [0, -1]
+      ])
         if (me !== inBlob(r + dr, c + dc)) count++;
       clues.push(rng() < 0.62 ? count : null);
     }
   const solution: EdgeState = { h: [], v: [] };
   for (let r = 0; r <= n; r++)
-    for (let c = 0; c < n; c++) solution.h.push(inBlob(r - 1, c) !== inBlob(r, c) ? 1 : 0);
+    for (let c = 0; c < n; c++)
+      solution.h.push(inBlob(r - 1, c) !== inBlob(r, c) ? 1 : 0);
   for (let r = 0; r < n; r++)
-    for (let c = 0; c <= n; c++) solution.v.push(inBlob(r, c - 1) !== inBlob(r, c) ? 1 : 0);
+    for (let c = 0; c <= n; c++)
+      solution.v.push(inBlob(r, c - 1) !== inBlob(r, c) ? 1 : 0);
   return { n, clues, solution };
 }
 
@@ -111,8 +142,10 @@ export function slitherSolved(p: SlitherPuzzle, edges: EdgeState): boolean {
       const want = clues[r * n + c];
       if (want === null) continue;
       const got =
-        (hOn(r, c) ? 1 : 0) + (hOn(r + 1, c) ? 1 : 0) +
-        (vOn(r, c) ? 1 : 0) + (vOn(r, c + 1) ? 1 : 0);
+        (hOn(r, c) ? 1 : 0) +
+        (hOn(r + 1, c) ? 1 : 0) +
+        (vOn(r, c) ? 1 : 0) +
+        (vOn(r, c + 1) ? 1 : 0);
       if (got !== want) return false;
     }
 
@@ -121,11 +154,9 @@ export function slitherSolved(p: SlitherPuzzle, edges: EdgeState): boolean {
   type Edge = [number, number];
   const lines: Edge[] = [];
   for (let r = 0; r <= n; r++)
-    for (let c = 0; c < n; c++)
-      if (hOn(r, c)) lines.push([r * V + c, r * V + c + 1]);
+    for (let c = 0; c < n; c++) if (hOn(r, c)) lines.push([r * V + c, r * V + c + 1]);
   for (let r = 0; r < n; r++)
-    for (let c = 0; c <= n; c++)
-      if (vOn(r, c)) lines.push([r * V + c, (r + 1) * V + c]);
+    for (let c = 0; c <= n; c++) if (vOn(r, c)) lines.push([r * V + c, (r + 1) * V + c]);
   if (!lines.length) return false;
 
   const degree = new Map<number, number>();
@@ -145,7 +176,10 @@ export function slitherSolved(p: SlitherPuzzle, edges: EdgeState): boolean {
   while (stack.length) {
     const i = stack.pop()!;
     for (const j of adj.get(i) ?? [])
-      if (!seen.has(j)) { seen.add(j); stack.push(j); }
+      if (!seen.has(j)) {
+        seen.add(j);
+        stack.push(j);
+      }
   }
   return seen.size === degree.size;
 }

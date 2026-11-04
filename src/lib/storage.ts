@@ -122,8 +122,7 @@ export function recordResult(game: GameId, won: boolean, slotKey: string = game)
     };
     if (won && !hinted && playMs > 0) {
       const best = s.best?.[diff];
-      if (best === undefined || playMs < best)
-        next.best = { ...s.best, [diff]: playMs };
+      if (best === undefined || playMs < best) next.best = { ...s.best, [diff]: playMs };
     }
   }
 

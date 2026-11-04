@@ -36,7 +36,8 @@ function generateSuguru(seed: string, n: number, reveal: number): Puzzle {
       const want = 2 + Math.floor(rng() * 4); // 2–5
       while (cells.length < want) {
         const frontier = cells.flatMap((i) => {
-          const r = Math.floor(i / n), c = i % n;
+          const r = Math.floor(i / n),
+            c = i % n;
           const out: number[] = [];
           if (r > 0 && regionOf[i - n] === -1) out.push(i - n);
           if (r < n - 1 && regionOf[i + n] === -1) out.push(i + n);
@@ -57,7 +58,8 @@ function generateSuguru(seed: string, n: number, reveal: number): Puzzle {
     for (let id = 0; id < regions.length; id++) {
       if (regions[id].length !== 1) continue;
       const i = regions[id][0];
-      const r = Math.floor(i / n), c = i % n;
+      const r = Math.floor(i / n),
+        c = i % n;
       const nbrs = [
         r > 0 ? i - n : -1,
         r < n - 1 ? i + n : -1,
@@ -77,7 +79,8 @@ function generateSuguru(seed: string, n: number, reveal: number): Puzzle {
     // could backtrack for tens of seconds on a 6×6 board.
     const values = Array(n * n).fill(0);
     const options = (i: number): number[] => {
-      const r = Math.floor(i / n), c = i % n;
+      const r = Math.floor(i / n),
+        c = i % n;
       const used = new Set(regions[regionOf[i]].map((j) => values[j]));
       const out: number[] = [];
       for (let v = 1; v <= regionSize[i]; v++) {
@@ -85,7 +88,8 @@ function generateSuguru(seed: string, n: number, reveal: number): Puzzle {
         let ok = true;
         for (let dr = -1; dr <= 1 && ok; dr++)
           for (let dc = -1; dc <= 1; dc++) {
-            const rr = r + dr, cc = c + dc;
+            const rr = r + dr,
+              cc = c + dc;
             if (rr >= 0 && rr < n && cc >= 0 && cc < n && values[rr * n + cc] === v) {
               ok = false;
               break;
@@ -163,11 +167,13 @@ export default function Suguru({ onExit }: { onExit: () => void }) {
       const v = board[i];
       if (v === 0) continue;
       if (v > puzzle.regionSize[i]) bad.add(i);
-      const r = Math.floor(i / n), c = i % n;
+      const r = Math.floor(i / n),
+        c = i % n;
       for (let dr = -1; dr <= 1; dr++)
         for (let dc = -1; dc <= 1; dc++) {
           if (!dr && !dc) continue;
-          const rr = r + dr, cc = c + dc;
+          const rr = r + dr,
+            cc = c + dc;
           const j = rr * n + cc;
           if (rr >= 0 && rr < n && cc >= 0 && cc < n && board[j] === v) {
             bad.add(i);
@@ -195,8 +201,7 @@ export default function Suguru({ onExit }: { onExit: () => void }) {
   }
 
   function hint() {
-    const open = (i: number) =>
-      puzzle.givens[i] === 0 && board[i] !== puzzle.solution[i];
+    const open = (i: number) => puzzle.givens[i] === 0 && board[i] !== puzzle.solution[i];
     const cands = [...Array(n * n).keys()].filter(open);
     if (!cands.length) return;
     const idx =
@@ -220,8 +225,7 @@ export default function Suguru({ onExit }: { onExit: () => void }) {
     <div className="game game-suguru">
       <GameHeader title="Suguru" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
-        1 to N in each N-cell region; equal numbers never touch, even
-        diagonally.
+        1 to N in each N-cell region; equal numbers never touch, even diagonally.
       </p>
       <GameTools
         diff={diff}
@@ -239,7 +243,8 @@ export default function Suguru({ onExit }: { onExit: () => void }) {
         aria-label="Suguru board"
       >
         {board.map((v, i) => {
-          const r = Math.floor(i / n), c = i % n;
+          const r = Math.floor(i / n),
+            c = i % n;
           const given = puzzle.givens[i] !== 0;
           return (
             <button

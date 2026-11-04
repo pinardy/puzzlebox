@@ -24,9 +24,16 @@ interface Puzzle {
 /** Cells a bulb at `i` shines on (until walls), excluding itself. */
 function beam(i: number, n: number, walls: boolean[]): number[] {
   const out: number[] = [];
-  const r = Math.floor(i / n), c = i % n;
-  for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-    let rr = r + dr, cc = c + dc;
+  const r = Math.floor(i / n),
+    c = i % n;
+  for (const [dr, dc] of [
+    [1, 0],
+    [-1, 0],
+    [0, 1],
+    [0, -1]
+  ]) {
+    let rr = r + dr,
+      cc = c + dc;
     while (rr >= 0 && rr < n && cc >= 0 && cc < n && !walls[rr * n + cc]) {
       out.push(rr * n + cc);
       rr += dr;
@@ -60,10 +67,17 @@ function generateAkari(seed: string, n: number): Puzzle {
   const numbers = new Map<number, number>();
   for (let i = 0; i < n * n; i++) {
     if (!walls[i]) continue;
-    const r = Math.floor(i / n), c = i % n;
+    const r = Math.floor(i / n),
+      c = i % n;
     let count = 0;
-    for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-      const rr = r + dr, cc = c + dc;
+    for (const [dr, dc] of [
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1]
+    ]) {
+      const rr = r + dr,
+        cc = c + dc;
       if (rr >= 0 && rr < n && cc >= 0 && cc < n && bulbs.has(rr * n + cc)) count++;
     }
     if (rng() < 0.6) numbers.set(i, count);
@@ -106,7 +120,10 @@ export default function Akari({ onExit }: { onExit: () => void }) {
     const bad = new Set<number>();
     for (const b of bulbs)
       for (const j of beam(b, n, puzzle.walls))
-        if (saved.marks[j] === 1) { bad.add(b); bad.add(j); }
+        if (saved.marks[j] === 1) {
+          bad.add(b);
+          bad.add(j);
+        }
     return bad;
   }, [bulbs, saved.marks, puzzle, n]);
 
@@ -115,10 +132,17 @@ export default function Akari({ onExit }: { onExit: () => void }) {
     const allLit = puzzle.walls.every((w, i) => w || lit.has(i));
     if (!allLit) return false;
     for (const [wall, want] of puzzle.numbers) {
-      const r = Math.floor(wall / n), c = wall % n;
+      const r = Math.floor(wall / n),
+        c = wall % n;
       let count = 0;
-      for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-        const rr = r + dr, cc = c + dc;
+      for (const [dr, dc] of [
+        [1, 0],
+        [-1, 0],
+        [0, 1],
+        [0, -1]
+      ]) {
+        const rr = r + dr,
+          cc = c + dc;
         if (rr >= 0 && rr < n && cc >= 0 && cc < n && saved.marks[rr * n + cc] === 1)
           count++;
       }
@@ -159,8 +183,7 @@ export default function Akari({ onExit }: { onExit: () => void }) {
     <div className="game game-akari">
       <GameHeader title="Light Up" onExit={onExit} onNew={() => newPuzzle()} />
       <p className="game-hint">
-        Light every cell; bulbs may not shine on each other. Numbers count
-        adjacent bulbs.
+        Light every cell; bulbs may not shine on each other. Numbers count adjacent bulbs.
       </p>
       <GameTools
         diff={diff}

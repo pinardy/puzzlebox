@@ -22,11 +22,20 @@
   cursor: default;
 }
 
-.kt-cell.dark { background: var(--grid-line); }
+.kt-cell.dark {
+  background: var(--grid-line);
+}
 
-.kt-cell.seen { color: var(--indigo); font-weight: 700; }
+.kt-cell.seen {
+  color: var(--indigo);
+  font-weight: 700;
+}
 
-.kt-cell.here { background: var(--indigo); color: #fff; font-size: clamp(16px, 4.5vw, 24px); }
+.kt-cell.here {
+  background: var(--indigo);
+  color: #fff;
+  font-size: clamp(16px, 4.5vw, 24px);
+}
 
 .kt-cell.legal {
   cursor: pointer;
@@ -34,6 +43,11 @@
   outline-offset: -3px;
 }
 
-.kt-cell.suggested { background: var(--amber); color: #fff; }
+.kt-cell.suggested {
+  background: var(--amber);
+  color: #fff;
+}
 
-:root[data-theme="dark"] .kt-cell.dark { background: #202b39; }
+:root[data-theme="dark"] .kt-cell.dark {
+  background: #202b39;
+}

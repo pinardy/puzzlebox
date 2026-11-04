@@ -22,15 +22,25 @@
   gap: 6px;
 }
 
-.t2048-slot { border-radius: 8px; background: var(--card); opacity: 0.55; }
+.t2048-slot {
+  border-radius: 8px;
+  background: var(--card);
+  opacity: 0.55;
+}
 
 .t2048-tile {
   position: absolute;
   width: calc((100% - 12px - (var(--gn, 4) - 1) * 6px) / var(--gn, 4));
   height: calc((100% - 12px - (var(--gn, 4) - 1) * 6px) / var(--gn, 4));
-  left: calc(6px + var(--c) * ((100% - 12px - (var(--gn, 4) - 1) * 6px) / var(--gn, 4) + 6px));
-  top: calc(6px + var(--r) * ((100% - 12px - (var(--gn, 4) - 1) * 6px) / var(--gn, 4) + 6px));
-  transition: left 110ms ease, top 110ms ease;
+  left: calc(
+    6px + var(--c) * ((100% - 12px - (var(--gn, 4) - 1) * 6px) / var(--gn, 4) + 6px)
+  );
+  top: calc(
+    6px + var(--r) * ((100% - 12px - (var(--gn, 4) - 1) * 6px) / var(--gn, 4) + 6px)
+  );
+  transition:
+    left 110ms ease,
+    top 110ms ease;
   border-radius: 8px;
   background: var(--card);
   display: grid;
@@ -41,30 +51,74 @@
   color: #1b2733;
 }
 
-.t2048-tile.pop { animation: tile-pop 160ms ease; }
+.t2048-tile.pop {
+  animation: tile-pop 160ms ease;
+}
 
-.t2048-tile.pulse { animation: tile-pulse 180ms ease; }
+.t2048-tile.pulse {
+  animation: tile-pulse 180ms ease;
+}
 
-.t2048-tile.t2 { background: #fdf6e3; }
+.t2048-tile.t2 {
+  background: #fdf6e3;
+}
 
-.t2048-tile.t4 { background: #f9e9c0; }
+.t2048-tile.t4 {
+  background: #f9e9c0;
+}
 
-.t2048-tile.t8 { background: #f6cf8e; color: #7a4b12; }
+.t2048-tile.t8 {
+  background: #f6cf8e;
+  color: #7a4b12;
+}
 
-.t2048-tile.t16 { background: #f2b56a; color: #6d3c08; }
+.t2048-tile.t16 {
+  background: #f2b56a;
+  color: #6d3c08;
+}
 
-.t2048-tile.t32 { background: #ee9a55; color: #fff; }
+.t2048-tile.t32 {
+  background: #ee9a55;
+  color: #fff;
+}
 
-.t2048-tile.t64 { background: #e97b3d; color: #fff; }
+.t2048-tile.t64 {
+  background: #e97b3d;
+  color: #fff;
+}
 
-.t2048-tile.t128 { background: #edc862; color: #6b4d00; font-size: clamp(14px, 4.4vw, 22px); }
+.t2048-tile.t128 {
+  background: #edc862;
+  color: #6b4d00;
+  font-size: clamp(14px, 4.4vw, 22px);
+}
 
-.t2048-tile.t256 { background: #e9bd4a; color: #5f4400; font-size: clamp(14px, 4.4vw, 22px); }
+.t2048-tile.t256 {
+  background: #e9bd4a;
+  color: #5f4400;
+  font-size: clamp(14px, 4.4vw, 22px);
+}
 
-.t2048-tile.t512 { background: #e5b232; color: #fff; font-size: clamp(14px, 4.4vw, 22px); }
+.t2048-tile.t512 {
+  background: #e5b232;
+  color: #fff;
+  font-size: clamp(14px, 4.4vw, 22px);
+}
 
-.t2048-tile.t1024 { background: #d9a410; color: #fff; font-size: clamp(12px, 3.8vw, 19px); }
+.t2048-tile.t1024 {
+  background: #d9a410;
+  color: #fff;
+  font-size: clamp(12px, 3.8vw, 19px);
+}
 
-.t2048-tile.t2048 { background: #1b2733; color: #ffd75e; font-size: clamp(12px, 3.8vw, 19px); }
+.t2048-tile.t2048 {
+  background: #1b2733;
+  color: #ffd75e;
+  font-size: clamp(12px, 3.8vw, 19px);
+}
 
-.t2048-tile.tbig { background: #1b2733; color: #fff; font-size: clamp(12px, 3.8vw, 19px); }
+.t2048-tile.tbig {
+  background: #1b2733;
+  color: #fff;
+  font-size: clamp(12px, 3.8vw, 19px);
+}

@@ -32,8 +32,9 @@ const HELP =
 type SavedState = CastleState;
 
 export default function BeleagueredCastle({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle } =
-    useGame<SavedState>((s) => dealCastle(s));
+  const { seed, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>((s) =>
+    dealCastle(s)
+  );
   const [sel, setSel] = useState<number | null>(null);
 
   const moves = useMemo(() => legalMoves(saved), [saved]);
@@ -49,8 +50,7 @@ export default function BeleagueredCastle({ onExit }: { onExit: () => void }) {
     return out;
   }, [sel, selCard, saved.piles]);
 
-  const homeSuit =
-    selCard !== null && canHome(saved, selCard) ? suit(selCard) : null;
+  const homeSuit = selCard !== null && canHome(saved, selCard) ? suit(selCard) : null;
 
   /** Fans whose end card has somewhere to go, hinted while nothing is held. */
   const live = useMemo(() => new Set(moves.map((m) => m.from)), [moves]);
@@ -187,9 +187,7 @@ export default function BeleagueredCastle({ onExit }: { onExit: () => void }) {
         <span>
           {home}/52 home · moves {saved.moves}
         </span>
-        {!saved.done && !moves.length && (
-          <span className="bc-stuck">No moves left</span>
-        )}
+        {!saved.done && !moves.length && <span className="bc-stuck">No moves left</span>}
         {!saved.done && canSend && (
           <button className="mini-btn" onClick={sendUp}>
             Send home ↑

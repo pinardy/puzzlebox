@@ -9,7 +9,9 @@
   gap: 3px;
 }
 
-.sw-corner { grid-area: 1 / 1; }
+.sw-corner {
+  grid-area: 1 / 1;
+}
 
 .sw-top {
   grid-area: 1 / 2;
@@ -23,7 +25,9 @@
   grid-template-rows: repeat(9, 1fr);
 }
 
-.sw-wrap .sudoku-grid { grid-area: 2 / 2; }
+.sw-wrap .sudoku-grid {
+  grid-area: 2 / 2;
+}
 
 .sw-clue {
   display: grid;
@@ -36,6 +40,10 @@
   color: var(--ink-soft);
 }
 
-.sw-clue.ok { color: var(--green); }
+.sw-clue.ok {
+  color: var(--green);
+}
 
-.sw-clue.bad { color: var(--rose); }
+.sw-clue.bad {
+  color: var(--rose);
+}

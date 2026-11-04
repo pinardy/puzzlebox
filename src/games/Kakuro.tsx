@@ -31,9 +31,13 @@ export default function Kakuro({ onExit }: { onExit: () => void }) {
   const runText = useMemo(() => {
     const out = new Map<number, string[]>();
     for (const run of puzzle.runs) {
-      const dir = run.cells.length > 1 && run.cells[1] - run.cells[0] === 1 ? "across" : "down";
+      const dir =
+        run.cells.length > 1 && run.cells[1] - run.cells[0] === 1 ? "across" : "down";
       for (const i of run.cells)
-        out.set(i, [...(out.get(i) ?? []), `${dir} run of ${run.cells.length} sums to ${run.sum}`]);
+        out.set(i, [
+          ...(out.get(i) ?? []),
+          `${dir} run of ${run.cells.length} sums to ${run.sum}`
+        ]);
     }
     return out;
   }, [puzzle]);
@@ -72,8 +76,7 @@ export default function Kakuro({ onExit }: { onExit: () => void }) {
   }
 
   function hint() {
-    const open = (i: number) =>
-      !puzzle.black[i] && board[i] !== puzzle.solution[i];
+    const open = (i: number) => !puzzle.black[i] && board[i] !== puzzle.solution[i];
     const cands = [...Array(G * G).keys()].filter(open);
     if (!cands.length) return;
     const idx =
@@ -105,8 +108,8 @@ export default function Kakuro({ onExit }: { onExit: () => void }) {
     <div className="game game-kakuro">
       <GameHeader title="Kakuro" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
-        Runs of digits 1–9, no repeats, adding to the clue — across top-right,
-        down bottom-left.
+        Runs of digits 1–9, no repeats, adding to the clue — across top-right, down
+        bottom-left.
       </p>
       <GameTools
         diff={diff}

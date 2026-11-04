@@ -9,7 +9,8 @@ export interface JigsawPuzzle {
 }
 
 const nbrs = (i: number): number[] => {
-  const r = Math.floor(i / 9), c = i % 9;
+  const r = Math.floor(i / 9),
+    c = i % 9;
   const out: number[] = [];
   if (r > 0) out.push(i - 9);
   if (r < 8) out.push(i + 9);
@@ -38,7 +39,8 @@ function connected(regionOf: number[], id: number): boolean {
 function makeRegions(rng: () => number, swaps: number): number[] {
   const regionOf = Array(81);
   for (let i = 0; i < 81; i++) {
-    const r = Math.floor(i / 9), c = i % 9;
+    const r = Math.floor(i / 9),
+      c = i % 9;
     regionOf[i] = Math.floor(r / 3) * 3 + Math.floor(c / 3);
   }
   let done = 0;
@@ -47,7 +49,8 @@ function makeRegions(rng: () => number, swaps: number): number[] {
     const cand = nbrs(x).filter((y) => regionOf[y] !== regionOf[x]);
     if (!cand.length) continue;
     const y = cand[Math.floor(rng() * cand.length)];
-    const a = regionOf[x], b = regionOf[y];
+    const a = regionOf[x],
+      b = regionOf[y];
     regionOf[x] = b;
     regionOf[y] = a;
     if (connected(regionOf, a) && connected(regionOf, b)) done++;
@@ -62,7 +65,8 @@ function makeRegions(rng: () => number, swaps: number): number[] {
 export function jigsawPeers(regionOf: number[]): number[][] {
   const peers: number[][] = [];
   for (let i = 0; i < 81; i++) {
-    const r = Math.floor(i / 9), c = i % 9;
+    const r = Math.floor(i / 9),
+      c = i % 9;
     const s = new Set<number>();
     for (let k = 0; k < 9; k++) {
       s.add(r * 9 + k);
@@ -98,8 +102,7 @@ function countSolutions(grid: number[], peers: number[][], cap: number): number 
     for (let i = 0; i < 81; i++) {
       if (grid[i]) continue;
       const opts: number[] = [];
-      for (let d = 1; d <= 9; d++)
-        if (!peers[i].some((p) => grid[p] === d)) opts.push(d);
+      for (let d = 1; d <= 9; d++) if (!peers[i].some((p) => grid[p] === d)) opts.push(d);
       if (!opts.length) return;
       if (!bestOpts || opts.length < bestOpts.length) {
         best = i;

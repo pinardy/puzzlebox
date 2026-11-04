@@ -42,13 +42,21 @@
   pointer-events: none;
 }
 
-.sl-cell.fwd::after { transform: translate(-50%, -50%) rotate(-45deg); }
+.sl-cell.fwd::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
 
-.sl-cell.back::after { transform: translate(-50%, -50%) rotate(45deg); }
+.sl-cell.back::after {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
 
-.sl-cell.loop { background: #fbe6ef; }
+.sl-cell.loop {
+  background: #fbe6ef;
+}
 
-.sl-cell.loop::after { border-top-color: var(--rose); }
+.sl-cell.loop::after {
+  border-top-color: var(--rose);
+}
 
 .sl-clues {
   position: absolute;
@@ -76,7 +84,10 @@
   z-index: 2;
 }
 
-.sl-clue.met { background: var(--ink); color: var(--card); }
+.sl-clue.met {
+  background: var(--ink);
+  color: var(--card);
+}
 
 /* Shape, not just colour: an over-counted point squares off. */
 .sl-clue.over {
@@ -86,4 +97,6 @@
   color: #fff;
 }
 
-:root[data-theme="dark"] .sl-cell.loop { background: #45222f; }
+:root[data-theme="dark"] .sl-cell.loop {
+  background: #45222f;
+}

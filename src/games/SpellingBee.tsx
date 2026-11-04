@@ -110,8 +110,7 @@ export default function SpellingBee({ onExit }: { onExit: () => void }) {
     (k: string) => {
       if (k === "enter") submit();
       else if (k === "back") setCurrent((c) => c.slice(0, -1));
-      else if (puzzle.letters.includes(k))
-        setCurrent((c) => (c.length < 24 ? c + k : c));
+      else if (puzzle.letters.includes(k)) setCurrent((c) => (c.length < 24 ? c + k : c));
     },
     [submit, puzzle.letters]
   );

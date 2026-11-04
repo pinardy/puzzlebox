@@ -53,9 +53,7 @@ function dealInto(cards: number[], layout: number[]): number[][] {
 
 export function dealPiles(seed: string, rules: PileRules): PileState {
   // Aces are ids 0–3, so they lift out without a search.
-  const pack = [...Array(52).keys()].filter(
-    (c) => !rules.acesHome || rank(c) !== 1
-  );
+  const pack = [...Array(52).keys()].filter((c) => !rules.acesHome || rank(c) !== 1);
   const piles = dealInto(
     shuffled(pack, makeRng(`${rules.seedTag}-${seed}`)),
     rules.layout
@@ -98,8 +96,7 @@ export function legalMoves(st: PileState, rules: PileRules): PileMove[] {
 
 export const isWon = (st: PileState) => st.foundations.every((f) => f === 13);
 
-export const cardsHome = (st: PileState) =>
-  st.foundations.reduce((a, f) => a + f, 0);
+export const cardsHome = (st: PileState) => st.foundations.reduce((a, f) => a + f, 0);
 
 export const clonePiles = (st: PileState): PileState => ({
   ...st,

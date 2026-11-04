@@ -1,0 +1,5 @@
+# Word lists: packed many to a line on purpose; one word per line would
+# turn them into tens of thousands of lines.
+src/lib/dict.ts
+src/lib/words.ts
+src/lib/words4.ts

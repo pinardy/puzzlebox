@@ -10,7 +10,10 @@
   aspect-ratio: 1;
 }
 
-.xw-black { background: var(--ink); border: 0.5px solid var(--ink); }
+.xw-black {
+  background: var(--ink);
+  border: 0.5px solid var(--ink);
+}
 
 .xw-cell {
   position: relative;
@@ -27,9 +30,16 @@
   aspect-ratio: 1;
 }
 
-.xw-cell.inword { background: var(--grid-line); }
+.xw-cell.inword {
+  background: var(--grid-line);
+}
 
-.xw-cell.selected { background: #c3d7f8; outline: 2px solid var(--blue); outline-offset: -2px; z-index: 1; }
+.xw-cell.selected {
+  background: #c3d7f8;
+  outline: 2px solid var(--blue);
+  outline-offset: -2px;
+  z-index: 1;
+}
 
 .xw-num {
   position: absolute;
@@ -80,12 +90,24 @@
   border-radius: 6px;
 }
 
-.xw-clue.active { background: var(--grid-line); }
+.xw-clue.active {
+  background: var(--grid-line);
+}
 
-.xw-clue.solved { color: var(--ink-soft); text-decoration: line-through; }
+.xw-clue.solved {
+  color: var(--ink-soft);
+  text-decoration: line-through;
+}
 
-.xw-clue b { margin-right: 3px; }
+.xw-clue b {
+  margin-right: 3px;
+}
 
-:root[data-theme="dark"] .xw-cell.selected { background: #2e4a6d; }
+:root[data-theme="dark"] .xw-cell.selected {
+  background: #2e4a6d;
+}
 
-:root[data-theme="dark"] .xw-black { background: #060a0e; border-color: #060a0e; }
+:root[data-theme="dark"] .xw-black {
+  background: #060a0e;
+  border-color: #060a0e;
+}

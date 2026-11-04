@@ -11,9 +11,19 @@ const HELP =
   "section pays a 35-point bonus at 63+. Chase your best total.";
 
 const CATS = [
-  "Ones", "Twos", "Threes", "Fours", "Fives", "Sixes",
-  "3 of a kind", "4 of a kind", "Full house", "Sm straight", "Lg straight",
-  "Yahtzee", "Chance"
+  "Ones",
+  "Twos",
+  "Threes",
+  "Fours",
+  "Fives",
+  "Sixes",
+  "3 of a kind",
+  "4 of a kind",
+  "Full house",
+  "Sm straight",
+  "Lg straight",
+  "Yahtzee",
+  "Chance"
 ] as const;
 
 interface SavedState {
@@ -47,9 +57,12 @@ function potential(cat: number, dice: number[]): number {
   const sum = dice.reduce((a, b) => a + b, 0);
   if (cat < 6) return counts[cat + 1] * (cat + 1);
   switch (cat) {
-    case 6: return counts.some((c) => c >= 3) ? sum : 0;
-    case 7: return counts.some((c) => c >= 4) ? sum : 0;
-    case 8: return counts.includes(3) && counts.includes(2) ? 25 : 0;
+    case 6:
+      return counts.some((c) => c >= 3) ? sum : 0;
+    case 7:
+      return counts.some((c) => c >= 4) ? sum : 0;
+    case 8:
+      return counts.includes(3) && counts.includes(2) ? 25 : 0;
     case 9: {
       const has = (a: number[]) => a.every((v) => counts[v] > 0);
       return has([1, 2, 3, 4]) || has([2, 3, 4, 5]) || has([3, 4, 5, 6]) ? 30 : 0;
@@ -58,12 +71,18 @@ function potential(cat: number, dice: number[]): number {
       const has = (a: number[]) => a.every((v) => counts[v] > 0);
       return has([1, 2, 3, 4, 5]) || has([2, 3, 4, 5, 6]) ? 40 : 0;
     }
-    case 11: return counts.some((c) => c === 5) ? 50 : 0;
-    default: return sum;
+    case 11:
+      return counts.some((c) => c === 5) ? 50 : 0;
+    default:
+      return sum;
   }
 }
 
-function totals(scores: (number | null)[]): { upper: number; bonus: number; total: number } {
+function totals(scores: (number | null)[]): {
+  upper: number;
+  bonus: number;
+  total: number;
+} {
   const upper = scores.slice(0, 6).reduce((a: number, s) => a + (s ?? 0), 0);
   const bonus = upper >= 63 ? 35 : 0;
   const total = scores.reduce((a: number, s) => a + (s ?? 0), 0) + bonus;
@@ -71,8 +90,7 @@ function totals(scores: (number | null)[]): { upper: number; bonus: number; tota
 }
 
 export default function Yahtzee({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, newPuzzle }= useGame<SavedState>((s) => fresh(s)
-  );
+  const { seed, saved, commit, newPuzzle } = useGame<SavedState>((s) => fresh(s));
   const [rolling, setRolling] = useState(false);
 
   function roll() {
@@ -174,7 +192,9 @@ export default function Yahtzee({ onExit }: { onExit: () => void }) {
           );
         })}
         <div className="yz-cat yz-total">
-          <span>Upper {upper}/63 {bonus ? "· bonus +35" : ""}</span>
+          <span>
+            Upper {upper}/63 {bonus ? "· bonus +35" : ""}
+          </span>
           <b>{total}</b>
         </div>
       </div>

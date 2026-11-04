@@ -26,7 +26,8 @@ function region(cells: number[], n: number): number[] {
   const stack = [0];
   while (stack.length) {
     const i = stack.pop()!;
-    const r = Math.floor(i / n), c = i % n;
+    const r = Math.floor(i / n),
+      c = i % n;
     for (const k of [
       r > 0 ? i - n : -1,
       r < n - 1 ? i + n : -1,
@@ -150,9 +151,7 @@ export default function FloodIt({ onExit }: { onExit: () => void }) {
   return (
     <div className="game game-flood">
       <GameHeader title="Flood It" onExit={onExit} onNew={() => newPuzzle()} />
-      <p className="game-hint">
-        Repaint the corner patch until it swallows the board.
-      </p>
+      <p className="game-hint">Repaint the corner patch until it swallows the board.</p>
       <GameTools
         diff={diff}
         onDiff={newPuzzle}

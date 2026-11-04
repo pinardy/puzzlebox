@@ -50,7 +50,8 @@ export function useGridNav(onActivate?: (i: number, alt: boolean) => void) {
       cells.find((c) => Number(c.dataset.cell) === active.current) ?? cells[0];
     for (const c of cells) {
       c.tabIndex = c === current ? 0 : -1;
-      if (!c.getAttribute("role") && c.tagName !== "BUTTON") c.setAttribute("role", "button");
+      if (!c.getAttribute("role") && c.tagName !== "BUTTON")
+        c.setAttribute("role", "button");
     }
   });
 
@@ -69,13 +70,15 @@ export function useGridNav(onActivate?: (i: number, alt: boolean) => void) {
     if (!dir) return;
     e.preventDefault();
     const a = from.getBoundingClientRect();
-    const ax = a.left + a.width / 2, ay = a.top + a.height / 2;
+    const ax = a.left + a.width / 2,
+      ay = a.top + a.height / 2;
     let best: HTMLElement | null = null;
     let bestScore = Infinity;
     for (const c of cellsOf(root)) {
       if (c === from) continue;
       const b = c.getBoundingClientRect();
-      const dx = b.left + b.width / 2 - ax, dy = b.top + b.height / 2 - ay;
+      const dx = b.left + b.width / 2 - ax,
+        dy = b.top + b.height / 2 - ay;
       const along = dx * dir[0] + dy * dir[1];
       if (along < 1) continue; // not in that direction
       const across = Math.abs(dx * dir[1] + dy * dir[0]);

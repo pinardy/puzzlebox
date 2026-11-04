@@ -11,7 +11,11 @@
   margin: auto 0;
 }
 
-.pegs-row { display: flex; gap: 6px; justify-content: center; }
+.pegs-row {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
 
 .peg-hole {
   width: var(--hole);
@@ -23,7 +27,9 @@
   cursor: pointer;
 }
 
-.peg-hole.center { border-style: dashed; }
+.peg-hole.center {
+  border-style: dashed;
+}
 
 .peg-hole.peg {
   background: var(--teal);
@@ -31,6 +37,13 @@
   box-shadow: var(--shadow);
 }
 
-.peg-hole.picked { outline: 3px solid var(--amber); outline-offset: 2px; }
+.peg-hole.picked {
+  outline: 3px solid var(--amber);
+  outline-offset: 2px;
+}
 
-.peg-hole.target { border-color: var(--amber); border-style: dashed; background: rgba(224, 162, 59, 0.15); }
+.peg-hole.target {
+  border-color: var(--amber);
+  border-style: dashed;
+  background: rgba(224, 162, 59, 0.15);
+}

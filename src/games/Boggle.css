@@ -33,11 +33,21 @@
   transition: background 120ms ease;
 }
 
-.bg-cell.off { color: var(--ink-soft); opacity: 0.5; cursor: default; }
+.bg-cell.off {
+  color: var(--ink-soft);
+  opacity: 0.5;
+  cursor: default;
+}
 
-.bg-cell.on { background: #dbe4fb; color: var(--indigo); }
+.bg-cell.on {
+  background: #dbe4fb;
+  color: var(--indigo);
+}
 
-.bg-cell.tip { background: var(--indigo); color: #fff; }
+.bg-cell.tip {
+  background: var(--indigo);
+  color: #fff;
+}
 
 /* Trace order, so the path reads without relying on the drawn line. */
 .bg-step {
@@ -65,7 +75,11 @@
   opacity: 0.55;
 }
 
-.bg-entry { display: flex; align-items: center; gap: 8px; }
+.bg-entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
 .bg-word {
   flex: 1;
@@ -77,13 +91,26 @@
   color: var(--ink);
 }
 
-.bg-enter { background: var(--indigo); border-color: var(--indigo); color: #fff; }
+.bg-enter {
+  background: var(--indigo);
+  border-color: var(--indigo);
+  color: #fff;
+}
 
-.bg-enter:disabled { opacity: 0.4; }
+.bg-enter:disabled {
+  opacity: 0.4;
+}
 
-.bg-hint-word { margin: 0; font-size: 13px; color: var(--ink-soft); }
+.bg-hint-word {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
 
-.bg-hint-word strong { font-family: var(--mono); color: var(--ink); }
+.bg-hint-word strong {
+  font-family: var(--mono);
+  color: var(--ink);
+}
 
 .bg-found {
   display: flex;
@@ -96,7 +123,10 @@
   overflow-y: auto;
 }
 
-.bg-empty { font-size: 13px; color: var(--ink-soft); }
+.bg-empty {
+  font-size: 13px;
+  color: var(--ink-soft);
+}
 
 .bg-chip {
   display: inline-flex;
@@ -111,14 +141,30 @@
   background: var(--card);
 }
 
-.bg-chip em { font-style: normal; font-size: 11px; color: var(--indigo); font-weight: 700; }
+.bg-chip em {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--indigo);
+  font-weight: 700;
+}
 
-:root[data-theme="dark"] .bg-cell.on { background: #2b3358; color: #c3cdf5; }
+:root[data-theme="dark"] .bg-cell.on {
+  background: #2b3358;
+  color: #c3cdf5;
+}
 
-:root[data-theme="dark"] .bg-chip em { color: #a9b6ef; }
+:root[data-theme="dark"] .bg-chip em {
+  color: #a9b6ef;
+}
 
 @media (min-width: 700px) {
-  .bg-board { width: min(100%, 440px); }
+  .bg-board {
+    width: min(100%, 440px);
+  }
   .bg-found,
-  .bg-entry { align-self: center; width: 100%; max-width: 580px; }
+  .bg-entry {
+    align-self: center;
+    width: 100%;
+    max-width: 580px;
+  }
 }

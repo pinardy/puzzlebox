@@ -141,8 +141,7 @@ export default function Numbrix({ onExit }: { onExit: () => void }) {
         ? selected
         : cands[Math.floor(Math.random() * cands.length)];
     const entries = saved.entries.slice();
-    for (let i = 0; i < n * n; i++)
-      if (entries[i] === solution[idx]) entries[i] = 0;
+    for (let i = 0; i < n * n; i++) if (entries[i] === solution[idx]) entries[i] = 0;
     entries[idx] = solution[idx];
     commitHint({ ...saved, entries });
     setSelected(idx);
@@ -153,9 +152,7 @@ export default function Numbrix({ onExit }: { onExit: () => void }) {
     setSelected(null);
   }
 
-  const tray = [...Array(n * n).keys()]
-    .map((k) => k + 1)
-    .filter((v) => !placed.has(v));
+  const tray = [...Array(n * n).keys()].map((k) => k + 1).filter((v) => !placed.has(v));
 
   return (
     <div className="game game-numbrix">

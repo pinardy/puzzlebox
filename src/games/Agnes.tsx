@@ -59,12 +59,11 @@ function deal(seed: string): SavedState {
 }
 
 type Sel =
-  | { from: "col"; pile: number; index: number }
-  | { from: "res"; slot: number }
-  | null;
+  { from: "col"; pile: number; index: number } | { from: "res"; slot: number } | null;
 
 export default function Agnes({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle }= useGame<SavedState>((s) => deal(s)
+  const { seed, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>((s) =>
+    deal(s)
   );
   const [sel, setSel] = useState<Sel>(null);
 
@@ -146,10 +145,7 @@ export default function Agnes({ onExit }: { onExit: () => void }) {
         return;
       }
       const top = cards.length ? cards[cards.length - 1] : null;
-      const fits =
-        top === null
-          ? true
-          : downSameColour(run[0], top);
+      const fits = top === null ? true : downSameColour(run[0], top);
       if (!fits) {
         setSel(null);
         return;
@@ -209,12 +205,7 @@ export default function Agnes({ onExit }: { onExit: () => void }) {
       <div className="kl-top">
         <span className="kl-gap" />
         {saved.foundations.map((f, s) => (
-          <Foundation
-            key={s}
-            suit={s}
-            top={foundationTop(f)}
-            onClick={tryFoundation}
-          />
+          <Foundation key={s} suit={s} top={foundationTop(f)} onClick={tryFoundation} />
         ))}
       </div>
 

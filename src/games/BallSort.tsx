@@ -10,8 +10,14 @@ import "./BallSort.css";
 const COLOR_COUNT: Record<Diff, number> = { easy: 4, medium: 6, hard: 8 };
 const TUBE_SIZE = 4;
 const COLORS = [
-  "#e05252", "#3b6fe0", "#2e9e6b", "#e0a23b",
-  "#7857c9", "#e06fb2", "#2a9d8f", "#8a5a2b"
+  "#e05252",
+  "#3b6fe0",
+  "#2e9e6b",
+  "#e0a23b",
+  "#7857c9",
+  "#e06fb2",
+  "#2a9d8f",
+  "#8a5a2b"
 ];
 const COLOR_NAMES = ["red", "blue", "green", "amber", "purple", "pink", "teal", "brown"];
 const HELP =
@@ -42,15 +48,14 @@ function deal(seed: string, colors: number): SavedState {
 
 function isSolved(tubes: number[][]): boolean {
   return tubes.every(
-    (t) =>
-      t.length === 0 ||
-      (t.length === TUBE_SIZE && t.every((b) => b === t[0]))
+    (t) => t.length === 0 || (t.length === TUBE_SIZE && t.every((b) => b === t[0]))
   );
 }
 
 export default function BallSort({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
-    useGame<SavedState>((s, d) => deal(s, COLOR_COUNT[d]));
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>(
+    (s, d) => deal(s, COLOR_COUNT[d])
+  );
   const [sel, setSel] = useState<number | null>(null);
 
   function tap(t: number) {
@@ -64,9 +69,13 @@ export default function BallSort({ onExit }: { onExit: () => void }) {
       setSel(null);
       return;
     }
-    const from = tubes[sel], to = tubes[t];
+    const from = tubes[sel],
+      to = tubes[t];
     const color = from[from.length - 1];
-    if (color === undefined) { setSel(null); return; }
+    if (color === undefined) {
+      setSel(null);
+      return;
+    }
     if (to.length >= TUBE_SIZE || (to.length && to[to.length - 1] !== color)) {
       // Not a legal pour — treat as picking the other tube instead.
       setSel(tubes[t].length ? t : null);

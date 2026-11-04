@@ -9,9 +9,18 @@ import "./Galaxies.css";
 
 const SIZE: Record<Diff, number> = { easy: 6, medium: 7, hard: 9 };
 const HUES = [
-  "#f5c8c4", "#c6def5", "#cdeccf", "#f5e9b8", "#e0d2f2",
-  "#f7d8b4", "#c6ecec", "#dbe6c3", "#e6ddd0", "#f3d4e6",
-  "#d4e6f3", "#e6f3d4"
+  "#f5c8c4",
+  "#c6def5",
+  "#cdeccf",
+  "#f5e9b8",
+  "#e0d2f2",
+  "#f7d8b4",
+  "#c6ecec",
+  "#dbe6c3",
+  "#e6ddd0",
+  "#f3d4e6",
+  "#d4e6f3",
+  "#e6f3d4"
 ];
 const HELP =
   "Divide the grid into galaxies: each dot owns one region that is " +
@@ -30,8 +39,10 @@ interface Puzzle {
 }
 
 function mirrorCell(i: number, n: number, cy: number, cx: number): number | null {
-  const r = Math.floor(i / n), c = i % n;
-  const my = 2 * cy - (2 * r + 1), mx = 2 * cx - (2 * c + 1);
+  const r = Math.floor(i / n),
+    c = i % n;
+  const my = 2 * cy - (2 * r + 1),
+    mx = 2 * cx - (2 * c + 1);
   if (my < 1 || mx < 1 || my > 2 * n - 1 || mx > 2 * n - 1) return null;
   if (my % 2 === 0 || mx % 2 === 0) return null;
   return ((my - 1) / 2) * n + (mx - 1) / 2;
@@ -43,8 +54,7 @@ function dotCells(n: number, cy: number, cx: number): number[] {
   const cols = cx % 2 === 1 ? [(cx - 1) / 2] : [cx / 2 - 1, cx / 2];
   const out: number[] = [];
   for (const r of rows)
-    for (const c of cols)
-      if (r >= 0 && r < n && c >= 0 && c < n) out.push(r * n + c);
+    for (const c of cols) if (r >= 0 && r < n && c >= 0 && c < n) out.push(r * n + c);
   return out;
 }
 
@@ -58,18 +68,20 @@ function generateGalaxies(seed: string, n: number): Puzzle {
 
   for (const start of shuffled([...Array(n * n).keys()], rng)) {
     if (owner[start] !== -1) continue;
-    const r = Math.floor(start / n), c = start % n;
+    const r = Math.floor(start / n),
+      c = start % n;
 
     // Pick a centre: the cell itself, an edge with a free neighbour, or a
     // free 2×2 corner — whichever the roll allows.
     const options: [number, number][] = [[2 * r + 1, 2 * c + 1]];
-    if (c < n - 1 && owner[start + 1] === -1)
-      options.push([2 * r + 1, 2 * c + 2]);
-    if (r < n - 1 && owner[start + n] === -1)
-      options.push([2 * r + 2, 2 * c + 1]);
+    if (c < n - 1 && owner[start + 1] === -1) options.push([2 * r + 1, 2 * c + 2]);
+    if (r < n - 1 && owner[start + n] === -1) options.push([2 * r + 2, 2 * c + 1]);
     if (
-      r < n - 1 && c < n - 1 &&
-      owner[start + 1] === -1 && owner[start + n] === -1 && owner[start + n + 1] === -1
+      r < n - 1 &&
+      c < n - 1 &&
+      owner[start + 1] === -1 &&
+      owner[start + n] === -1 &&
+      owner[start + n + 1] === -1
     )
       options.push([2 * r + 2, 2 * c + 2]);
     const [cy, cx] = options[Math.floor(rng() * options.length)];
@@ -85,9 +97,11 @@ function generateGalaxies(seed: string, n: number): Puzzle {
     while (cells.length < target) {
       const frontier: number[] = [];
       for (const i of cells) {
-        const rr = Math.floor(i / n), cc = i % n;
+        const rr = Math.floor(i / n),
+          cc = i % n;
         for (const j of [i - n, i + n, i - 1, i + 1]) {
-          const jr = Math.floor(j / n), jc = j % n;
+          const jr = Math.floor(j / n),
+            jc = j % n;
           if (j < 0 || j >= n * n) continue;
           if (Math.abs(jr - rr) + Math.abs(jc - cc) !== 1) continue;
           if (owner[j] !== -1) continue;
@@ -145,9 +159,16 @@ export default function Galaxies({ onExit }: { onExit: () => void }) {
       const stack = [cells[0]];
       while (stack.length) {
         const i = stack.pop()!;
-        const r = Math.floor(i / n), c = i % n;
-        for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-          const rr = r + dr, cc = c + dc;
+        const r = Math.floor(i / n),
+          c = i % n;
+        for (const [dr, dc] of [
+          [1, 0],
+          [-1, 0],
+          [0, 1],
+          [0, -1]
+        ]) {
+          const rr = r + dr,
+            cc = c + dc;
           const j = rr * n + cc;
           if (rr >= 0 && rr < n && cc >= 0 && cc < n && set.has(j) && !seen.has(j)) {
             seen.add(j);
@@ -194,8 +215,8 @@ export default function Galaxies({ onExit }: { onExit: () => void }) {
     <div className="game game-galaxies">
       <GameHeader title="Galaxies" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
-        Tap a dot to pick its galaxy, then paint its cells — each galaxy is
-        180° symmetric about its dot.
+        Tap a dot to pick its galaxy, then paint its cells — each galaxy is 180° symmetric
+        about its dot.
       </p>
       <GameTools
         diff={diff}
@@ -206,10 +227,7 @@ export default function Galaxies({ onExit }: { onExit: () => void }) {
         onHint={saved.done ? undefined : hint}
       />
 
-      <div
-        className="gal-wrap"
-        style={{ "--n": n } as CSSProperties}
-      >
+      <div className="gal-wrap" style={{ "--n": n } as CSSProperties}>
         <div
           className="gal-grid drag-paint"
           role="grid"
@@ -217,7 +235,8 @@ export default function Galaxies({ onExit }: { onExit: () => void }) {
           {...drag}
         >
           {saved.assign.map((g, i) => {
-            const r = Math.floor(i / n), c = i % n;
+            const r = Math.floor(i / n),
+              c = i % n;
             return (
               <button
                 key={i}

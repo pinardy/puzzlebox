@@ -20,14 +20,35 @@
   padding: 4px 2px;
 }
 
-.ca-step { font-size: 9px; font-weight: 700; color: var(--ink-soft); }
+.ca-step {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
 
-.ca-need { font-size: 15px; font-weight: 800; }
+.ca-need {
+  font-size: 15px;
+  font-weight: 800;
+}
 
-.ca-count { font-size: 8px; color: var(--ink-soft); }
+.ca-count {
+  font-size: 8px;
+  color: var(--ink-soft);
+}
 
-.ca-heap { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.ca-heap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
 
-.ca-heap-n { font-size: 10px; color: var(--ink-soft); min-height: 12px; }
+.ca-heap-n {
+  font-size: 10px;
+  color: var(--ink-soft);
+  min-height: 12px;
+}
 
-.ca-wastes { margin-top: 4px; }
+.ca-wastes {
+  margin-top: 4px;
+}

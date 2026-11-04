@@ -39,8 +39,9 @@ function deal(seed: string): SavedState {
 type Sel = { from: "waste" } | { from: "tableau"; pile: number } | null;
 
 export default function FortyThieves({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle } =
-    useGame<SavedState>((s) => deal(s));
+  const { seed, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>((s) =>
+    deal(s)
+  );
   const [sel, setSel] = useState<Sel>(null);
 
   const selCard = (): number | null => {
@@ -106,8 +107,7 @@ export default function FortyThieves({ onExit }: { onExit: () => void }) {
         return;
       }
       const top = cards.length ? cards[cards.length - 1] : null;
-      const fits =
-        top === null || downInSuit(card, top);
+      const fits = top === null || downInSuit(card, top);
       if (!fits) {
         setSel(null);
         return;
@@ -158,7 +158,9 @@ export default function FortyThieves({ onExit }: { onExit: () => void }) {
           card={null}
           faceDown={saved.stock.length > 0}
           onClick={tapStock}
-          aria-label={saved.stock.length ? `Stock, ${nCards(saved.stock.length)}` : "Stock, empty"}
+          aria-label={
+            saved.stock.length ? `Stock, ${nCards(saved.stock.length)}` : "Stock, empty"
+          }
         >
           {saved.stock.length || "—"}
         </PlayingCard>
@@ -205,7 +207,9 @@ export default function FortyThieves({ onExit }: { onExit: () => void }) {
       </div>
 
       <div className="lights-meta">
-        <span>Moves: {saved.moves} · stock {saved.stock.length}</span>
+        <span>
+          Moves: {saved.moves} · stock {saved.stock.length}
+        </span>
       </div>
 
       {saved.done && (

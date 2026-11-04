@@ -13,12 +13,14 @@ export interface HidatoPuzzle {
 
 /** The eight cells a king can step to. */
 export function kingNeighbours(idx: number, n: number): number[] {
-  const r = Math.floor(idx / n), c = idx % n;
+  const r = Math.floor(idx / n),
+    c = idx % n;
   const out: number[] = [];
   for (let dr = -1; dr <= 1; dr++)
     for (let dc = -1; dc <= 1; dc++) {
       if (dr === 0 && dc === 0) continue;
-      const rr = r + dr, cc = c + dc;
+      const rr = r + dr,
+        cc = c + dc;
       if (rr >= 0 && rr < n && cc >= 0 && cc < n) out.push(rr * n + cc);
     }
   return out;

@@ -19,24 +19,26 @@ interface SavedState {
 }
 
 export default function Zip({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, finish, newPuzzle } = useGame<SavedState>((s, d) => {
-    const n = SIZE[d];
-    const p = generateZip(`zip-${s}`, n, n + 1);
-    return { path: [p.start], done: false };
-  });
+  const { seed, diff, saved, commit, commitHint, finish, newPuzzle } =
+    useGame<SavedState>((s, d) => {
+      const n = SIZE[d];
+      const p = generateZip(`zip-${s}`, n, n + 1);
+      return { path: [p.start], done: false };
+    });
   const n = SIZE[diff];
-  const { checkpoints, start, last, path: answer } = useMemo(
-    () => generateZip(`zip-${seed}`, n, n + 1),
-    [seed, n]
-  );
+  const {
+    checkpoints,
+    start,
+    last,
+    path: answer
+  } = useMemo(() => generateZip(`zip-${seed}`, n, n + 1), [seed, n]);
 
   const onPath = useMemo(() => new Set(saved.path), [saved.path]);
   const head = saved.path[saved.path.length - 1];
 
   const nextCheckpoint = useMemo(() => {
     let expect = 1;
-    for (const cell of saved.path)
-      if (checkpoints.get(cell) === expect) expect++;
+    for (const cell of saved.path) if (checkpoints.get(cell) === expect) expect++;
     return expect;
   }, [saved.path, checkpoints]);
 
@@ -145,7 +147,10 @@ export default function Zip({ onExit }: { onExit: () => void }) {
       </div>
 
       <div className="lights-meta">
-        <span>{saved.path.length} / {n * n} squares · next: {nextCheckpoint > last ? "—" : nextCheckpoint}</span>
+        <span>
+          {saved.path.length} / {n * n} squares · next:{" "}
+          {nextCheckpoint > last ? "—" : nextCheckpoint}
+        </span>
         <button className="mini-btn" onClick={() => apply([start])}>
           Clear
         </button>

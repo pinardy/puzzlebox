@@ -8,7 +8,9 @@
   gap: 0;
 }
 
-.tt-corner { aspect-ratio: 1; }
+.tt-corner {
+  aspect-ratio: 1;
+}
 
 .tt-count {
   display: grid;
@@ -20,9 +22,14 @@
   color: var(--ink);
 }
 
-.tt-count.ok { color: var(--green); text-decoration: line-through; }
+.tt-count.ok {
+  color: var(--green);
+  text-decoration: line-through;
+}
 
-.tt-count.over { color: var(--rose); }
+.tt-count.over {
+  color: var(--rose);
+}
 
 .tt-cell {
   aspect-ratio: 1;
@@ -42,14 +49,30 @@
   color: var(--indigo);
 }
 
-.tt-cell.given { background: var(--grid-line); color: var(--ink); cursor: default; }
+.tt-cell.given {
+  background: var(--grid-line);
+  color: var(--ink);
+  cursor: default;
+}
 
-.tt-cell.clash { color: var(--rose); outline: 2px solid var(--rose); outline-offset: -2px; }
+.tt-cell.clash {
+  color: var(--rose);
+  outline: 2px solid var(--rose);
+  outline-offset: -2px;
+}
 
-.tt-cell.edge-n { border-top: 3px solid var(--teal); }
+.tt-cell.edge-n {
+  border-top: 3px solid var(--teal);
+}
 
-.tt-cell.edge-e { border-right: 3px solid var(--teal); }
+.tt-cell.edge-e {
+  border-right: 3px solid var(--teal);
+}
 
-.tt-cell.edge-s { border-bottom: 3px solid var(--teal); }
+.tt-cell.edge-s {
+  border-bottom: 3px solid var(--teal);
+}
 
-.tt-cell.edge-w { border-left: 3px solid var(--teal); }
+.tt-cell.edge-w {
+  border-left: 3px solid var(--teal);
+}

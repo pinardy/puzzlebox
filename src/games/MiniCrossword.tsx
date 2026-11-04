@@ -1,4 +1,10 @@
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent
+} from "react";
 import { makeRng, shuffled } from "../lib/rng";
 import { WORDS3, WORDS4, WORDS5, Entry } from "../lib/crossword";
 import { useGame } from "../lib/useGame";
@@ -61,8 +67,16 @@ function slotCells(black: boolean[]): { cells: number[]; across: boolean }[] {
       run = [];
     }
   };
-  for (let r = 0; r < N; r++) scan(Array.from({ length: N }, (_, c) => r * N + c), true);
-  for (let c = 0; c < N; c++) scan(Array.from({ length: N }, (_, r) => r * N + c), false);
+  for (let r = 0; r < N; r++)
+    scan(
+      Array.from({ length: N }, (_, c) => r * N + c),
+      true
+    );
+  for (let c = 0; c < N; c++)
+    scan(
+      Array.from({ length: N }, (_, r) => r * N + c),
+      false
+    );
   return out;
 }
 
@@ -269,7 +283,12 @@ export default function MiniCrossword({ onExit }: { onExit: () => void }) {
   useEffect(() => {
     const root = gridEl.current;
     const active = document.activeElement as HTMLElement | null;
-    if (!root || !active || !root.contains(active) || active.dataset.cell === String(cursor))
+    if (
+      !root ||
+      !active ||
+      !root.contains(active) ||
+      active.dataset.cell === String(cursor)
+    )
       return;
     root.querySelector<HTMLElement>(`[data-cell="${cursor}"]`)?.focus();
   }, [cursor]);
@@ -281,8 +300,7 @@ export default function MiniCrossword({ onExit }: { onExit: () => void }) {
   }
 
   const numAt = new Map<number, number>();
-  for (const s of puzzle.slots)
-    if (!numAt.has(s.cells[0])) numAt.set(s.cells[0], s.num);
+  for (const s of puzzle.slots) if (!numAt.has(s.cells[0])) numAt.set(s.cells[0], s.num);
 
   const clueList = (across: boolean) =>
     puzzle.slots

@@ -139,7 +139,10 @@ export default function Ladder({ onExit }: { onExit: () => void }) {
     const won = next === target;
     const done = won || chain.length - 1 >= budget;
     setSlot(null);
-    commitHint({ chain, done, won }, { outcome: done ? (won ? "won" : "lost") : undefined });
+    commitHint(
+      { chain, done, won },
+      { outcome: done ? (won ? "won" : "lost") : undefined }
+    );
   }
 
   function startNew(d?: Diff) {
@@ -151,9 +154,7 @@ export default function Ladder({ onExit }: { onExit: () => void }) {
   return (
     <div className="game game-ladder">
       <GameHeader title="Word Ladder" onExit={onExit} onNew={() => startNew()} />
-      <p className="game-hint">
-        Change one letter per step, always making a real word.
-      </p>
+      <p className="game-hint">Change one letter per step, always making a real word.</p>
       <GameTools
         diff={diff}
         onDiff={startNew}
@@ -176,7 +177,11 @@ export default function Ladder({ onExit }: { onExit: () => void }) {
         {saved.chain.map((word, r) => {
           const isCurrent = r === saved.chain.length - 1 && !saved.done;
           return (
-            <div key={r} className={`word-row${isCurrent && shake ? " shake" : ""}`} role="row">
+            <div
+              key={r}
+              className={`word-row${isCurrent && shake ? " shake" : ""}`}
+              role="row"
+            >
               {word.split("").map((ch, c) => {
                 const good = target[c] === ch;
                 return (

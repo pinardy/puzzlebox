@@ -40,7 +40,9 @@ export function PlayingCard({
     <button
       type="button"
       className={cls.join(" ")}
-      aria-label={place ? `${place}, ${cardName(card, faceDown)}` : cardName(card, faceDown)}
+      aria-label={
+        place ? `${place}, ${cardName(card, faceDown)}` : cardName(card, faceDown)
+      }
       // A grid cell has no pressed state; it is selected instead.
       aria-pressed={rest.role === "gridcell" ? undefined : selected || undefined}
       aria-selected={rest.role === "gridcell" ? !!selected : undefined}

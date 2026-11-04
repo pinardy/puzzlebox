@@ -27,7 +27,10 @@
   position: relative;
 }
 
-.hitori-cell.shaded { background: var(--ink); color: var(--paper); }
+.hitori-cell.shaded {
+  background: var(--ink);
+  color: var(--paper);
+}
 
 .hitori-cell.circled::after {
   content: "";
@@ -38,10 +41,15 @@
   border-radius: 50%;
 }
 
-.hitori-cell.conflict.shaded { background: var(--rose); color: #fff; }
+.hitori-cell.conflict.shaded {
+  background: var(--rose);
+  color: #fff;
+}
 
 @media (min-width: 700px) {
-  .hitori-grid { width: min(100%, 520px); }
+  .hitori-grid {
+    width: min(100%, 520px);
+  }
   .hitori-grid {
     margin-top: auto;
     margin-bottom: auto;

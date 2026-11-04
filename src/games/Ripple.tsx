@@ -1,11 +1,6 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useGridKeys } from "../lib/keys";
-import {
-  generateRipple,
-  rippleConflicts,
-  rippleSolved,
-  MAX_ROOM
-} from "../lib/ripple";
+import { generateRipple, rippleConflicts, rippleSolved, MAX_ROOM } from "../lib/ripple";
 import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
@@ -102,8 +97,7 @@ export default function Ripple({ onExit }: { onExit: () => void }) {
     <div className="game game-ripple">
       <GameHeader title="Ripple Effect" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
-        1 to k in every k-cell room; a repeated number keeps that many
-        cells clear.
+        1 to k in every k-cell room; a repeated number keeps that many cells clear.
       </p>
       <GameTools
         diff={diff}
@@ -128,7 +122,8 @@ export default function Ripple({ onExit }: { onExit: () => void }) {
         aria-label="Ripple Effect board"
       >
         {board.map((v, i) => {
-          const r = Math.floor(i / n), c = i % n;
+          const r = Math.floor(i / n),
+            c = i % n;
           const id = roomOf[i];
           const given = givens[i] !== 0;
           return (

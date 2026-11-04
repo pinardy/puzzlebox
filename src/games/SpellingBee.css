@@ -43,9 +43,13 @@
 
 /* The centre letter is underlined rather than recoloured — amber type on
    pale paper is too faint to read at a glance. */
-.sb-entry .sb-key-letter { border-bottom: 3px solid var(--amber); }
+.sb-entry .sb-key-letter {
+  border-bottom: 3px solid var(--amber);
+}
 
-.sb-entry.shake { animation: shake 380ms ease; }
+.sb-entry.shake {
+  animation: shake 380ms ease;
+}
 
 .sb-caret {
   width: 2px;
@@ -96,14 +100,23 @@
 }
 
 /* Amber holds in both themes, so the face keeps dark type on it. */
-.sb-centre .sb-face { background: var(--amber); color: #1b2733; }
+.sb-centre .sb-face {
+  background: var(--amber);
+  color: #1b2733;
+}
 
-.sb-hex:active { transform: translate(-50%, -50%) scale(0.94); }
+.sb-hex:active {
+  transform: translate(-50%, -50%) scale(0.94);
+}
 
 /* The clip eats an outline, so keyboard focus rings the face from inside. */
-.sb-hex:focus-visible { outline: none; }
+.sb-hex:focus-visible {
+  outline: none;
+}
 
-.sb-hex:focus-visible .sb-face { box-shadow: inset 0 0 0 4px var(--blue); }
+.sb-hex:focus-visible .sb-face {
+  box-shadow: inset 0 0 0 4px var(--blue);
+}
 
 .sb-pad {
   display: flex;
@@ -112,11 +125,22 @@
   margin-bottom: 6px;
 }
 
-.sb-pad .mini-btn { min-width: 82px; padding: 9px 14px; font-size: 14px; }
+.sb-pad .mini-btn {
+  min-width: 82px;
+  padding: 9px 14px;
+  font-size: 14px;
+}
 
-.sb-pad .mini-btn:disabled { opacity: 0.4; box-shadow: none; cursor: default; }
+.sb-pad .mini-btn:disabled {
+  opacity: 0.4;
+  box-shadow: none;
+  cursor: default;
+}
 
-.sb-pad .sb-spin { min-width: 48px; font-size: 18px; }
+.sb-pad .sb-spin {
+  min-width: 48px;
+  font-size: 18px;
+}
 
 .sb-note {
   align-self: center;
@@ -135,7 +159,10 @@
   padding-bottom: 4px;
 }
 
-.sb-empty { font-size: 13px; color: var(--ink-soft); }
+.sb-empty {
+  font-size: 13px;
+  color: var(--ink-soft);
+}
 
 .sb-word {
   font-family: var(--mono);
@@ -148,4 +175,8 @@
   color: var(--ink);
 }
 
-.sb-word.sb-pan { border-color: var(--amber); background: var(--amber); color: #1b2733; }
+.sb-word.sb-pan {
+  border-color: var(--amber);
+  background: var(--amber);
+  color: #1b2733;
+}

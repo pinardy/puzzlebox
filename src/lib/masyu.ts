@@ -12,7 +12,8 @@ export interface MasyuPuzzle {
 /** Edge helpers for a loop drawn between cell centres:
  *  h[r*(n-1)+c] joins (r,c)-(r,c+1); v[r*n+c] joins (r,c)-(r+1,c). */
 function edgesOfCell(n: number, edges: EdgeState, i: number): number[] {
-  const r = Math.floor(i / n), c = i % n;
+  const r = Math.floor(i / n),
+    c = i % n;
   const out: number[] = [];
   if (c > 0 && edges.h[r * (n - 1) + c - 1] === 1) out.push(i - 1);
   if (c < n - 1 && edges.h[r * (n - 1) + c] === 1) out.push(i + 1);
@@ -45,8 +46,7 @@ export function generateMasyu(seed: string, n: number): MasyuPuzzle {
       for (let c = 0; c < n - 1; c++)
         if (inBlob(r - 1, c) !== inBlob(r, c)) h[r * (n - 1) + c] = 1;
     for (let r = 0; r < n - 1; r++)
-      for (let c = 0; c < n; c++)
-        if (inBlob(r, c - 1) !== inBlob(r, c)) v[r * n + c] = 1;
+      for (let c = 0; c < n; c++) if (inBlob(r, c - 1) !== inBlob(r, c)) v[r * n + c] = 1;
     const edges: EdgeState = { h, v };
 
     const pearls = new Map<number, "black" | "white">();
@@ -61,7 +61,8 @@ export function generateMasyu(seed: string, n: number): MasyuPuzzle {
         if (rng() < 0.5) pearls.set(i, "white");
       }
     }
-    if (pearls.size >= Math.max(4, Math.floor(n * 0.8))) return { n, pearls, solution: edges };
+    if (pearls.size >= Math.max(4, Math.floor(n * 0.8)))
+      return { n, pearls, solution: edges };
   }
   // Effectively unreachable.
   return {
@@ -104,7 +105,10 @@ export function masyuSolved(p: MasyuPuzzle, edges: EdgeState): boolean {
   while (stack.length) {
     const i = stack.pop()!;
     for (const j of adj.get(i) ?? [])
-      if (!seen.has(j)) { seen.add(j); stack.push(j); }
+      if (!seen.has(j)) {
+        seen.add(j);
+        stack.push(j);
+      }
   }
   if (seen.size !== degree.size) return false;
 

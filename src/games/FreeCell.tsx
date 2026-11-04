@@ -47,8 +47,9 @@ type Sel =
   | null;
 
 export default function FreeCell({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
-    useGame<SavedState>((s, d) => deal(s, d));
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>(
+    (s, d) => deal(s, d)
+  );
   const [sel, setSel] = useState<Sel>(null);
 
   const selCards = useMemo((): number[] => {
@@ -124,17 +125,17 @@ export default function FreeCell({ onExit }: { onExit: () => void }) {
 
     if (sel) {
       const run = selCards;
-      if (!run.length) { setSel(null); return; }
+      if (!run.length) {
+        setSel(null);
+        return;
+      }
       if (sel.from === "cascade" && sel.pile === pile) {
         setSel(null);
         if (run.length === 1) tryFoundation();
         return;
       }
       const top = cards.length ? cards[cards.length - 1] : null;
-      const fits =
-        top === null
-          ? true
-          : downAltColour(run[0], top);
+      const fits = top === null ? true : downAltColour(run[0], top);
       if (!fits || run.length > moveCapacity(top === null)) {
         setSel(null);
         return;
@@ -215,8 +216,7 @@ export default function FreeCell({ onExit }: { onExit: () => void }) {
     <div className="game game-freecell" style={{ "--cols": 8 } as CSSProperties}>
       <GameHeader title="FreeCell" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
-        Tap a run, then where it goes; tap a selected card again to send it
-        up.
+        Tap a run, then where it goes; tap a selected card again to send it up.
       </p>
       <GameTools
         diff={diff}
@@ -239,12 +239,7 @@ export default function FreeCell({ onExit }: { onExit: () => void }) {
           </PlayingCard>
         ))}
         {saved.foundations.map((f, s) => (
-          <Foundation
-            key={s}
-            suit={s}
-            top={f}
-            onClick={tryFoundation}
-          />
+          <Foundation key={s} suit={s} top={f} onClick={tryFoundation} />
         ))}
       </div>
 

@@ -24,9 +24,15 @@
   cursor: pointer;
 }
 
-.sky-cell.selected { outline: 2.5px solid var(--teal); outline-offset: -2.5px; }
+.sky-cell.selected {
+  outline: 2.5px solid var(--teal);
+  outline-offset: -2.5px;
+}
 
-.sky-cell.conflict { color: var(--rose); background: #fbe6ef; }
+.sky-cell.conflict {
+  color: var(--rose);
+  background: #fbe6ef;
+}
 
 .sky-clue {
   display: grid;
@@ -37,12 +43,18 @@
   color: var(--ink-soft);
 }
 
-.sky-clue.ok { color: var(--green); }
+.sky-clue.ok {
+  color: var(--green);
+}
 
-.sky-clue.bad { color: var(--rose); }
+.sky-clue.bad {
+  color: var(--rose);
+}
 
 @media (min-width: 700px) {
-  .sky-grid { width: min(100%, 520px); }
+  .sky-grid {
+    width: min(100%, 520px);
+  }
   .sky-grid {
     margin-top: auto;
     margin-bottom: auto;

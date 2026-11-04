@@ -15,8 +15,10 @@ export const edgeKey = (a: number, b: number): string =>
 
 /** Cells strictly between two aligned islands, or null if not aligned. */
 export function corridor(a: number, b: number, n: number): number[] | null {
-  const ra = Math.floor(a / n), ca = a % n;
-  const rb = Math.floor(b / n), cb = b % n;
+  const ra = Math.floor(a / n),
+    ca = a % n;
+  const rb = Math.floor(b / n),
+    cb = b % n;
   if (ra !== rb && ca !== cb) return null;
   const step = ra === rb ? Math.sign(cb - ca) : Math.sign(rb - ra) * n;
   const out: number[] = [];
@@ -28,7 +30,11 @@ export function corridor(a: number, b: number, n: number): number[] | null {
  *  island (or linking two existing ones), then read the degrees off it.
  *  Bridges reserve their corridor cells, so the generated layout — and
  *  therefore at least one solution — has no crossings. */
-export function generateHashi(seed: string, n: number, targetIslands: number): HashiPuzzle {
+export function generateHashi(
+  seed: string,
+  n: number,
+  targetIslands: number
+): HashiPuzzle {
   const rng = makeRng(seed);
   const isIsland = Array(n * n).fill(false);
   const bridgeCell = Array(n * n).fill(false);
@@ -48,20 +54,31 @@ export function generateHashi(seed: string, n: number, targetIslands: number): H
     const dist = 2 + Math.floor(rng() * 3); // 2..4 cells away
 
     // Walk outward, stopping at the board edge or the first obstruction.
-    const r0 = Math.floor(from / n), c0 = from % n;
+    const r0 = Math.floor(from / n),
+      c0 = from % n;
     let to = from;
     let blocked = false;
     for (let step = 1; step <= dist; step++) {
       const next = from + dir * step;
-      const r = Math.floor(next / n), c = next % n;
+      const r = Math.floor(next / n),
+        c = next % n;
       const rowWalk = dir === 1 || dir === -1;
-      if (r < 0 || r >= n || c < 0 || c >= n || (rowWalk && r !== r0) || (!rowWalk && c !== c0)) {
+      if (
+        r < 0 ||
+        r >= n ||
+        c < 0 ||
+        c >= n ||
+        (rowWalk && r !== r0) ||
+        (!rowWalk && c !== c0)
+      ) {
         blocked = true;
         break;
       }
       if (step < dist && (isIsland[next] || bridgeCell[next])) {
         // Hitting an island early is fine if we can link to it instead.
-        if (isIsland[next]) { to = next; }
+        if (isIsland[next]) {
+          to = next;
+        }
         blocked = !isIsland[next];
         break;
       }
@@ -114,7 +131,10 @@ export function hashiSolved(p: HashiPuzzle, edges: Edges): boolean {
   while (stack.length) {
     const i = stack.pop()!;
     for (const j of adj.get(i) ?? [])
-      if (!seen.has(j)) { seen.add(j); stack.push(j); }
+      if (!seen.has(j)) {
+        seen.add(j);
+        stack.push(j);
+      }
   }
   return all.every((i) => seen.has(i));
 }

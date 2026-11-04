@@ -29,7 +29,8 @@ interface Puzzle {
 function generateTents(seed: string, n: number, tentCount: number): Puzzle {
   const rng = makeRng(seed);
   const orth = (i: number): number[] => {
-    const r = Math.floor(i / n), c = i % n;
+    const r = Math.floor(i / n),
+      c = i % n;
     const out: number[] = [];
     if (r > 0) out.push(i - n);
     if (r < n - 1) out.push(i + n);
@@ -38,12 +39,14 @@ function generateTents(seed: string, n: number, tentCount: number): Puzzle {
     return out;
   };
   const kings = (i: number): number[] => {
-    const r = Math.floor(i / n), c = i % n;
+    const r = Math.floor(i / n),
+      c = i % n;
     const out: number[] = [];
     for (let dr = -1; dr <= 1; dr++)
       for (let dc = -1; dc <= 1; dc++) {
         if (!dr && !dc) continue;
-        const rr = r + dr, cc = c + dc;
+        const rr = r + dr,
+          cc = c + dc;
         if (rr >= 0 && rr < n && cc >= 0 && cc < n) out.push(rr * n + cc);
       }
     return out;
@@ -56,7 +59,10 @@ function generateTents(seed: string, n: number, tentCount: number): Puzzle {
       if (tents.length >= tentCount) break;
       if (used.has(cell)) continue;
       if (kings(cell).some((j) => tents.includes(j))) continue;
-      const spots = shuffled(orth(cell).filter((j) => !used.has(j)), rng);
+      const spots = shuffled(
+        orth(cell).filter((j) => !used.has(j)),
+        rng
+      );
       if (!spots.length) continue;
       tents.push(cell);
       trees.push(spots[0]);
@@ -64,8 +70,12 @@ function generateTents(seed: string, n: number, tentCount: number): Puzzle {
       used.add(spots[0]);
     }
     if (tents.length < tentCount) continue;
-    const rows = Array(n).fill(0), cols = Array(n).fill(0);
-    for (const t of tents) { rows[Math.floor(t / n)]++; cols[t % n]++; }
+    const rows = Array(n).fill(0),
+      cols = Array(n).fill(0);
+    for (const t of tents) {
+      rows[Math.floor(t / n)]++;
+      cols[t % n]++;
+    }
     return { n, trees, rows, cols, tents };
   }
 }
@@ -75,7 +85,8 @@ function tentsMatchTrees(n: number, tents: number[], trees: number[]): boolean {
   if (tents.length !== trees.length) return false;
   const treeIdx = new Map(trees.map((t, k) => [t, k]));
   const orth = (i: number): number[] => {
-    const r = Math.floor(i / n), c = i % n;
+    const r = Math.floor(i / n),
+      c = i % n;
     const out: number[] = [];
     if (r > 0) out.push(i - n);
     if (r < n - 1) out.push(i + n);
@@ -122,12 +133,14 @@ export default function Tents({ onExit }: { onExit: () => void }) {
   const treeSet = useMemo(() => new Set(puzzle.trees), [puzzle]);
 
   const kings = (i: number): number[] => {
-    const r = Math.floor(i / n), c = i % n;
+    const r = Math.floor(i / n),
+      c = i % n;
     const out: number[] = [];
     for (let dr = -1; dr <= 1; dr++)
       for (let dc = -1; dc <= 1; dc++) {
         if (!dr && !dc) continue;
-        const rr = r + dr, cc = c + dc;
+        const rr = r + dr,
+          cc = c + dc;
         if (rr >= 0 && rr < n && cc >= 0 && cc < n) out.push(rr * n + cc);
       }
     return out;
@@ -142,15 +155,22 @@ export default function Tents({ onExit }: { onExit: () => void }) {
     const bad = new Set<number>();
     for (const t of tents)
       for (const j of kings(t))
-        if (saved.marks[j] === 1) { bad.add(t); bad.add(j); }
+        if (saved.marks[j] === 1) {
+          bad.add(t);
+          bad.add(j);
+        }
     return bad;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tents, saved.marks, n]);
 
   const solved = useMemo(() => {
     if (conflicts.size > 0) return false;
-    const rows = Array(n).fill(0), cols = Array(n).fill(0);
-    for (const t of tents) { rows[Math.floor(t / n)]++; cols[t % n]++; }
+    const rows = Array(n).fill(0),
+      cols = Array(n).fill(0);
+    for (const t of tents) {
+      rows[Math.floor(t / n)]++;
+      cols[t % n]++;
+    }
     const countsOk =
       rows.every((v, r) => v === puzzle.rows[r]) &&
       cols.every((v, c) => v === puzzle.cols[c]);
@@ -210,7 +230,8 @@ export default function Tents({ onExit }: { onExit: () => void }) {
         {...drag}
       >
         {Array.from({ length: G * G }).map((_, k) => {
-          const gr = Math.floor(k / G), gc = k % G;
+          const gr = Math.floor(k / G),
+            gc = k % G;
           if (gr === 0 && gc === 0) return <span key={k} />;
           if (gr === 0)
             return (
@@ -257,7 +278,9 @@ export default function Tents({ onExit }: { onExit: () => void }) {
       </div>
 
       <div className="lights-meta">
-        <span>⛺ {tents.length} / {puzzle.trees.length}</span>
+        <span>
+          ⛺ {tents.length} / {puzzle.trees.length}
+        </span>
       </div>
 
       {saved.done && (

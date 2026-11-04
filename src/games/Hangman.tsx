@@ -29,7 +29,8 @@ function answerFor(seed: string, diff: Diff): string {
 }
 
 export default function Hangman({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, newPuzzle }= useGame<SavedState>(() => ({ guessed: [], done: false, won: false })
+  const { seed, diff, saved, commit, commitHint, newPuzzle } = useGame<SavedState>(
+    () => ({ guessed: [], done: false, won: false })
   );
   const LIVES = LIVES_BY[diff];
   const answer = answerFor(seed, diff);
@@ -71,8 +72,8 @@ export default function Hangman({ onExit }: { onExit: () => void }) {
     <div className="game game-hangman">
       <GameHeader title="Hangman" onExit={onExit} onNew={() => newPuzzle()} />
       <p className="game-hint">
-        Guess the {answer.length}-letter word one letter at a time — {LIVES}{" "}
-        misses and it's gone.
+        Guess the {answer.length}-letter word one letter at a time — {LIVES} misses and
+        it's gone.
       </p>
       <GameTools
         diff={diff}
@@ -119,7 +120,11 @@ export default function Hangman({ onExit }: { onExit: () => void }) {
             {row.split("").map((k) => {
               const K = k.toUpperCase();
               const used = saved.guessed.includes(K);
-              const state = used ? (answer.includes(K) ? " is-correct" : " is-absent") : "";
+              const state = used
+                ? answer.includes(K)
+                  ? " is-correct"
+                  : " is-absent"
+                : "";
               return (
                 <button
                   key={k}
@@ -127,7 +132,11 @@ export default function Hangman({ onExit }: { onExit: () => void }) {
                   onClick={() => guess(K)}
                   disabled={used}
                   aria-label={`${K}${
-                    used ? (answer.includes(K) ? ", in the word" : ", not in the word") : ""
+                    used
+                      ? answer.includes(K)
+                        ? ", in the word"
+                        : ", not in the word"
+                      : ""
                   }`}
                 >
                   {K}
@@ -143,9 +152,7 @@ export default function Hangman({ onExit }: { onExit: () => void }) {
           key={seed}
           won={saved.won}
           message={
-            saved.won
-              ? `Saved with ${livesLeft} ♥ to spare!`
-              : `The word was ${answer}`
+            saved.won ? `Saved with ${livesLeft} ♥ to spare!` : `The word was ${answer}`
           }
           onNew={() => newPuzzle()}
           onExit={onExit}

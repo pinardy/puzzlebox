@@ -35,7 +35,13 @@ interface SavedState {
 
 /** Deterministic spawn: the k-th tile of a given seed always lands the same
  *  way, so a reloaded game replays identically. */
-function spawnTile(tiles: Tile[], nextId: number, seed: string, k: number, n: number): { tiles: Tile[]; nextId: number } {
+function spawnTile(
+  tiles: Tile[],
+  nextId: number,
+  seed: string,
+  k: number,
+  n: number
+): { tiles: Tile[]; nextId: number } {
   const rng = makeRng(`2048-${seed}-${k}`);
   const occupied = new Set(tiles.map((t) => t.r * n + t.c));
   const empty = [...Array(n * n).keys()].filter((i) => !occupied.has(i));
@@ -43,7 +49,10 @@ function spawnTile(tiles: Tile[], nextId: number, seed: string, k: number, n: nu
   const cell = empty[Math.floor(rng() * empty.length)];
   const v = rng() < 0.9 ? 2 : 4;
   return {
-    tiles: [...tiles, { id: nextId, v, r: Math.floor(cell / n), c: cell % n, spawned: true }],
+    tiles: [
+      ...tiles,
+      { id: nextId, v, r: Math.floor(cell / n), c: cell % n, spawned: true }
+    ],
     nextId: nextId + 1
   };
 }
@@ -51,12 +60,23 @@ function spawnTile(tiles: Tile[], nextId: number, seed: string, k: number, n: nu
 function fresh(seed: string, n: number): SavedState {
   let s = spawnTile([], 1, seed, 0, n);
   s = spawnTile(s.tiles, s.nextId, seed, 1, n);
-  return { tiles: s.tiles, nextId: s.nextId, score: 0, spawns: 2, done: false, won: false };
+  return {
+    tiles: s.tiles,
+    nextId: s.nextId,
+    score: 0,
+    spawns: 2,
+    done: false,
+    won: false
+  };
 }
 
 type Dir = "left" | "right" | "up" | "down";
 
-function moveTiles(tiles: Tile[], dir: Dir, n: number): { tiles: Tile[]; gained: number; changed: boolean } {
+function moveTiles(
+  tiles: Tile[],
+  dir: Dir,
+  n: number
+): { tiles: Tile[]; gained: number; changed: boolean } {
   const horiz = dir === "left" || dir === "right";
   const rev = dir === "right" || dir === "down";
   let gained = 0;
@@ -114,8 +134,9 @@ function migrate(state: SavedState & { cells?: number[] }, n: number): SavedStat
 }
 
 export default function Game2048({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
-    useGame<SavedState>((s, d) => fresh(s, SIZE[d]));
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>(
+    (s, d) => fresh(s, SIZE[d])
+  );
   const N = SIZE[diff];
   const TARGET = TARGET_BY[diff];
   const state = useMemo(() => migrate(saved, N), [saved, N]);
@@ -150,7 +171,12 @@ export default function Game2048({ onExit }: { onExit: () => void }) {
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       const dir = (
-        { ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down" } as const
+        {
+          ArrowLeft: "left",
+          ArrowRight: "right",
+          ArrowUp: "up",
+          ArrowDown: "down"
+        } as const
       )[e.key as "ArrowLeft"];
       if (dir) {
         e.preventDefault();
@@ -197,8 +223,12 @@ export default function Game2048({ onExit }: { onExit: () => void }) {
           if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) return;
           move(
             Math.abs(dx) > Math.abs(dy)
-              ? dx > 0 ? "right" : "left"
-              : dy > 0 ? "down" : "up"
+              ? dx > 0
+                ? "right"
+                : "left"
+              : dy > 0
+                ? "down"
+                : "up"
           );
         }}
       >
@@ -232,11 +262,19 @@ export default function Game2048({ onExit }: { onExit: () => void }) {
       </div>
 
       <div className="t2048-pad">
-        <button className="mini-btn" onClick={() => move("up")} aria-label="Up">↑</button>
+        <button className="mini-btn" onClick={() => move("up")} aria-label="Up">
+          ↑
+        </button>
         <div>
-          <button className="mini-btn" onClick={() => move("left")} aria-label="Left">←</button>
-          <button className="mini-btn" onClick={() => move("down")} aria-label="Down">↓</button>
-          <button className="mini-btn" onClick={() => move("right")} aria-label="Right">→</button>
+          <button className="mini-btn" onClick={() => move("left")} aria-label="Left">
+            ←
+          </button>
+          <button className="mini-btn" onClick={() => move("down")} aria-label="Down">
+            ↓
+          </button>
+          <button className="mini-btn" onClick={() => move("right")} aria-label="Right">
+            →
+          </button>
         </div>
       </div>
 
@@ -244,7 +282,11 @@ export default function Game2048({ onExit }: { onExit: () => void }) {
         <Result
           key={seed}
           won={state.won}
-          message={state.won ? `${TARGET} — you made it!` : `No moves left — score ${state.score}`}
+          message={
+            state.won
+              ? `${TARGET} — you made it!`
+              : `No moves left — score ${state.score}`
+          }
           onNew={() => newPuzzle()}
           onExit={onExit}
         />

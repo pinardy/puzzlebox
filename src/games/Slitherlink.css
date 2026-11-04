@@ -26,7 +26,9 @@
 }
 
 @media (min-width: 700px) {
-  .slither-grid { width: min(100%, 500px); }
+  .slither-grid {
+    width: min(100%, 500px);
+  }
   .slither-grid {
     margin-top: auto;
     margin-bottom: auto;
@@ -35,4 +37,7 @@
 
 /* Thin edges: draw the keyboard ring around the edge, above its
    neighbours, rather than inset where it would vanish. */
-.game-slither .slither-edge:focus-visible { outline-offset: 0; z-index: 2; }
+.game-slither .slither-edge:focus-visible {
+  outline-offset: 0;
+  z-index: 2;
+}

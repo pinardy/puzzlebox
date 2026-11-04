@@ -25,7 +25,8 @@ interface Puzzle {
 
 /** Sum of the digits strictly between the 1 and the 9 of a line. */
 function sandwich(line: number[]): number {
-  const a = line.indexOf(1), b = line.indexOf(9);
+  const a = line.indexOf(1),
+    b = line.indexOf(9);
   const [lo, hi] = a < b ? [a, b] : [b, a];
   let s = 0;
   for (let k = lo + 1; k < hi; k++) s += line[k];
@@ -75,7 +76,8 @@ export default function Sandwich({ onExit }: { onExit: () => void }) {
   /** A line's clue can only be judged once its 1 and 9 are both down. */
   const lineState = useMemo(() => {
     const judge = (line: number[], want: number): "ok" | "bad" | "open" => {
-      const a = line.indexOf(1), b = line.indexOf(9);
+      const a = line.indexOf(1),
+        b = line.indexOf(9);
       if (a === -1 || b === -1) return "open";
       const [lo, hi] = a < b ? [a, b] : [b, a];
       let sum = 0;
@@ -87,10 +89,16 @@ export default function Sandwich({ onExit }: { onExit: () => void }) {
     };
     return {
       rows: rowSums.map((want, r) =>
-        judge(Array.from({ length: 9 }, (_, c) => board[r * 9 + c]), want)
+        judge(
+          Array.from({ length: 9 }, (_, c) => board[r * 9 + c]),
+          want
+        )
       ),
       cols: colSums.map((want, c) =>
-        judge(Array.from({ length: 9 }, (_, r) => board[r * 9 + c]), want)
+        judge(
+          Array.from({ length: 9 }, (_, r) => board[r * 9 + c]),
+          want
+        )
       )
     };
   }, [board, rowSums, colSums]);
@@ -176,7 +184,8 @@ export default function Sandwich({ onExit }: { onExit: () => void }) {
         <div className="sudoku-grid" role="grid" aria-label="Sandwich sudoku board">
           {board.map((v, i) => {
             const given = givens[i] !== 0;
-            const r = Math.floor(i / 9), c = i % 9;
+            const r = Math.floor(i / 9),
+              c = i % 9;
             return (
               <button
                 key={i}

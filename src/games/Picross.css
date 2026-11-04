@@ -10,7 +10,9 @@
   font-family: var(--mono);
 }
 
-.picross-corner { grid-area: 1 / 1; }
+.picross-corner {
+  grid-area: 1 / 1;
+}
 
 .picross-colclues {
   grid-area: 1 / 2;
@@ -41,19 +43,31 @@
   cursor: pointer;
   font-size: 13px;
   color: var(--ink-soft);
-  display: grid; place-items: center;
+  display: grid;
+  place-items: center;
 }
 
-.pic-cell.fill { background: var(--rose); border-color: var(--rose); }
+.pic-cell.fill {
+  background: var(--rose);
+  border-color: var(--rose);
+}
 
-.pic-cell.cross { color: var(--ink-soft); }
+.pic-cell.cross {
+  color: var(--ink-soft);
+}
 
-.pic-cell.br { border-right: 1.5px solid var(--ink); }
+.pic-cell.br {
+  border-right: 1.5px solid var(--ink);
+}
 
-.pic-cell.bb { border-bottom: 1.5px solid var(--ink); }
+.pic-cell.bb {
+  border-bottom: 1.5px solid var(--ink);
+}
 
 @media (min-width: 700px) {
-  .picross-wrap { width: min(100%, 580px); }
+  .picross-wrap {
+    width: min(100%, 580px);
+  }
   .picross-wrap {
     margin-top: auto;
     margin-bottom: auto;

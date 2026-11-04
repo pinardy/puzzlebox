@@ -15,9 +15,23 @@ const HELP =
 
 // Aligned layered layouts; upper layers are centered on the base.
 const LAYOUTS: Record<Diff, [number, number][]> = {
-  easy: [[10, 5], [6, 3], [2, 1]],
-  medium: [[12, 6], [8, 4], [4, 2], [2, 2]],
-  hard: [[12, 7], [10, 5], [6, 3], [2, 1]]
+  easy: [
+    [10, 5],
+    [6, 3],
+    [2, 1]
+  ],
+  medium: [
+    [12, 6],
+    [8, 4],
+    [4, 2],
+    [2, 2]
+  ],
+  hard: [
+    [12, 7],
+    [10, 5],
+    [6, 3],
+    [2, 1]
+  ]
 };
 
 // 42 faces: three suits of 1–9, four winds, three dragons, eight blooms.
@@ -27,7 +41,11 @@ interface Face {
   hue: number; // 0 blue, 1 rose, 2 green, 3 amber, 4 indigo
 }
 const FACES: Face[] = [];
-for (const [sub, hue] of [["●", 0], ["▲", 1], ["■", 2]] as [string, number][])
+for (const [sub, hue] of [
+  ["●", 0],
+  ["▲", 1],
+  ["■", 2]
+] as [string, number][])
   for (let v = 1; v <= 9; v++) FACES.push({ main: String(v), sub, hue });
 for (const w of ["N", "E", "S", "W"]) FACES.push({ main: w, sub: "✦", hue: 4 });
 for (const d of ["R", "G", "B"]) FACES.push({ main: d, sub: "◆", hue: 3 });
@@ -43,14 +61,20 @@ function positions(layers: [number, number][]): Pos[] {
   const out: Pos[] = [];
   const [W, H] = layers[0];
   layers.forEach(([w, h], l) => {
-    const ox = (W - w) / 2, oy = (H - h) / 2;
+    const ox = (W - w) / 2,
+      oy = (H - h) / 2;
     for (let y = 0; y < h; y++)
       for (let x = 0; x < w; x++) out.push({ l, gx: x + ox, gy: y + oy });
   });
   return out;
 }
 
-function freeIn(pos: Pos[], present: boolean[], index: Map<string, number>, i: number): boolean {
+function freeIn(
+  pos: Pos[],
+  present: boolean[],
+  index: Map<string, number>,
+  i: number
+): boolean {
   const p = pos[i];
   const above = index.get(`${p.l + 1},${p.gx},${p.gy}`);
   if (above !== undefined && present[above]) return false;
@@ -99,8 +123,7 @@ function generateMahjong(seed: string, diff: Diff): Board {
       present[a] = present[b] = false;
       faces[a] = faces[b] = face;
     }
-    if (!stuck)
-      return { pos, faces, index, cols: layers[0][0], rows: layers[0][1] };
+    if (!stuck) return { pos, faces, index, cols: layers[0][0], rows: layers[0][1] };
   }
 }
 
@@ -111,12 +134,13 @@ interface SavedState {
 }
 
 export default function Mahjong({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
-    useGame<SavedState>((s, d) => ({
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>(
+    (s, d) => ({
       present: generateMahjong(s, d).pos.map(() => true),
       done: false,
       won: false
-    }));
+    })
+  );
   const board = useMemo(() => generateMahjong(seed, diff), [seed, diff]);
   const [selected, setSelected] = useState<number | null>(null);
 

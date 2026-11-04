@@ -8,11 +8,18 @@
   color: var(--ink-soft);
 }
 
-.db-score b { font-family: var(--mono); font-size: 17px; }
+.db-score b {
+  font-family: var(--mono);
+  font-size: 17px;
+}
 
-.db-you b { color: var(--blue); }
+.db-you b {
+  color: var(--blue);
+}
 
-.db-them b { color: var(--coral); }
+.db-them b {
+  color: var(--coral);
+}
 
 .db-board {
   align-self: center;
@@ -40,15 +47,27 @@
   border-radius: 3px;
 }
 
-.db-edge:disabled { cursor: default; }
+.db-edge:disabled {
+  cursor: default;
+}
 
-.db-h { height: 8px; align-self: center; }
+.db-h {
+  height: 8px;
+  align-self: center;
+}
 
-.db-v { width: 8px; justify-self: center; }
+.db-v {
+  width: 8px;
+  justify-self: center;
+}
 
-.db-edge:not(.on):not(:disabled):hover { background: var(--grid-line); }
+.db-edge:not(.on):not(:disabled):hover {
+  background: var(--grid-line);
+}
 
-.db-edge.on { background: var(--ink); }
+.db-edge.on {
+  background: var(--ink);
+}
 
 .db-box {
   display: grid;
@@ -57,6 +76,12 @@
   color: transparent;
 }
 
-.db-box.you { background: rgba(59, 111, 224, 0.22); color: var(--blue); }
+.db-box.you {
+  background: rgba(59, 111, 224, 0.22);
+  color: var(--blue);
+}
 
-.db-box.them { background: rgba(217, 92, 67, 0.22); color: var(--coral); }
+.db-box.them {
+  background: rgba(217, 92, 67, 0.22);
+  color: var(--coral);
+}

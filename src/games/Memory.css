@@ -14,12 +14,18 @@
   border: 2px solid var(--ink);
   border-radius: 12px;
   background: var(--indigo);
-  background-image: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.22) 12%, transparent 13%);
+  background-image: radial-gradient(
+    circle at 50% 50%,
+    rgba(255, 255, 255, 0.22) 12%,
+    transparent 13%
+  );
   background-size: 14px 14px;
   box-shadow: var(--shadow);
   font-size: clamp(22px, 7vw, 34px);
   cursor: pointer;
-  transition: background 160ms, transform 160ms;
+  transition:
+    background 160ms,
+    transform 160ms;
 }
 
 .memory-card.up {
@@ -35,11 +41,15 @@
 }
 
 @media (min-width: 700px) {
-  .memory-grid { width: min(100%, 480px); }
+  .memory-grid {
+    width: min(100%, 480px);
+  }
   .memory-grid {
     margin-top: auto;
     margin-bottom: auto;
   }
 }
 
-:root[data-theme="dark"] .memory-card.matched { background: #1f3126; }
+:root[data-theme="dark"] .memory-card.matched {
+  background: #1f3126;
+}

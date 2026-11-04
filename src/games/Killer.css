@@ -1,10 +1,16 @@
 /* Killer: styles only this board uses. Loaded with its chunk. */
 
-.killer-cell { position: relative; }
+.killer-cell {
+  position: relative;
+}
 
-.killer-cell.kc-t { border-top: 1.5px dashed var(--ink-soft); }
+.killer-cell.kc-t {
+  border-top: 1.5px dashed var(--ink-soft);
+}
 
-.killer-cell.kc-l { border-left: 1.5px dashed var(--ink-soft); }
+.killer-cell.kc-l {
+  border-left: 1.5px dashed var(--ink-soft);
+}
 
 .killer-sum {
   position: absolute;

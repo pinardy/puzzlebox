@@ -50,14 +50,12 @@ function deal(seed: string, diff: Diff): SavedState {
   };
 }
 
-type Sel =
-  | { from: "waste" }
-  | { from: "tableau"; pile: number; index: number }
-  | null;
+type Sel = { from: "waste" } | { from: "tableau"; pile: number; index: number } | null;
 
 export default function Klondike({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
-    useGame<SavedState>((s, d) => deal(s, d));
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>(
+    (s, d) => deal(s, d)
+  );
   const [sel, setSel] = useState<Sel>(null);
   // Saves from before draw modes lack the redeal counter.
   const redeals = saved.redeals ?? -1;
@@ -142,7 +140,10 @@ export default function Klondike({ onExit }: { onExit: () => void }) {
 
     if (sel) {
       const run = selCards;
-      if (!run.length) { setSel(null); return; }
+      if (!run.length) {
+        setSel(null);
+        return;
+      }
       const first = run[0];
       const top = cards.length ? cards[cards.length - 1] : null;
       const fits =
@@ -155,7 +156,10 @@ export default function Klondike({ onExit }: { onExit: () => void }) {
         if (run.length === 1) tryFoundation();
         return;
       }
-      if (!fits) { setSel(null); return; }
+      if (!fits) {
+        setSel(null);
+        return;
+      }
       const next = clone();
       const moved = takeSelection(next);
       next.tableau[pile].push(...moved);
@@ -273,12 +277,7 @@ export default function Klondike({ onExit }: { onExit: () => void }) {
         </span>
         <span className="kl-gap" />
         {saved.foundations.map((f, s) => (
-          <Foundation
-            key={s}
-            suit={s}
-            top={f}
-            onClick={tryFoundation}
-          />
+          <Foundation key={s} suit={s} top={f} onClick={tryFoundation} />
         ))}
       </div>
 

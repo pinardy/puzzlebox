@@ -45,7 +45,8 @@ function generateThermo(seed: string, n: number): Puzzle {
     at += len;
   }
 
-  const rows = Array(n).fill(0), cols = Array(n).fill(0);
+  const rows = Array(n).fill(0),
+    cols = Array(n).fill(0);
   const levels: number[] = [];
   for (const t of thermos) {
     const fill = Math.floor(rng() * (t.cells.length + 1));
@@ -95,7 +96,8 @@ export default function Thermometers({ onExit }: { onExit: () => void }) {
   }, [puzzle, n]);
 
   const counts = useMemo(() => {
-    const rows = Array(n).fill(0), cols = Array(n).fill(0);
+    const rows = Array(n).fill(0),
+      cols = Array(n).fill(0);
     puzzle.thermos.forEach((th, t) => {
       for (const i of th.cells.slice(0, saved.fills[t])) {
         rows[Math.floor(i / n)]++;
@@ -141,9 +143,7 @@ export default function Thermometers({ onExit }: { onExit: () => void }) {
   return (
     <div className="game game-thermo">
       <GameHeader title="Thermometers" onExit={onExit} onNew={() => newPuzzle()} />
-      <p className="game-hint">
-        Fill from the bulb to match the row and column counts.
-      </p>
+      <p className="game-hint">Fill from the bulb to match the row and column counts.</p>
       <GameTools
         diff={diff}
         onDiff={newPuzzle}
@@ -161,7 +161,8 @@ export default function Thermometers({ onExit }: { onExit: () => void }) {
         {...nav}
       >
         {Array.from({ length: G * G }).map((_, k) => {
-          const gr = Math.floor(k / G), gc = k % G;
+          const gr = Math.floor(k / G),
+            gc = k % G;
           if (gr === 0 && gc === 0) return <span key={k} />;
           if (gr === 0)
             return (

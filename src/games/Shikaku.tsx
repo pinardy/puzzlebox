@@ -40,9 +40,16 @@ function generateShikaku(
   const rects: Rect[] = [];
   const split = (t: Rect) => {
     const a = area(t);
-    const h = t.r1 - t.r0 + 1, w = t.c1 - t.c0 + 1;
-    if (a <= 2 || (a <= 6 && rng() < 0.45)) { rects.push(t); return; }
-    if (w === 1 && h === 1) { rects.push(t); return; }
+    const h = t.r1 - t.r0 + 1,
+      w = t.c1 - t.c0 + 1;
+    if (a <= 2 || (a <= 6 && rng() < 0.45)) {
+      rects.push(t);
+      return;
+    }
+    if (w === 1 && h === 1) {
+      rects.push(t);
+      return;
+    }
     const vertical = w > 1 && (h === 1 || rng() < w / (w + h));
     if (vertical) {
       const cut = t.c0 + 1 + Math.floor(rng() * (w - 1));
@@ -146,8 +153,7 @@ export default function Shikaku({ onExit }: { onExit: () => void }) {
     <div className="game game-shikaku">
       <GameHeader title="Shikaku" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
-        Box every number: tap two opposite corners; each box's area must
-        match its number.
+        Box every number: tap two opposite corners; each box's area must match its number.
       </p>
       <GameTools
         diff={diff}
@@ -168,7 +174,8 @@ export default function Shikaku({ onExit }: { onExit: () => void }) {
         {Array.from({ length: n * n }).map((_, i) => {
           const k = rectAt.get(i);
           const t = k !== undefined ? saved.rects[k] : null;
-          const r = Math.floor(i / n), c = i % n;
+          const r = Math.floor(i / n),
+            c = i % n;
           return (
             <button
               key={i}
@@ -201,7 +208,9 @@ export default function Shikaku({ onExit }: { onExit: () => void }) {
       </div>
 
       <div className="lights-meta">
-        <span>{rectAt.size} / {n * n} covered</span>
+        <span>
+          {rectAt.size} / {n * n} covered
+        </span>
         <button
           className="mini-btn"
           onClick={() => {

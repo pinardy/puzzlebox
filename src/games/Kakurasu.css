@@ -8,7 +8,9 @@
   gap: 2px;
 }
 
-.ks-pad { aspect-ratio: 1; }
+.ks-pad {
+  aspect-ratio: 1;
+}
 
 .ks-weight {
   display: grid;
@@ -28,7 +30,10 @@
   cursor: pointer;
 }
 
-.ks-cell.on { background: var(--olive); border-color: var(--ink); }
+.ks-cell.on {
+  background: var(--olive);
+  border-color: var(--ink);
+}
 
 .ks-target {
   display: grid;
@@ -40,6 +45,10 @@
   color: var(--ink);
 }
 
-.ks-target.ok { color: var(--green); }
+.ks-target.ok {
+  color: var(--green);
+}
 
-.ks-target.over { color: var(--rose); }
+.ks-target.over {
+  color: var(--rose);
+}

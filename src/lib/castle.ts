@@ -59,8 +59,7 @@ export function legalMoves(st: CastleState): CastleMove[] {
 
 export const isWon = (st: CastleState) => st.foundations.every((f) => f === 13);
 
-export const cardsHome = (st: CastleState) =>
-  st.foundations.reduce((a, f) => a + f, 0);
+export const cardsHome = (st: CastleState) => st.foundations.reduce((a, f) => a + f, 0);
 
 export const cloneCastle = (st: CastleState): CastleState => ({
   ...st,

@@ -44,7 +44,8 @@ function deal(seed: string): SavedState {
 type Sel = { from: "col"; pile: number; index: number } | { from: "waste" } | null;
 
 export default function Whitehead({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle }= useGame<SavedState>((s) => deal(s)
+  const { seed, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>((s) =>
+    deal(s)
   );
   const [sel, setSel] = useState<Sel>(null);
 
@@ -181,7 +182,9 @@ export default function Whitehead({ onExit }: { onExit: () => void }) {
           card={null}
           faceDown={saved.stock.length > 0}
           onClick={tapStock}
-          aria-label={saved.stock.length ? `Stock, ${nCards(saved.stock.length)}` : "Stock, empty"}
+          aria-label={
+            saved.stock.length ? `Stock, ${nCards(saved.stock.length)}` : "Stock, empty"
+          }
         >
           {saved.stock.length ? "" : "·"}
         </PlayingCard>
@@ -195,22 +198,13 @@ export default function Whitehead({ onExit }: { onExit: () => void }) {
         </PlayingCard>
         <span className="kl-gap" />
         {saved.foundations.map((f, s) => (
-          <Foundation
-            key={s}
-            suit={s}
-            top={f}
-            onClick={tryFoundation}
-          />
+          <Foundation key={s} suit={s} top={f} onClick={tryFoundation} />
         ))}
       </div>
 
       <div className="kl-tableau">
         {saved.tableau.map((pile, p) => (
-          <Pile
-            key={p}
-            name={`Column ${p + 1}`}
-            onTap={() => tapCol(p, null)}
-          >
+          <Pile key={p} name={`Column ${p + 1}`} onTap={() => tapCol(p, null)}>
             {pile.length === 0 && (
               <PlayingCard
                 card={null}

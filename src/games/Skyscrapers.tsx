@@ -17,9 +17,13 @@ const HELP =
 
 /** Towers visible along a line of heights: each new maximum is visible. */
 function visible(line: number[]): number {
-  let max = 0, count = 0;
+  let max = 0,
+    count = 0;
   for (const v of line) {
-    if (v > max) { max = v; count++; }
+    if (v > max) {
+      max = v;
+      count++;
+    }
   }
   return count;
 }
@@ -68,9 +72,11 @@ export default function Skyscrapers({ onExit }: { onExit: () => void }) {
     for (let i = 0; i < n * n; i++) {
       const v = board[i];
       if (v === 0) continue;
-      const r = Math.floor(i / n), c = i % n;
+      const r = Math.floor(i / n),
+        c = i % n;
       for (let k = 0; k < n; k++) {
-        const row = r * n + k, col = k * n + c;
+        const row = r * n + k,
+          col = k * n + c;
         if (row !== i && board[row] === v) bad.add(i);
         if (col !== i && board[col] === v) bad.add(i);
       }
@@ -156,8 +162,8 @@ export default function Skyscrapers({ onExit }: { onExit: () => void }) {
     <div className="game game-sky">
       <GameHeader title="Skyscrapers" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
-        Heights 1–{n} once per row and column. Edge numbers count the towers
-        visible from that side.
+        Heights 1–{n} once per row and column. Edge numbers count the towers visible from
+        that side.
       </p>
       <GameTools
         diff={diff}
@@ -175,7 +181,8 @@ export default function Skyscrapers({ onExit }: { onExit: () => void }) {
         aria-label="Skyscrapers board"
       >
         {Array.from({ length: G * G }).map((_, k) => {
-          const gr = Math.floor(k / G), gc = k % G;
+          const gr = Math.floor(k / G),
+            gc = k % G;
           const inner = gr > 0 && gr <= n && gc > 0 && gc <= n;
           if (inner) {
             const i = (gr - 1) * n + (gc - 1);
@@ -196,14 +203,11 @@ export default function Skyscrapers({ onExit }: { onExit: () => void }) {
               </button>
             );
           }
-          if (gr === 0 && gc > 0 && gc <= n)
-            return clue(k, "top", gc - 1, "column");
+          if (gr === 0 && gc > 0 && gc <= n) return clue(k, "top", gc - 1, "column");
           if (gr === G - 1 && gc > 0 && gc <= n)
             return clue(k, "bottom", gc - 1, "column");
-          if (gc === 0 && gr > 0 && gr <= n)
-            return clue(k, "left", gr - 1, "row");
-          if (gc === G - 1 && gr > 0 && gr <= n)
-            return clue(k, "right", gr - 1, "row");
+          if (gc === 0 && gr > 0 && gr <= n) return clue(k, "left", gr - 1, "row");
+          if (gc === G - 1 && gr > 0 && gr <= n) return clue(k, "right", gr - 1, "row");
           return <span key={k} />;
         })}
       </div>

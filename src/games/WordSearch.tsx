@@ -15,8 +15,14 @@ const HELP =
   "backwards. Tap a word's first letter, then its last; found words light up.";
 
 const DIRS = [
-  [0, 1], [1, 0], [1, 1], [1, -1],
-  [0, -1], [-1, 0], [-1, -1], [-1, 1]
+  [0, 1],
+  [1, 0],
+  [1, 1],
+  [1, -1],
+  [0, -1],
+  [-1, 0],
+  [-1, -1],
+  [-1, 1]
 ] as const;
 
 interface Placed {
@@ -50,11 +56,16 @@ function buildPuzzle(seed: string, wordCount: number): Puzzle {
       let ok = true;
       for (let i = 0; i < word.length; i++) {
         const idx = (r0 + dr * i) * GRID + (c0 + dc * i);
-        if (letters[idx] !== "" && letters[idx] !== word[i]) { ok = false; break; }
+        if (letters[idx] !== "" && letters[idx] !== word[i]) {
+          ok = false;
+          break;
+        }
         cells.push(idx);
       }
       if (!ok) continue;
-      cells.forEach((idx, i) => { letters[idx] = word[i]; });
+      cells.forEach((idx, i) => {
+        letters[idx] = word[i];
+      });
       placed.push({ word, cells });
       done = true;
     }
@@ -69,12 +80,14 @@ function buildPuzzle(seed: string, wordCount: number): Puzzle {
 
 /** Cells on a straight line between two indices, or null if not straight. */
 function lineBetween(a: number, b: number): number[] | null {
-  const r0 = Math.floor(a / GRID), c0 = a % GRID;
-  const r1 = Math.floor(b / GRID), c1 = b % GRID;
-  const dr = Math.sign(r1 - r0), dc = Math.sign(c1 - c0);
+  const r0 = Math.floor(a / GRID),
+    c0 = a % GRID;
+  const r1 = Math.floor(b / GRID),
+    c1 = b % GRID;
+  const dr = Math.sign(r1 - r0),
+    dc = Math.sign(c1 - c0);
   const len = Math.max(Math.abs(r1 - r0), Math.abs(c1 - c0)) + 1;
-  if (!(r0 === r1 || c0 === c1 || Math.abs(r1 - r0) === Math.abs(c1 - c0)))
-    return null;
+  if (!(r0 === r1 || c0 === c1 || Math.abs(r1 - r0) === Math.abs(c1 - c0))) return null;
   return Array.from({ length: len }, (_, i) => (r0 + dr * i) * GRID + (c0 + dc * i));
 }
 
@@ -84,10 +97,12 @@ interface SavedState {
 }
 
 export default function WordSearch({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, commitHint, newPuzzle } = useGame<SavedState>(() => ({
-    found: [],
-    done: false
-  }));
+  const { seed, diff, saved, commit, commitHint, newPuzzle } = useGame<SavedState>(
+    () => ({
+      found: [],
+      done: false
+    })
+  );
   const { letters, placed } = useMemo(
     () => buildPuzzle(`wordsearch-${seed}`, WORDS[diff]),
     [seed, diff]
@@ -104,8 +119,14 @@ export default function WordSearch({ onExit }: { onExit: () => void }) {
 
   function tap(idx: number) {
     if (saved.done) return;
-    if (anchor === null) { setAnchor(idx); return; }
-    if (anchor === idx) { setAnchor(null); return; }
+    if (anchor === null) {
+      setAnchor(idx);
+      return;
+    }
+    if (anchor === idx) {
+      setAnchor(null);
+      return;
+    }
     const line = lineBetween(anchor, idx);
     setAnchor(null);
     if (!line) return;
@@ -142,9 +163,7 @@ export default function WordSearch({ onExit }: { onExit: () => void }) {
   return (
     <div className="game game-wordsearch">
       <GameHeader title="Word Search" onExit={onExit} onNew={() => startNew()} />
-      <p className="game-hint">
-        Tap the first letter of a word, then its last letter.
-      </p>
+      <p className="game-hint">Tap the first letter of a word, then its last letter.</p>
       <GameTools
         diff={diff}
         onDiff={startNew}

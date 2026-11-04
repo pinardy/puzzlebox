@@ -46,7 +46,8 @@ export default function Heyawake({ onExit }: { onExit: () => void }) {
     const bad = new Set<number>();
     for (let i = 0; i < n * n; i++) {
       if (!saved.shaded[i]) continue;
-      const r = Math.floor(i / n), c = i % n;
+      const r = Math.floor(i / n),
+        c = i % n;
       if (c > 0 && saved.shaded[i - 1]) {
         bad.add(i);
         bad.add(i - 1);
@@ -71,7 +72,8 @@ export default function Heyawake({ onExit }: { onExit: () => void }) {
     const stack = [start];
     while (stack.length) {
       const j = stack.pop()!;
-      const r = Math.floor(j / n), c = j % n;
+      const r = Math.floor(j / n),
+        c = j % n;
       for (const k of [
         r > 0 ? j - n : -1,
         r < n - 1 ? j + n : -1,
@@ -145,8 +147,7 @@ export default function Heyawake({ onExit }: { onExit: () => void }) {
     <div className="game game-heyawake">
       <GameHeader title="Heyawake" onExit={onExit} onNew={() => newPuzzle()} />
       <p className="game-hint">
-        Numbers count shaded squares in their room; shaded squares never
-        touch.
+        Numbers count shaded squares in their room; shaded squares never touch.
       </p>
       <GameTools
         diff={diff}
@@ -165,7 +166,8 @@ export default function Heyawake({ onExit }: { onExit: () => void }) {
         {...nav}
       >
         {Array.from({ length: n * n }, (_, i) => {
-          const r = Math.floor(i / n), c = i % n;
+          const r = Math.floor(i / n),
+            c = i % n;
           const id = roomOf[i];
           const want = clue[id];
           return (
@@ -191,9 +193,7 @@ export default function Heyawake({ onExit }: { onExit: () => void }) {
               onClick={() => toggle(i)}
               aria-pressed={saved.shaded[i]}
             >
-              {labelAt.has(i) && (
-                <span className="hw-clue">{labelAt.get(i)}</span>
-              )}
+              {labelAt.has(i) && <span className="hw-clue">{labelAt.get(i)}</span>}
             </button>
           );
         })}

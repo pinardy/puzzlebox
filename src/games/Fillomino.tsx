@@ -34,7 +34,8 @@ function groups(values: number[], n: number): { id: number[]; size: number[] } {
     while (stack.length) {
       const j = stack.pop()!;
       count++;
-      const r = Math.floor(j / n), c = j % n;
+      const r = Math.floor(j / n),
+        c = j % n;
       for (const k of [
         r > 0 ? j - n : -1,
         r < n - 1 ? j + n : -1,
@@ -68,7 +69,8 @@ function generateFillomino(seed: string, n: number, reveal: number): Puzzle {
       const want = 1 + Math.floor(rng() * 5); // 1–5
       while (cells.length < want) {
         const frontier = cells.flatMap((i) => {
-          const r = Math.floor(i / n), c = i % n;
+          const r = Math.floor(i / n),
+            c = i % n;
           const out: number[] = [];
           if (r > 0 && regionOf[i - n] === -1) out.push(i - n);
           if (r < n - 1 && regionOf[i + n] === -1) out.push(i + n);
@@ -88,10 +90,12 @@ function generateFillomino(seed: string, n: number, reveal: number): Puzzle {
     for (;;) {
       let merged = false;
       outer: for (let i = 0; i < n * n; i++) {
-        const r = Math.floor(i / n), c = i % n;
+        const r = Math.floor(i / n),
+          c = i % n;
         for (const j of [r < n - 1 ? i + n : -1, c < n - 1 ? i + 1 : -1]) {
           if (j === -1) continue;
-          const a = regionOf[i], b = regionOf[j];
+          const a = regionOf[i],
+            b = regionOf[j];
           if (a === b || regions[a].length !== regions[b].length) continue;
           if (regions[a].length + regions[b].length > 9) continue attempt;
           for (const cell of regions[b]) regionOf[cell] = a;
@@ -156,7 +160,8 @@ export default function Fillomino({ onExit }: { onExit: () => void }) {
     const sealed = Array(size.length).fill(true);
     for (let i = 0; i < n * n; i++) {
       if (board[i] !== 0) continue;
-      const r = Math.floor(i / n), c = i % n;
+      const r = Math.floor(i / n),
+        c = i % n;
       for (const j of [
         r > 0 ? i - n : -1,
         r < n - 1 ? i + n : -1,
@@ -232,7 +237,8 @@ export default function Fillomino({ onExit }: { onExit: () => void }) {
         aria-label="Fillomino board"
       >
         {board.map((v, i) => {
-          const r = Math.floor(i / n), c = i % n;
+          const r = Math.floor(i / n),
+            c = i % n;
           const given = givens[i] !== 0;
           // Draw borders between different filled numbers, so completed
           // regions read at a glance.

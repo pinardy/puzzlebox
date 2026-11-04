@@ -139,9 +139,7 @@ export default function Nim({ onExit }: { onExit: () => void }) {
                   const doomed =
                     hover !== null && hover.heap === i && h - hover.take <= j;
                   const tipped =
-                    saved.tip !== null &&
-                    saved.tip.heap === i &&
-                    h - saved.tip.take <= j;
+                    saved.tip !== null && saved.tip.heap === i && h - saved.tip.take <= j;
                   return (
                     <button
                       key={j}

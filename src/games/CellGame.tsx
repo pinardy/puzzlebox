@@ -60,9 +60,7 @@ function deal(seed: string, rules: CellRules): SavedState {
 }
 
 type Sel =
-  | { from: "col"; pile: number; index: number }
-  | { from: "cell"; slot: number }
-  | null;
+  { from: "col"; pile: number; index: number } | { from: "cell"; slot: number } | null;
 
 export function CellGame({
   title,
@@ -79,7 +77,8 @@ export function CellGame({
   wonMessage: (moves: number) => string;
   onExit: () => void;
 }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle }= useGame<SavedState>((s) => deal(s, rules)
+  const { seed, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>((s) =>
+    deal(s, rules)
   );
   const [sel, setSel] = useState<Sel>(null);
 
@@ -171,10 +170,7 @@ export function CellGame({
         return;
       }
       const top = cards.length ? cards[cards.length - 1] : null;
-      const fits =
-        top === null
-          ? acceptsEmpty(run[0])
-          : downInSuit(run[0], top);
+      const fits = top === null ? acceptsEmpty(run[0]) : downInSuit(run[0], top);
       if (!fits || run.length > moveCapacity(top === null)) {
         setSel(null);
         return;
@@ -287,12 +283,7 @@ export function CellGame({
           </PlayingCard>
         ))}
         {saved.foundations.map((f, s) => (
-          <Foundation
-            key={s}
-            suit={s}
-            top={foundationTop(f)}
-            onClick={tryFoundation}
-          />
+          <Foundation key={s} suit={s} top={foundationTop(f)} onClick={tryFoundation} />
         ))}
       </div>
 

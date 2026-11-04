@@ -18,9 +18,11 @@ function placeQueens(n: number, rng: () => number): number[] | null {
     for (const c of shuffled([...Array(n).keys()], rng)) {
       if (used.has(c)) continue;
       if (row > 0 && Math.abs(c - cols[row - 1]) <= 1) continue;
-      cols.push(c); used.add(c);
+      cols.push(c);
+      used.add(c);
       if (go(row + 1)) return true;
-      cols.pop(); used.delete(c);
+      cols.pop();
+      used.delete(c);
     }
     return false;
   }
@@ -56,7 +58,8 @@ function growRegions(n: number, queenCols: number[], rng: () => number): number[
     const cells = frontier[g];
     const pick = Math.floor(rng() * cells.length);
     const cell = cells[pick];
-    const r = Math.floor(cell / n), c = cell % n;
+    const r = Math.floor(cell / n),
+      c = cell % n;
     const opts: number[] = [];
     if (r > 0 && regions[cell - n] === -1) opts.push(cell - n);
     if (r < n - 1 && regions[cell + n] === -1) opts.push(cell + n);
@@ -75,25 +78,26 @@ function growRegions(n: number, queenCols: number[], rng: () => number): number[
 }
 
 /** Count valid crown placements (row by row), stopping at `limit`. */
-export function countQueensSolutions(
-  n: number,
-  regions: number[],
-  limit = 2
-): number {
+export function countQueensSolutions(n: number, regions: number[], limit = 2): number {
   let count = 0;
   const usedCols = Array(n).fill(false);
   const usedRegions = Array(n).fill(false);
   function go(row: number, prevCol: number) {
     if (count >= limit) return;
-    if (row === n) { count++; return; }
+    if (row === n) {
+      count++;
+      return;
+    }
     for (let c = 0; c < n; c++) {
       if (usedCols[c]) continue;
       if (prevCol !== -1 && Math.abs(c - prevCol) <= 1) continue;
       const reg = regions[row * n + c];
       if (usedRegions[reg]) continue;
-      usedCols[c] = true; usedRegions[reg] = true;
+      usedCols[c] = true;
+      usedRegions[reg] = true;
       go(row + 1, c);
-      usedCols[c] = false; usedRegions[reg] = false;
+      usedCols[c] = false;
+      usedRegions[reg] = false;
     }
   }
   go(0, -1);

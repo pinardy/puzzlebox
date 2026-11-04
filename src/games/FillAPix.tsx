@@ -31,11 +31,14 @@ function generateFillAPix(seed: string, n: number, rate: number): Puzzle {
     const target = Array.from({ length: n * n }, () => (rng() < 0.52 ? 1 : 0));
     // Smooth once toward neighbours so the picture clumps like a mosaic.
     const smoothed = target.map((_, i) => {
-      const r = Math.floor(i / n), c = i % n;
-      let on = 0, all = 0;
+      const r = Math.floor(i / n),
+        c = i % n;
+      let on = 0,
+        all = 0;
       for (let dr = -1; dr <= 1; dr++)
         for (let dc = -1; dc <= 1; dc++) {
-          const rr = r + dr, cc = c + dc;
+          const rr = r + dr,
+            cc = c + dc;
           if (rr < 0 || rr >= n || cc < 0 || cc >= n) continue;
           all++;
           on += target[rr * n + cc];
@@ -47,11 +50,13 @@ function generateFillAPix(seed: string, n: number, rate: number): Puzzle {
 
     const clues = smoothed.map((_, i) => {
       if (rng() >= rate) return null;
-      const r = Math.floor(i / n), c = i % n;
+      const r = Math.floor(i / n),
+        c = i % n;
       let count = 0;
       for (let dr = -1; dr <= 1; dr++)
         for (let dc = -1; dc <= 1; dc++) {
-          const rr = r + dr, cc = c + dc;
+          const rr = r + dr,
+            cc = c + dc;
           if (rr >= 0 && rr < n && cc >= 0 && cc < n) count += smoothed[rr * n + cc];
         }
       return count;
@@ -83,11 +88,14 @@ export default function FillAPix({ onExit }: { onExit: () => void }) {
   const clueState = useMemo(() => {
     return clues.map((clue, i) => {
       if (clue === null) return null;
-      const r = Math.floor(i / n), c = i % n;
-      let filled = 0, undecided = 0;
+      const r = Math.floor(i / n),
+        c = i % n;
+      let filled = 0,
+        undecided = 0;
       for (let dr = -1; dr <= 1; dr++)
         for (let dc = -1; dc <= 1; dc++) {
-          const rr = r + dr, cc = c + dc;
+          const rr = r + dr,
+            cc = c + dc;
           if (rr < 0 || rr >= n || cc < 0 || cc >= n) continue;
           const m = saved.marks[rr * n + cc];
           if (m === 1) filled++;
@@ -100,8 +108,7 @@ export default function FillAPix({ onExit }: { onExit: () => void }) {
   }, [clues, saved.marks, n]);
 
   const complete =
-    saved.marks.every((m) => m !== 0) &&
-    clueState.every((s) => s === null || s === "ok");
+    saved.marks.every((m) => m !== 0) && clueState.every((s) => s === null || s === "ok");
   useEffect(() => {
     if (complete) finish();
   }, [complete, finish]);

@@ -43,7 +43,8 @@ function deal(seed: string): SavedState {
 type Sel = { pile: number; index: number } | null;
 
 export default function Russian({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle }= useGame<SavedState>((s) => deal(s)
+  const { seed, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>((s) =>
+    deal(s)
   );
   const [sel, setSel] = useState<Sel>(null);
 
@@ -102,10 +103,7 @@ export default function Russian({ onExit }: { onExit: () => void }) {
       const moving = saved.tableau[sel.pile][sel.index];
       const top = cards.length ? cards[cards.length - 1] : null;
       // The one difference from Yukon: same suit, not opposite colour.
-      const fits =
-        top === null
-          ? rank(moving) === 13
-          : downInSuit(moving, top);
+      const fits = top === null ? rank(moving) === 13 : downInSuit(moving, top);
       if (!fits) {
         setSel(null);
         return;
@@ -140,12 +138,7 @@ export default function Russian({ onExit }: { onExit: () => void }) {
       <div className="kl-top">
         <span className="kl-gap" />
         {saved.foundations.map((f, s) => (
-          <Foundation
-            key={s}
-            suit={s}
-            top={f}
-            onClick={tryFoundation}
-          />
+          <Foundation key={s} suit={s} top={f} onClick={tryFoundation} />
         ))}
       </div>
 

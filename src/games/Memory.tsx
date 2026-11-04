@@ -18,8 +18,11 @@ interface SavedState {
 }
 
 export default function Memory({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, newPuzzle }= useGame<SavedState>((_s, d) => ({ matched: Array(PAIRS[d] * 2).fill(false), flips: 0, done: false })
-  );
+  const { seed, diff, saved, commit, newPuzzle } = useGame<SavedState>((_s, d) => ({
+    matched: Array(PAIRS[d] * 2).fill(false),
+    flips: 0,
+    done: false
+  }));
   const pairs = PAIRS[diff];
   const cards = useMemo(() => {
     const set = SYMBOLS.slice(0, pairs);

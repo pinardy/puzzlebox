@@ -38,7 +38,7 @@ export default function Codeword({ onExit }: { onExit: () => void }) {
   const isGiven = (n: number) => puzzle.given.includes(n);
   const letterAt = (i: number) => {
     const n = puzzle.nums[i];
-    return n === null ? "" : saved.assign[n - 1] ?? "";
+    return n === null ? "" : (saved.assign[n - 1] ?? "");
   };
 
   // Which letters are already spoken for, for the tracker row.
@@ -120,9 +120,7 @@ export default function Codeword({ onExit }: { onExit: () => void }) {
   return (
     <div className="game game-codeword">
       <GameHeader title="Codeword" onExit={onExit} onNew={() => startNew()} />
-      <p className="game-hint">
-        Same number, same letter. Tap a square, then a letter.
-      </p>
+      <p className="game-hint">Same number, same letter. Tap a square, then a letter.</p>
       <GameTools
         diff={diff}
         onDiff={startNew}

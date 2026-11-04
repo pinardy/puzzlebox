@@ -31,7 +31,7 @@ function evalExpr(s: string): number | null {
     } else ops.push(parts[i]);
   }
   // × and ÷ first…
-  for (let i = 0; i < ops.length; ) {
+  for (let i = 0; i < ops.length;) {
     if (ops[i] === "×" || ops[i] === "÷") {
       if (ops[i] === "÷" && (nums[i + 1] === 0 || nums[i] % nums[i + 1] !== 0))
         return null;
@@ -75,10 +75,13 @@ function answerFor(seed: string, diff: Diff): string {
     const twoOps = diff === "hard" ? rng() < 0.7 : diff === "medium" && rng() < 0.3;
     let s: string;
     if (twoOps) {
-      const a = int(1, 99), b = int(1, 12), c = int(1, 99);
+      const a = int(1, 99),
+        b = int(1, 12),
+        c = int(1, 99);
       s = `${a}${ops[int(0, ops.length - 1)]}${b}${ops[int(0, ops.length - 1)]}${c}`;
     } else {
-      const a = int(1, 999), b = int(1, 999);
+      const a = int(1, 999),
+        b = int(1, 999);
       s = `${a}${ops[int(0, ops.length - 1)]}${b}`;
     }
     const val = evalExpr(s);
@@ -109,8 +112,11 @@ const SAY_SCORE: Record<LetterState, string> = {
 };
 
 export default function Equation({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, newPuzzle }= useGame<SavedState>(() => ({ guesses: [], done: false, won: false })
-  );
+  const { seed, diff, saved, commit, newPuzzle } = useGame<SavedState>(() => ({
+    guesses: [],
+    done: false,
+    won: false
+  }));
   const answer = useMemo(() => answerFor(seed, diff), [seed, diff]);
   const [current, setCurrent] = useState("");
   const [shake, setShake] = useState(false);
@@ -161,8 +167,7 @@ export default function Equation({ onExit }: { onExit: () => void }) {
       if (saved.done) return;
       if (k === "enter") submit();
       else if (k === "back") setCurrent((c) => c.slice(0, -1));
-      else if (/^[\d+\-×÷=]$/.test(k) && current.length < LEN)
-        setCurrent((c) => c + k);
+      else if (/^[\d+\-×÷=]$/.test(k) && current.length < LEN) setCurrent((c) => c + k);
     },
     [saved.done, submit, current.length]
   );

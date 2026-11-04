@@ -54,11 +54,11 @@ function deal(seed: string): SavedState {
   };
 }
 
-const rowSuit = (row: number[]): number | null =>
-  row.length ? suit(row[0]) : null;
+const rowSuit = (row: number[]): number | null => (row.length ? suit(row[0]) : null);
 
 export default function Osmosis({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle }= useGame<SavedState>((s) => deal(s)
+  const { seed, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>((s) =>
+    deal(s)
   );
 
   const wasteTop = saved.waste.length ? saved.waste[saved.waste.length - 1] : null;
@@ -132,7 +132,8 @@ export default function Osmosis({ onExit }: { onExit: () => void }) {
   }
 
   const home = saved.rows.reduce((n, r) => n + r.length, 0);
-  const playableWaste = wasteTop !== null && [0, 1, 2, 3].some((r) => canPlay(wasteTop, r));
+  const playableWaste =
+    wasteTop !== null && [0, 1, 2, 3].some((r) => canPlay(wasteTop, r));
   const stuck =
     !saved.done &&
     !playableWaste &&
@@ -173,10 +174,7 @@ export default function Osmosis({ onExit }: { onExit: () => void }) {
                 <span className="kl-card kl-empty os-card">·</span>
               ) : (
                 row.map((c) => (
-                  <span
-                    key={c}
-                    className={`kl-card os-card${isRed(c) ? " red" : ""}`}
-                  >
+                  <span key={c} className={`kl-card os-card${isRed(c) ? " red" : ""}`}>
                     {label(c)}
                   </span>
                 ))

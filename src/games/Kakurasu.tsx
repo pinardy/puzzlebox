@@ -108,9 +108,7 @@ export default function Kakurasu({ onExit }: { onExit: () => void }) {
   return (
     <div className="game game-kakurasu">
       <GameHeader title="Kakurasu" onExit={onExit} onNew={() => newPuzzle()} />
-      <p className="game-hint">
-        Shade squares so every row and column hits its total.
-      </p>
+      <p className="game-hint">Shade squares so every row and column hits its total.</p>
       <GameTools
         diff={diff}
         onDiff={newPuzzle}

@@ -13,8 +13,15 @@ const HELP =
   "to rule squares out.";
 
 const REGION_COLORS = [
-  "#f5c8c4", "#c6def5", "#cdeccf", "#f5e9b8", "#e0d2f2",
-  "#f7d8b4", "#c6ecec", "#e6ddd0", "#dbe6c3"
+  "#f5c8c4",
+  "#c6def5",
+  "#cdeccf",
+  "#f5e9b8",
+  "#e0d2f2",
+  "#f7d8b4",
+  "#c6ecec",
+  "#e6ddd0",
+  "#dbe6c3"
 ];
 
 interface SavedState {
@@ -29,7 +36,10 @@ export default function Queens({ onExit }: { onExit: () => void }) {
       done: false
     }));
   const n = SIZE[diff];
-  const { regions, solution } = useMemo(() => generateQueens(`queens-${seed}`, n), [seed, n]);
+  const { regions, solution } = useMemo(
+    () => generateQueens(`queens-${seed}`, n),
+    [seed, n]
+  );
 
   const crowns = useMemo(
     () => saved.marks.flatMap((m, i) => (m === 2 ? [i] : [])),
@@ -40,14 +50,16 @@ export default function Queens({ onExit }: { onExit: () => void }) {
   const conflicts = useMemo(() => {
     const bad = new Set<number>();
     for (const a of crowns) {
-      const ra = Math.floor(a / n), ca = a % n;
+      const ra = Math.floor(a / n),
+        ca = a % n;
       for (const b of crowns) {
         if (a >= b) continue;
-        const rb = Math.floor(b / n), cb = b % n;
-        const touching =
-          Math.abs(ra - rb) <= 1 && Math.abs(ca - cb) <= 1;
+        const rb = Math.floor(b / n),
+          cb = b % n;
+        const touching = Math.abs(ra - rb) <= 1 && Math.abs(ca - cb) <= 1;
         if (ra === rb || ca === cb || regions[a] === regions[b] || touching) {
-          bad.add(a); bad.add(b);
+          bad.add(a);
+          bad.add(b);
         }
       }
     }
@@ -85,8 +97,8 @@ export default function Queens({ onExit }: { onExit: () => void }) {
     <div className="game game-queens">
       <GameHeader title="Queens" onExit={onExit} onNew={() => newPuzzle()} />
       <p className="game-hint">
-        One crown per row, column, and colour — none touching. Tap once for
-        ✕, twice for a crown.
+        One crown per row, column, and colour — none touching. Tap once for ✕, twice for a
+        crown.
       </p>
       <GameTools
         diff={diff}
@@ -124,7 +136,9 @@ export default function Queens({ onExit }: { onExit: () => void }) {
       </div>
 
       <div className="lights-meta">
-        <span>👑 {crowns.length} / {n}</span>
+        <span>
+          👑 {crowns.length} / {n}
+        </span>
         <button
           className="mini-btn"
           onClick={() => commit({ marks: Array(n * n).fill(0), done: false })}

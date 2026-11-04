@@ -24,10 +24,12 @@ export function generateKakuro(seed: string, G: number): KakuroPuzzle {
   for (;;) {
     // Pattern: border is black, inner cells black with low probability.
     const black = Array(G * G).fill(false);
-    for (let i = 0; i < G; i++) { black[i] = true; black[i * G] = true; }
+    for (let i = 0; i < G; i++) {
+      black[i] = true;
+      black[i * G] = true;
+    }
     for (let r = 1; r < G; r++)
-      for (let c = 1; c < G; c++)
-        if (rng() < 0.26) black[r * G + c] = true;
+      for (let c = 1; c < G; c++) if (rng() < 0.26) black[r * G + c] = true;
 
     // Collect runs; reject patterns with 1-cell or 6+-cell runs.
     const runs: number[][] = [];
@@ -35,8 +37,13 @@ export function generateKakuro(seed: string, G: number): KakuroPuzzle {
     const scan = (line: number[]) => {
       let run: number[] = [];
       for (const i of [...line, -1]) {
-        if (i !== -1 && !black[i]) { run.push(i); continue; }
-        if (run.length === 1 || run.length > 5) { ok = false; }
+        if (i !== -1 && !black[i]) {
+          run.push(i);
+          continue;
+        }
+        if (run.length === 1 || run.length > 5) {
+          ok = false;
+        }
         if (run.length >= 2) runs.push(run);
         run = [];
       }

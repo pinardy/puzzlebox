@@ -45,7 +45,8 @@ export function PileGame({
   wonMessage: (moves: number) => string;
   onExit: () => void;
 }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle }= useGame<PileState>((s) => dealPiles(s, rules)
+  const { seed, saved, commit, undo, canUndo, newPuzzle } = useGame<PileState>((s) =>
+    dealPiles(s, rules)
   );
   const [sel, setSel] = useState<number | null>(null);
 

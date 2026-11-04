@@ -15,7 +15,8 @@ export interface ZipPuzzle {
 }
 
 function neighbours(idx: number, n: number): number[] {
-  const r = Math.floor(idx / n), c = idx % n;
+  const r = Math.floor(idx / n),
+    c = idx % n;
   const out: number[] = [];
   if (r > 0) out.push(idx - n);
   if (r < n - 1) out.push(idx + n);
@@ -65,7 +66,9 @@ export function generateZip(seed: string, n: number, checkpointCount: number): Z
 }
 
 export function areAdjacent(a: number, b: number, n: number): boolean {
-  const ra = Math.floor(a / n), ca = a % n;
-  const rb = Math.floor(b / n), cb = b % n;
+  const ra = Math.floor(a / n),
+    ca = a % n;
+  const rb = Math.floor(b / n),
+    cb = b % n;
   return Math.abs(ra - rb) + Math.abs(ca - cb) === 1;
 }

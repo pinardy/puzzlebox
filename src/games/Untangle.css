@@ -11,9 +11,15 @@
   touch-action: none;
 }
 
-.ut-edge { stroke: var(--ink-soft); stroke-width: 0.8; }
+.ut-edge {
+  stroke: var(--ink-soft);
+  stroke-width: 0.8;
+}
 
-.ut-edge.bad { stroke: var(--rose); stroke-width: 1.2; }
+.ut-edge.bad {
+  stroke: var(--rose);
+  stroke-width: 1.2;
+}
 
 .ut-node {
   fill: var(--blue);
@@ -22,4 +28,7 @@
   cursor: grab;
 }
 
-.ut-node:active { cursor: grabbing; fill: var(--amber); }
+.ut-node:active {
+  cursor: grabbing;
+  fill: var(--amber);
+}

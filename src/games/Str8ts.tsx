@@ -43,7 +43,8 @@ function generateStr8ts(seed: string, n: number, reveal: number): Puzzle {
       black[i] = black[j] = true;
       placed += i === j ? 1 : 2;
       for (let r = 0; r < n; r++) {
-        let rc = 0, cc = 0;
+        let rc = 0,
+          cc = 0;
         for (let k = 0; k < n; k++) {
           if (black[r * n + k]) rc++;
           if (black[k * n + r]) cc++;
@@ -76,9 +77,17 @@ function generateStr8ts(seed: string, n: number, reveal: number): Puzzle {
       }
     };
     for (let r = 0; r < n; r++)
-      scan(Array.from({ length: n }, (_, c) => r * n + c), compRow, compOfRow);
+      scan(
+        Array.from({ length: n }, (_, c) => r * n + c),
+        compRow,
+        compOfRow
+      );
     for (let c = 0; c < n; c++)
-      scan(Array.from({ length: n }, (_, r) => r * n + c), compCol, compOfCol);
+      scan(
+        Array.from({ length: n }, (_, r) => r * n + c),
+        compCol,
+        compOfCol
+      );
 
     const grid = Array(n * n).fill(0);
     const whites = [...Array(n * n).keys()].filter((i) => !black[i]);
@@ -88,14 +97,16 @@ function generateStr8ts(seed: string, n: number, reveal: number): Puzzle {
       const cells = comps[id];
       const vals = cells.map((c) => grid[c]).filter((v) => v > 0);
       if (!vals.length) return true;
-      const mn = Math.min(...vals), mx = Math.max(...vals);
+      const mn = Math.min(...vals),
+        mx = Math.max(...vals);
       if (mx - mn >= cells.length) return false;
       const lo = Math.max(1, mx - cells.length + 1);
       const hi = Math.min(n, mn + cells.length - 1);
       return hi - lo + 1 >= cells.length;
     };
     const okAt = (i: number, v: number): boolean => {
-      const r = Math.floor(i / n), c = i % n;
+      const r = Math.floor(i / n),
+        c = i % n;
       for (let k = 0; k < n; k++) {
         if (k !== c && grid[r * n + k] === v) return false;
         if (k !== r && grid[k * n + c] === v) return false;
@@ -106,7 +117,10 @@ function generateStr8ts(seed: string, n: number, reveal: number): Puzzle {
       if (++nodes > 20000) return false;
       if (k === whites.length) return true;
       const i = whites[k];
-      for (const v of shuffled([...Array(n).keys()].map((x) => x + 1), rng)) {
+      for (const v of shuffled(
+        [...Array(n).keys()].map((x) => x + 1),
+        rng
+      )) {
         grid[i] = v;
         if (okAt(i, v) && fill(k + 1)) return true;
         grid[i] = 0;
@@ -119,7 +133,8 @@ function generateStr8ts(seed: string, n: number, reveal: number): Puzzle {
     const blackDigit = Array(n * n).fill(0);
     for (let i = 0; i < n * n; i++) {
       if (!black[i] || rng() > 0.45) continue;
-      const r = Math.floor(i / n), c = i % n;
+      const r = Math.floor(i / n),
+        c = i % n;
       const used = new Set<number>();
       for (let k = 0; k < n; k++) {
         used.add(grid[r * n + k]);
@@ -177,9 +192,11 @@ export default function Str8ts({ onExit }: { onExit: () => void }) {
     for (let i = 0; i < n * n; i++) {
       const v = at(i);
       if (v === 0 || puzzle.black[i]) continue;
-      const r = Math.floor(i / n), c = i % n;
+      const r = Math.floor(i / n),
+        c = i % n;
       for (let k = 0; k < n; k++) {
-        const row = r * n + k, col = k * n + c;
+        const row = r * n + k,
+          col = k * n + c;
         if (row !== i && at(row) === v) bad.add(i);
         if (col !== i && at(col) === v) bad.add(i);
       }
@@ -250,8 +267,8 @@ export default function Str8ts({ onExit }: { onExit: () => void }) {
     <div className="game game-str8ts">
       <GameHeader title="Str8ts" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
-        White runs must be consecutive numbers in any order; rows and columns
-        never repeat.
+        White runs must be consecutive numbers in any order; rows and columns never
+        repeat.
       </p>
       <GameTools
         diff={diff}
@@ -275,7 +292,12 @@ export default function Str8ts({ onExit }: { onExit: () => void }) {
                 key={i}
                 className="st-black"
                 role="gridcell"
-                aria-label={cellLabel(i, n, "black", puzzle.blackDigit[i] && `clue ${puzzle.blackDigit[i]}`)}
+                aria-label={cellLabel(
+                  i,
+                  n,
+                  "black",
+                  puzzle.blackDigit[i] && `clue ${puzzle.blackDigit[i]}`
+                )}
               >
                 {puzzle.blackDigit[i] || ""}
               </span>

@@ -33,10 +33,7 @@ export default function Masyu({ onExit }: { onExit: () => void }) {
   const n = SIZE[diff];
   const puzzle = useMemo(() => generateMasyu(`masyu-${seed}`, n), [seed, n]);
 
-  const solved = useMemo(
-    () => masyuSolved(puzzle, saved.edges),
-    [puzzle, saved.edges]
-  );
+  const solved = useMemo(() => masyuSolved(puzzle, saved.edges), [puzzle, saved.edges]);
   useEffect(() => {
     if (solved) finish();
   }, [solved, finish]);
@@ -80,7 +77,10 @@ export default function Masyu({ onExit }: { onExit: () => void }) {
   const edgeState = (m: number) => (m === 1 ? "line" : m === 2 ? "crossed" : "empty");
 
   const G = 2 * n - 1;
-  const track = Array(n - 1).fill("1fr 0.5fr").join(" ") + " 1fr";
+  const track =
+    Array(n - 1)
+      .fill("1fr 0.5fr")
+      .join(" ") + " 1fr";
   const edgeMark = (m: number) => (m === 1 ? "line" : m === 2 ? "off" : "");
 
   return (
@@ -106,7 +106,8 @@ export default function Masyu({ onExit }: { onExit: () => void }) {
         {...nav}
       >
         {Array.from({ length: G * G }).map((_, k) => {
-          const gr = Math.floor(k / G), gc = k % G;
+          const gr = Math.floor(k / G),
+            gc = k % G;
           if (gr % 2 === 0 && gc % 2 === 0) {
             const i = (gr / 2) * n + gc / 2;
             const pearl = puzzle.pearls.get(i);
@@ -126,7 +127,8 @@ export default function Masyu({ onExit }: { onExit: () => void }) {
           }
           if (gr % 2 === 0 && gc % 2 === 1) {
             const idx = (gr / 2) * (n - 1) + (gc - 1) / 2;
-            const r = gr / 2 + 1, c = (gc - 1) / 2 + 1;
+            const r = gr / 2 + 1,
+              c = (gc - 1) / 2 + 1;
             return (
               <button
                 key={k}
@@ -143,7 +145,8 @@ export default function Masyu({ onExit }: { onExit: () => void }) {
           }
           if (gr % 2 === 1 && gc % 2 === 0) {
             const idx = ((gr - 1) / 2) * n + gc / 2;
-            const r = (gr - 1) / 2 + 1, c = gc / 2 + 1;
+            const r = (gr - 1) / 2 + 1,
+              c = gc / 2 + 1;
             return (
               <button
                 key={k}

@@ -13,18 +13,32 @@
   color: var(--indigo);
 }
 
-.ships-cell.ship { background: #e2e4f5; }
+.ships-cell.ship {
+  background: #e2e4f5;
+}
 
-.ships-cell.water { color: var(--teal); }
+.ships-cell.water {
+  color: var(--teal);
+}
 
-.ships-cell.given { background: #f1f3f6; cursor: default; }
+.ships-cell.given {
+  background: #f1f3f6;
+  cursor: default;
+}
 
-.ships-cell.given.ship { background: var(--indigo); color: #fff; }
+.ships-cell.given.ship {
+  background: var(--indigo);
+  color: #fff;
+}
 
 :root[data-theme="dark"] .ships-cell.given {
   background: #262f3a;
 }
 
-:root[data-theme="dark"] .ships-cell.given.ship { background: var(--indigo); }
+:root[data-theme="dark"] .ships-cell.given.ship {
+  background: var(--indigo);
+}
 
-:root[data-theme="dark"] .ships-cell.ship { background: #2b3050; }
+:root[data-theme="dark"] .ships-cell.ship {
+  background: #2b3050;
+}

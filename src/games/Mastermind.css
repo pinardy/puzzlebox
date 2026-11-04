@@ -37,11 +37,18 @@
   text-shadow: 0 0 3px rgba(255, 255, 255, 0.85);
 }
 
-.mm-slot { background: var(--card); cursor: pointer; }
+.mm-slot {
+  background: var(--card);
+  cursor: pointer;
+}
 
-.mm-current .mm-peg { border-style: dashed; }
+.mm-current .mm-peg {
+  border-style: dashed;
+}
 
-.mm-answer { opacity: 0.85; }
+.mm-answer {
+  opacity: 0.85;
+}
 
 .mm-feedback {
   font-family: var(--mono);
@@ -51,7 +58,11 @@
   color: var(--ink);
 }
 
-.mm-count { color: var(--ink-soft); font-size: 13px; letter-spacing: 0; }
+.mm-count {
+  color: var(--ink-soft);
+  font-size: 13px;
+  letter-spacing: 0;
+}
 
 .mm-palette {
   display: flex;
@@ -61,6 +72,12 @@
   flex-wrap: wrap;
 }
 
-.mm-pick { cursor: pointer; box-shadow: var(--shadow); }
+.mm-pick {
+  cursor: pointer;
+  box-shadow: var(--shadow);
+}
 
-.mm-pick:active { transform: translateY(2px); box-shadow: none; }
+.mm-pick:active {
+  transform: translateY(2px);
+  box-shadow: none;
+}

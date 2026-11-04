@@ -27,7 +27,8 @@ interface Puzzle {
 /** Tile the grid with dominoes by randomized backtracking, then deal the
  *  full pair set onto the tiles. Solvable by construction. */
 function generateDominoes(seed: string, maxPip: number): Puzzle {
-  const rows = maxPip + 1, cols = maxPip + 2;
+  const rows = maxPip + 1,
+    cols = maxPip + 2;
   const rng = makeRng(seed);
   const total = rows * cols;
 
@@ -36,7 +37,8 @@ function generateDominoes(seed: string, maxPip: number): Puzzle {
   const fill = (): boolean => {
     const at = owner.indexOf(-1);
     if (at === -1) return true;
-    const r = Math.floor(at / cols), c = at % cols;
+    const r = Math.floor(at / cols),
+      c = at % cols;
     const options: number[] = [];
     if (c < cols - 1 && owner[at + 1] === -1) options.push(at + 1);
     if (r < rows - 1 && owner[at + cols] === -1) options.push(at + cols);
@@ -52,14 +54,18 @@ function generateDominoes(seed: string, maxPip: number): Puzzle {
   fill();
 
   const pairs: [number, number][] = [];
-  for (let a = 0; a <= maxPip; a++)
-    for (let b = a; b <= maxPip; b++) pairs.push([a, b]);
+  for (let a = 0; a <= maxPip; a++) for (let b = a; b <= maxPip; b++) pairs.push([a, b]);
   const dealt = shuffled(pairs, rng);
   const values = Array(total).fill(0);
   tiles.forEach(([a, b], k) => {
     const [x, y] = dealt[k];
-    if (rng() < 0.5) { values[a] = x; values[b] = y; }
-    else { values[a] = y; values[b] = x; }
+    if (rng() < 0.5) {
+      values[a] = x;
+      values[b] = y;
+    } else {
+      values[a] = y;
+      values[b] = x;
+    }
   });
   return { rows, cols, values, maxPip, tiles };
 }
@@ -85,7 +91,10 @@ export default function Dominoes({ onExit }: { onExit: () => void }) {
   /** cell → placed-domino index */
   const placedAt = useMemo(() => {
     const map = new Map<number, number>();
-    saved.placed.forEach(([a, b], k) => { map.set(a, k); map.set(b, k); });
+    saved.placed.forEach(([a, b], k) => {
+      map.set(a, k);
+      map.set(b, k);
+    });
     return map;
   }, [saved.placed]);
 
@@ -113,8 +122,10 @@ export default function Dominoes({ onExit }: { onExit: () => void }) {
   }, [solved, finish]);
 
   function adjacent(a: number, b: number): boolean {
-    const ra = Math.floor(a / cols), ca = a % cols;
-    const rb = Math.floor(b / cols), cb = b % cols;
+    const ra = Math.floor(a / cols),
+      ca = a % cols;
+    const rb = Math.floor(b / cols),
+      cb = b % cols;
     return Math.abs(ra - rb) + Math.abs(ca - cb) === 1;
   }
 
@@ -129,7 +140,10 @@ export default function Dominoes({ onExit }: { onExit: () => void }) {
       setAnchor(i);
       return;
     }
-    if (anchor === i) { setAnchor(null); return; }
+    if (anchor === i) {
+      setAnchor(null);
+      return;
+    }
     setAnchor(null);
     if (at !== undefined || !adjacent(anchor, i)) return;
     commit({ ...saved, placed: [...saved.placed, [anchor, i]] });
@@ -161,8 +175,7 @@ export default function Dominoes({ onExit }: { onExit: () => void }) {
     <div className="game game-dominoes">
       <GameHeader title="Dominoes" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
-        Tap two adjacent numbers to pair them; each domino appears exactly
-        once.
+        Tap two adjacent numbers to pair them; each domino appears exactly once.
       </p>
       <GameTools
         diff={diff}
@@ -184,7 +197,9 @@ export default function Dominoes({ onExit }: { onExit: () => void }) {
           const k = placedAt.get(i);
           const mate =
             k !== undefined
-              ? saved.placed[k][0] === i ? saved.placed[k][1] : saved.placed[k][0]
+              ? saved.placed[k][0] === i
+                ? saved.placed[k][1]
+                : saved.placed[k][0]
               : null;
           const key =
             k !== undefined

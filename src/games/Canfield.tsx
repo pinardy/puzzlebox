@@ -53,8 +53,9 @@ type Sel =
   | null;
 
 export default function Canfield({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle } =
-    useGame<SavedState>((s) => deal(s));
+  const { seed, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>((s) =>
+    deal(s)
+  );
   const [sel, setSel] = useState<Sel>(null);
 
   const selCards = (): number[] => {
@@ -153,8 +154,7 @@ export default function Canfield({ onExit }: { onExit: () => void }) {
     if (saved.done) return;
     const next = clone();
     if (next.stock.length) {
-      for (let k = 0; k < 3 && next.stock.length; k++)
-        next.waste.push(next.stock.pop()!);
+      for (let k = 0; k < 3 && next.stock.length; k++) next.waste.push(next.stock.pop()!);
     } else if (next.waste.length) {
       next.stock = next.waste.reverse();
       next.waste = [];
@@ -176,8 +176,8 @@ export default function Canfield({ onExit }: { onExit: () => void }) {
     <div className="game game-canfield" style={{ "--cols": 7 } as CSSProperties}>
       <GameHeader title="Canfield" onExit={onExit} onNew={startNew} />
       <p className="game-hint">
-        Foundations start at {RANKS[saved.base - 1]} and wrap; columns build
-        down in alternating colours.
+        Foundations start at {RANKS[saved.base - 1]} and wrap; columns build down in
+        alternating colours.
       </p>
       <GameTools help={HELP} onUndo={undo} canUndo={canUndo && !saved.done} />
 
@@ -208,12 +208,7 @@ export default function Canfield({ onExit }: { onExit: () => void }) {
         />
         <span className="kl-gap" />
         {saved.foundations.map((f, s) => (
-          <Foundation
-            key={s}
-            suit={s}
-            top={f}
-            onClick={toFoundation}
-          />
+          <Foundation key={s} suit={s} top={f} onClick={toFoundation} />
         ))}
       </div>
 

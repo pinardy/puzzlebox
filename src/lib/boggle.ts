@@ -8,19 +8,51 @@ import { makeRng, shuffled } from "./rng";
  *  spells both letters at once, which is the only way q is ever usable
  *  (no word in the dictionary has a q without a u after it). */
 export const DICE_16: readonly string[] = [
-  "AAEEGN", "ABBJOO", "ACHOPS", "AFFKPS",
-  "AOOTTW", "CIMOTU", "DEILRX", "DELRVY",
-  "DISTTY", "EEGHNW", "EEINSU", "EHRTVW",
-  "EIOSST", "ELRTTY", "HIMNQU", "HLNNRZ"
+  "AAEEGN",
+  "ABBJOO",
+  "ACHOPS",
+  "AFFKPS",
+  "AOOTTW",
+  "CIMOTU",
+  "DEILRX",
+  "DELRVY",
+  "DISTTY",
+  "EEGHNW",
+  "EEINSU",
+  "EHRTVW",
+  "EIOSST",
+  "ELRTTY",
+  "HIMNQU",
+  "HLNNRZ"
 ];
 
 /** Big Boggle's twenty-five dice, for the 5×5 board. */
 export const DICE_25: readonly string[] = [
-  "AAAFRS", "AAEEEE", "AAFIRS", "ADENNN", "AEEEEM",
-  "AEEGMU", "AEGMNN", "AFIRSY", "BJKQXZ", "CCENST",
-  "CEIILT", "CEILPT", "CEIPST", "DDHNOT", "DHHLOR",
-  "DHHNOT", "DHLNOR", "EIIITT", "EMOTTT", "ENSSSU",
-  "FIPRSY", "GORRVW", "HIPRRY", "NOOTUW", "OOOTTU"
+  "AAAFRS",
+  "AAEEEE",
+  "AAFIRS",
+  "ADENNN",
+  "AEEEEM",
+  "AEEGMU",
+  "AEGMNN",
+  "AFIRSY",
+  "BJKQXZ",
+  "CCENST",
+  "CEIILT",
+  "CEILPT",
+  "CEIPST",
+  "DDHNOT",
+  "DHHLOR",
+  "DHHNOT",
+  "DHLNOR",
+  "EIIITT",
+  "EMOTTT",
+  "ENSSSU",
+  "FIPRSY",
+  "GORRVW",
+  "HIPRRY",
+  "NOOTUW",
+  "OOOTTU"
 ];
 
 const MIN_LEN = 3;
@@ -42,8 +74,7 @@ export function scoreWord(word: string): number {
 }
 
 /** What a cell shows: "qu" prints as "Qu". */
-export const cellLabel = (cell: string): string =>
-  cell[0].toUpperCase() + cell.slice(1);
+export const cellLabel = (cell: string): string => cell[0].toUpperCase() + cell.slice(1);
 
 const neighbourCache = new Map<number, number[][]>();
 
@@ -101,11 +132,7 @@ export function solveBoard(cells: string[], n: number): string[] {
 
 /** A cell path spelling `word`, or null if the board can't spell it — used to
  *  resolve a typed guess into a trace, and to reject one that has no trace. */
-export function findPath(
-  cells: string[],
-  n: number,
-  word: string
-): number[] | null {
+export function findPath(cells: string[], n: number, word: string): number[] | null {
   const nei = neighboursFor(n);
   const w = word.toLowerCase();
   const used = cells.map(() => false);

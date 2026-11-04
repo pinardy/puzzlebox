@@ -10,8 +10,10 @@ const DIGITS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
 const PEERS: readonly number[][] = (() => {
   const peers: number[][] = [];
   for (let i = 0; i < 81; i++) {
-    const r = Math.floor(i / 9), c = i % 9;
-    const br = Math.floor(r / 3) * 3, bc = Math.floor(c / 3) * 3;
+    const r = Math.floor(i / 9),
+      c = i % 9;
+    const br = Math.floor(r / 3) * 3,
+      bc = Math.floor(c / 3) * 3;
     const set = new Set<number>();
     for (let k = 0; k < 9; k++) {
       set.add(r * 9 + k);
@@ -53,13 +55,15 @@ function fill(grid: Grid, rng: () => number): boolean {
 /** Count solutions, short-circuiting at `limit`. */
 function countSolutions(grid: Grid, limit = 2): number {
   // Most-constrained-cell heuristic keeps the search tree tiny.
-  let best = -1, bestCands: number[] | null = null;
+  let best = -1,
+    bestCands: number[] | null = null;
   for (let i = 0; i < 81; i++) {
     if (grid[i] !== 0) continue;
     const c = candidates(grid, i);
     if (c.length === 0) return 0;
     if (bestCands === null || c.length < bestCands.length) {
-      best = i; bestCands = c;
+      best = i;
+      bestCands = c;
       if (c.length === 1) break;
     }
   }

@@ -49,7 +49,11 @@ function KeysPopover({
   return (
     <span className="tools-menu-wrap">
       <button className="tools-menu-scrim" onClick={onClose} aria-label="Close" />
-      <div className="tools-menu tools-keys" role="dialog" aria-label="Keyboard shortcuts">
+      <div
+        className="tools-menu tools-keys"
+        role="dialog"
+        aria-label="Keyboard shortcuts"
+      >
         <span className="tools-menu-keys-head">Keys</span>
         <span>
           <kbd>Esc</kbd> back
@@ -332,8 +336,7 @@ export function Result({
   const playMs = slot?.playMs;
   const hinted = (slot?.hints ?? 0) > 0;
   const best = diff ? stats.best?.[diff] : undefined;
-  const newBest =
-    won && !hinted && playMs !== undefined && playMs > 0 && best === playMs;
+  const newBest = won && !hinted && playMs !== undefined && playMs > 0 && best === playMs;
   const streak = stats.streak ?? 0;
 
   useEffect(() => {
@@ -373,9 +376,7 @@ export function Result({
         {(streak > 1 || (stats.longestStreak ?? 0) > 1) && (
           <p className="result-streak">
             {streak > 1 ? <>🔥 {streak} win streak</> : <>Streak over</>}
-            {(stats.longestStreak ?? 0) > streak && (
-              <> · longest {stats.longestStreak}</>
-            )}
+            {(stats.longestStreak ?? 0) > streak && <> · longest {stats.longestStreak}</>}
           </p>
         )}
         {won && hinted && <p className="result-hinted">💡 Solved with hints</p>}

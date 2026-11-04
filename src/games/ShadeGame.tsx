@@ -1,4 +1,10 @@
-import { isValidElement, useEffect, useMemo, type CSSProperties, type ReactNode } from "react";
+import {
+  isValidElement,
+  useEffect,
+  useMemo,
+  type CSSProperties,
+  type ReactNode
+} from "react";
 import { useMarkPaint } from "../lib/drag";
 import type { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
@@ -22,7 +28,8 @@ function shadeClueText(node: ReactNode): string {
   if (node === null || node === undefined || typeof node === "boolean") return "";
   if (typeof node === "string" || typeof node === "number") return String(node);
   if (Array.isArray(node)) return node.map(shadeClueText).filter(Boolean).join(" ");
-  if (isValidElement<{ children?: ReactNode }>(node)) return shadeClueText(node.props.children);
+  if (isValidElement<{ children?: ReactNode }>(node))
+    return shadeClueText(node.props.children);
   return "";
 }
 
@@ -134,9 +141,9 @@ export function ShadeGame({
                 key={i}
                 className="shade-cell shade-clue"
                 role="gridcell"
-                aria-label={`Row ${Math.floor(i / n) + 1}, column ${(i % n) + 1}, clue ${
-                  shadeClueText(clue)
-                }`}
+                aria-label={`Row ${Math.floor(i / n) + 1}, column ${(i % n) + 1}, clue ${shadeClueText(
+                  clue
+                )}`}
               >
                 {clue}
               </div>

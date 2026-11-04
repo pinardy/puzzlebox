@@ -17,7 +17,8 @@ const HELP =
 type Cell = 0 | 1 | 2; // empty | white | black
 
 function nbrs(i: number, n: number): number[] {
-  const r = Math.floor(i / n), c = i % n;
+  const r = Math.floor(i / n),
+    c = i % n;
   const out: number[] = [];
   if (r > 0) out.push(i - n);
   if (r < n - 1) out.push(i + n);
@@ -39,7 +40,8 @@ function blocks2x2(cells: Cell[], n: number): Set<number> {
 }
 
 function connected(cells: Cell[], n: number, col: Cell): boolean {
-  let start = -1, count = 0;
+  let start = -1,
+    count = 0;
   for (let i = 0; i < n * n; i++)
     if (cells[i] === col) {
       count++;
@@ -77,7 +79,8 @@ function generateYinYang(
   const attemptOnce = (): Cell[] | null => {
     const black = Array(total).fill(false);
     const whiteConnectedWithout = (extra: number): boolean => {
-      let start = -1, count = 0;
+      let start = -1,
+        count = 0;
       for (let i = 0; i < total; i++)
         if (!black[i] && i !== extra) {
           count++;
@@ -100,13 +103,20 @@ function generateYinYang(
       return reach === count;
     };
     const white2x2sAt = (i: number): number => {
-      const r = Math.floor(i / n), c = i % n;
+      const r = Math.floor(i / n),
+        c = i % n;
       let count = 0;
       for (let dr = -1; dr <= 0; dr++)
         for (let dc = -1; dc <= 0; dc++) {
-          const rr = r + dr, cc = c + dc;
+          const rr = r + dr,
+            cc = c + dc;
           if (rr < 0 || cc < 0 || rr + 1 >= n || cc + 1 >= n) continue;
-          const q = [rr * n + cc, rr * n + cc + 1, (rr + 1) * n + cc, (rr + 1) * n + cc + 1];
+          const q = [
+            rr * n + cc,
+            rr * n + cc + 1,
+            (rr + 1) * n + cc,
+            (rr + 1) * n + cc + 1
+          ];
           if (q.every((j) => !black[j])) count++;
         }
       return count;
@@ -115,8 +125,10 @@ function generateYinYang(
       for (let r = 0; r + 1 < n; r++)
         for (let c = 0; c + 1 < n; c++)
           if (
-            !black[r * n + c] && !black[r * n + c + 1] &&
-            !black[(r + 1) * n + c] && !black[(r + 1) * n + c + 1]
+            !black[r * n + c] &&
+            !black[r * n + c + 1] &&
+            !black[(r + 1) * n + c] &&
+            !black[(r + 1) * n + c + 1]
           )
             return true;
       return false;
@@ -136,7 +148,8 @@ function generateYinYang(
       let placed = false;
       let sum = cands.reduce((a, c) => a + c.w, 0);
       while (cands.length) {
-        let roll = rng() * sum, idx = 0;
+        let roll = rng() * sum,
+          idx = 0;
         for (let k = 0; k < cands.length; k++) {
           roll -= cands[k].w;
           if (roll <= 0) {
@@ -238,8 +251,7 @@ export default function YinYang({ onExit }: { onExit: () => void }) {
     <div className="game game-yinyang">
       <GameHeader title="Yin-Yang" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
-        One connected white group, one connected black group, no 2×2 of
-        either.
+        One connected white group, one connected black group, no 2×2 of either.
       </p>
       <GameTools
         diff={diff}
@@ -279,8 +291,8 @@ export default function YinYang({ onExit }: { onExit: () => void }) {
 
       {flash && !saved.done && (
         <p className="game-help">
-          Almost — every square is filled with no 2×2 blocks, but one of the
-          colours is split into separate groups.
+          Almost — every square is filled with no 2×2 blocks, but one of the colours is
+          split into separate groups.
         </p>
       )}
 

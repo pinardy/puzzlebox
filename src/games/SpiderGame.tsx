@@ -77,7 +77,8 @@ export function SpiderGame({
   wonMessage: (moves: number) => string;
   onExit: () => void;
 }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle }= useGame<SavedState>((s) => deal(s, rules)
+  const { seed, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>((s) =>
+    deal(s, rules)
   );
   const [sel, setSel] = useState<Sel>(null);
 
@@ -181,11 +182,7 @@ export function SpiderGame({
 
       <div className="kl-tableau">
         {saved.cols.map((pile, p) => (
-          <Pile
-            key={p}
-            name={`Column ${p + 1}`}
-            onTap={() => tapPile(p, null)}
-          >
+          <Pile key={p} name={`Column ${p + 1}`} onTap={() => tapPile(p, null)}>
             {pile.length === 0 && (
               <PlayingCard
                 card={null}

@@ -4,8 +4,14 @@
    wings are far too wide for a 480px column. Fan cards get their own
    width; the four foundations keep the shared .kl-card sizing, so they
    read as bigger targets than the tableau. */
-.game-castle { --bc-w: clamp(30px, 8.4vw, 40px); --bc-off: clamp(16px, 4.6vw, 24px); }
+.game-castle {
+  --bc-w: clamp(30px, 8.4vw, 40px);
+  --bc-off: clamp(16px, 4.6vw, 24px);
+}
 
 @media (min-width: 700px) {
-  .game-castle { --bc-w: 48px; --bc-off: 30px; }
+  .game-castle {
+    --bc-w: 48px;
+    --bc-off: 30px;
+  }
 }

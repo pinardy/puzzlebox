@@ -49,7 +49,8 @@ function deal(seed: string): SavedState {
 }
 
 export default function Calculation({ onExit }: { onExit: () => void }) {
-  const { seed, saved, commit, undo, canUndo, newPuzzle }= useGame<SavedState>((s) => deal(s)
+  const { seed, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>((s) =>
+    deal(s)
   );
 
   const current = saved.stock.length ? saved.stock[saved.stock.length - 1] : null;
@@ -73,7 +74,9 @@ export default function Calculation({ onExit }: { onExit: () => void }) {
       // Out of deck: only playable waste tops can still move.
       const canMove = next.wastes.some((w) => {
         const top = w.length ? w[w.length - 1] : null;
-        return top !== null && next.founds.some((f, k) => f < 13 && wants(k, f) === rank(top));
+        return (
+          top !== null && next.founds.some((f, k) => f < 13 && wants(k, f) === rank(top))
+        );
       });
       if (!canMove) {
         next.done = true;

@@ -24,12 +24,26 @@
   aspect-ratio: 1;
 }
 
-.fap-cell.fill { background: var(--blue); color: #fff; }
+.fap-cell.fill {
+  background: var(--blue);
+  color: #fff;
+}
 
-.fap-cell.cross { color: var(--ink-soft); background: var(--paper); }
+.fap-cell.cross {
+  color: var(--ink-soft);
+  background: var(--paper);
+}
 
-.fap-cell.satisfied:not(.fill) { color: var(--ink-soft); opacity: 0.75; }
+.fap-cell.satisfied:not(.fill) {
+  color: var(--ink-soft);
+  opacity: 0.75;
+}
 
-.fap-cell.broken { color: var(--rose); }
+.fap-cell.broken {
+  color: var(--rose);
+}
 
-.fap-cell.fill.broken { background: var(--rose); color: #fff; }
+.fap-cell.fill.broken {
+  background: var(--rose);
+  color: #fff;
+}

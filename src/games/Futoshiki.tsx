@@ -28,7 +28,12 @@ interface Puzzle {
   solution: number[];
 }
 
-function generateFutoshiki(seed: string, n: number, clues: number, givenCount: number): Puzzle {
+function generateFutoshiki(
+  seed: string,
+  n: number,
+  clues: number,
+  givenCount: number
+): Puzzle {
   const sol = generateLatin(`futo-${seed}`, n);
   const rng = makeRng(`futo-clues-${seed}`);
 
@@ -87,9 +92,11 @@ export default function Futoshiki({ onExit }: { onExit: () => void }) {
     for (let i = 0; i < n * n; i++) {
       const v = board[i];
       if (v === 0) continue;
-      const r = Math.floor(i / n), c = i % n;
+      const r = Math.floor(i / n),
+        c = i % n;
       for (let k = 0; k < n; k++) {
-        const row = r * n + k, col = k * n + c;
+        const row = r * n + k,
+          col = k * n + c;
         if (row !== i && board[row] === v) bad.add(i);
         if (col !== i && board[col] === v) bad.add(i);
       }
@@ -167,14 +174,16 @@ export default function Futoshiki({ onExit }: { onExit: () => void }) {
   };
 
   const G = 2 * n - 1;
-  const track = Array(n - 1).fill("1fr 0.42fr").join(" ") + " 1fr";
+  const track =
+    Array(n - 1)
+      .fill("1fr 0.42fr")
+      .join(" ") + " 1fr";
 
   return (
     <div className="game game-futoshiki">
       <GameHeader title="Futoshiki" onExit={onExit} onNew={() => startNew()} />
       <p className="game-hint">
-        Every row and column holds 1–{n} once; the arrows point at the smaller
-        number.
+        Every row and column holds 1–{n} once; the arrows point at the smaller number.
       </p>
       <GameTools
         diff={diff}
@@ -192,7 +201,8 @@ export default function Futoshiki({ onExit }: { onExit: () => void }) {
         aria-label="Futoshiki board"
       >
         {Array.from({ length: G * G }).map((_, k) => {
-          const gr = Math.floor(k / G), gc = k % G;
+          const gr = Math.floor(k / G),
+            gc = k % G;
           if (gr % 2 === 0 && gc % 2 === 0) {
             const i = (gr / 2) * n + gc / 2;
             const given = givens[i] !== 0;
@@ -223,15 +233,11 @@ export default function Futoshiki({ onExit }: { onExit: () => void }) {
           }
           if (gr % 2 === 0 && gc % 2 === 1) {
             const a = (gr / 2) * n + (gc - 1) / 2;
-            return (
-              <SignMark key={k} mark={sign(a, a + 1, true)} names={signName} />
-            );
+            return <SignMark key={k} mark={sign(a, a + 1, true)} names={signName} />;
           }
           if (gr % 2 === 1 && gc % 2 === 0) {
             const a = ((gr - 1) / 2) * n + gc / 2;
-            return (
-              <SignMark key={k} mark={sign(a, a + n, false)} names={signName} />
-            );
+            return <SignMark key={k} mark={sign(a, a + n, false)} names={signName} />;
           }
           return <span key={k} />;
         })}

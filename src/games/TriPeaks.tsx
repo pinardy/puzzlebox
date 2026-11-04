@@ -28,11 +28,11 @@ const SPOTS: Spot[] = (() => {
   for (let p = 0; p < 3; p++)
     out.push({ x: 3 * p + 1.5, r: 0, covers: [3 + 2 * p, 4 + 2 * p] });
   for (let j = 0; j < 6; j++) {
-    const p = Math.floor(j / 2), k = j % 2;
+    const p = Math.floor(j / 2),
+      k = j % 2;
     out.push({ x: 3 * p + k + 1, r: 1, covers: [9 + 3 * p + k, 10 + 3 * p + k] });
   }
-  for (let i = 0; i < 9; i++)
-    out.push({ x: i + 0.5, r: 2, covers: [19 + i, 20 + i] });
+  for (let i = 0; i < 9; i++) out.push({ x: i + 0.5, r: 2, covers: [19 + i, 20 + i] });
   for (let i = 0; i < 10; i++) out.push({ x: i, r: 3, covers: null });
   return out;
 })();
@@ -72,15 +72,13 @@ const playable = (a: number, b: number, wrap: boolean): boolean => {
 };
 
 export default function TriPeaks({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } =
-    useGame<SavedState>((s, d) => deal(s, d));
+  const { seed, diff, saved, commit, undo, canUndo, newPuzzle } = useGame<SavedState>(
+    (s, d) => deal(s, d)
+  );
   const wrap = WRAP[diff];
 
   const wasteTop = saved.waste[saved.waste.length - 1];
-  const left = useMemo(
-    () => saved.removed.filter((r) => !r).length,
-    [saved.removed]
-  );
+  const left = useMemo(() => saved.removed.filter((r) => !r).length, [saved.removed]);
 
   /** Mark `next` finished if the peaks are clear or dead, returning the
    *  outcome for the commit that ends the game. */
@@ -161,7 +159,9 @@ export default function TriPeaks({ onExit }: { onExit: () => void }) {
           card={null}
           faceDown
           onClick={tapStock}
-          aria-label={saved.stock.length ? `Stock, ${nCards(saved.stock.length)}` : "Stock, empty"}
+          aria-label={
+            saved.stock.length ? `Stock, ${nCards(saved.stock.length)}` : "Stock, empty"
+          }
         >
           {saved.stock.length || "—"}
         </PlayingCard>

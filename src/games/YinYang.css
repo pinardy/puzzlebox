@@ -23,8 +23,15 @@
   aspect-ratio: 1;
 }
 
-.yy-cell.given { background: var(--paper); cursor: default; }
+.yy-cell.given {
+  background: var(--paper);
+  cursor: default;
+}
 
-.yy-cell.conflict { background: #fbe6ef; }
+.yy-cell.conflict {
+  background: #fbe6ef;
+}
 
-:root[data-theme="dark"] .yy-cell.conflict { background: #45222f; }
+:root[data-theme="dark"] .yy-cell.conflict {
+  background: #45222f;
+}
