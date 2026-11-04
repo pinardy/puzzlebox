@@ -12,6 +12,7 @@ import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Slant.css";
 
 const SIZE: Record<Diff, number> = { easy: 5, medium: 7, hard: 9 };
 const REVEAL: Record<Diff, number> = { easy: 0.62, medium: 0.45, hard: 0.32 };

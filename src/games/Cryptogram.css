@@ -1,0 +1,52 @@
+/* Cryptogram: styles only this board uses. Loaded with its chunk. */
+
+.cg-quote {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  justify-content: center;
+  margin: 10px 0;
+}
+
+.cg-word { display: flex; gap: 2px; }
+
+.cg-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  border: none;
+  background: transparent;
+  padding: 1px;
+  cursor: pointer;
+}
+
+.cg-guess {
+  width: clamp(16px, 4.6vw, 22px);
+  height: clamp(20px, 5.4vw, 26px);
+  border-bottom: 2px solid var(--ink-soft);
+  font-family: var(--mono);
+  font-size: clamp(13px, 3.6vw, 17px);
+  font-weight: 700;
+  color: var(--ink);
+  display: grid;
+  place-items: center;
+}
+
+.cg-cipher { font-size: 10px; color: var(--ink-soft); font-family: var(--mono); }
+
+.cg-cell.selected .cg-guess {
+  border-bottom-color: var(--blue);
+  background: var(--grid-line);
+  border-radius: 4px 4px 0 0;
+}
+
+.cg-cell.given .cg-guess { color: var(--ink-soft); border-bottom-style: dotted; }
+
+.cg-cell.clash .cg-guess { color: var(--amber); }
+
+.cg-punct {
+  align-self: flex-end;
+  font-weight: 700;
+  color: var(--ink-soft);
+}

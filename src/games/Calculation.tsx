@@ -4,6 +4,7 @@ import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
+import "./Calculation.css";
 
 // Foundation k counts up in steps of k+1, wrapping past the king: the ace
 // pile is A,2,3…K, the two pile is 2,4,6…, and so on. Suit never matters.

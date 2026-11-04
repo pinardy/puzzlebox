@@ -1,0 +1,49 @@
+/* Hitori: styles only this board uses. Loaded with its chunk. */
+
+.hitori-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--card);
+  align-self: center;
+  width: min(100%, 400px);
+  aspect-ratio: 1;
+  margin: 6px 0;
+}
+
+.hitori-cell {
+  border: 0.5px solid var(--grid-line);
+  background: var(--card);
+  font-family: var(--mono);
+  font-size: clamp(16px, 4.8vw, 24px);
+  font-weight: 600;
+  color: var(--ink);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  cursor: pointer;
+  position: relative;
+}
+
+.hitori-cell.shaded { background: var(--ink); color: var(--paper); }
+
+.hitori-cell.circled::after {
+  content: "";
+  position: absolute;
+  width: 70%;
+  height: 70%;
+  border: 2px solid var(--indigo);
+  border-radius: 50%;
+}
+
+.hitori-cell.conflict.shaded { background: var(--rose); color: #fff; }
+
+@media (min-width: 700px) {
+  .hitori-grid { width: min(100%, 520px); }
+  .hitori-grid {
+    margin-top: auto;
+    margin-bottom: auto;
+  }
+}

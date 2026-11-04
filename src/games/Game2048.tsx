@@ -4,6 +4,7 @@ import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Game2048.css";
 
 const SIZE: Record<Diff, number> = { easy: 5, medium: 4, hard: 3 };
 // A 3×3 board can't realistically reach 2048 — 256 is the honest summit.

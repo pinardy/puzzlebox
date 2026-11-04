@@ -4,6 +4,7 @@ import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./LightsOut.css";
 
 const N = 5;
 const SCRAMBLES: Record<Diff, number> = { easy: 6, medium: 8, hard: 12 };

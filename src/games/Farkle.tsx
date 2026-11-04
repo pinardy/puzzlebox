@@ -4,6 +4,7 @@ import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Farkle.css";
 
 const TURNS = 10;
 const TARGET: Record<Diff, number> = { easy: 2000, medium: 3500, hard: 5000 };

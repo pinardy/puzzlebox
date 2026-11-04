@@ -13,6 +13,7 @@ import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { Foundation, PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
+import "./Agnes.css";
 
 const HELP =
   "Seven columns, everything face-up, and the card dealt after them sets " +

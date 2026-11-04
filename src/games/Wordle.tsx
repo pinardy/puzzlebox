@@ -6,6 +6,7 @@ import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result, Toast } from "./ui";
+import "./Wordle.css";
 
 const ROWS = 6;
 const LEN: Record<Diff, number> = { easy: 4, medium: 5, hard: 5 };

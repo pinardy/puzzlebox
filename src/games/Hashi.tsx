@@ -4,6 +4,7 @@ import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Hashi.css";
 
 const LEVELS: Record<Diff, [number, number]> = {
   easy: [7, 7],

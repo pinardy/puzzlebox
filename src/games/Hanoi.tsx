@@ -3,6 +3,7 @@ import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Hanoi.css";
 
 // Hard once jumped to 8 disks (255 optimal moves) — a slog on touch.
 const DISKS: Record<Diff, number> = { easy: 5, medium: 6, hard: 7 };

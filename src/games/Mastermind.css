@@ -1,0 +1,66 @@
+/* Mastermind: styles only this board uses. Loaded with its chunk. */
+
+.mm-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-self: center;
+  width: min(100%, 320px);
+  margin: auto 0;
+}
+
+.mm-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mm-peg {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 2px solid var(--ink);
+  flex-shrink: 0;
+  padding: 0;
+  display: grid;
+  place-items: center;
+}
+
+/* Several of the eight peg colours collide for red-green colour
+   blindness, and no palette of eight avoids that — so number them. */
+:root[data-cb="1"] .mm-peg::after {
+  content: attr(data-c);
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 700;
+  color: #12181f;
+  text-shadow: 0 0 3px rgba(255, 255, 255, 0.85);
+}
+
+.mm-slot { background: var(--card); cursor: pointer; }
+
+.mm-current .mm-peg { border-style: dashed; }
+
+.mm-answer { opacity: 0.85; }
+
+.mm-feedback {
+  font-family: var(--mono);
+  font-size: 15px;
+  letter-spacing: 2px;
+  margin-left: auto;
+  color: var(--ink);
+}
+
+.mm-count { color: var(--ink-soft); font-size: 13px; letter-spacing: 0; }
+
+.mm-palette {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.mm-pick { cursor: pointer; box-shadow: var(--shadow); }
+
+.mm-pick:active { transform: translateY(2px); box-shadow: none; }

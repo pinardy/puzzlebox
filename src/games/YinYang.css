@@ -1,0 +1,30 @@
+/* YinYang: styles only this board uses. Loaded with its chunk. */
+
+.yy-grid {
+  align-self: center;
+  width: min(100%, 420px);
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  border: 2px solid var(--ink);
+  background: var(--card);
+  aspect-ratio: 1;
+}
+
+.yy-cell {
+  border: 0.5px solid var(--grid-line);
+  background: var(--card);
+  padding: 0;
+  cursor: pointer;
+  font-size: clamp(16px, 4.5vw, 26px);
+  line-height: 1;
+  color: var(--ink);
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+}
+
+.yy-cell.given { background: var(--paper); cursor: default; }
+
+.yy-cell.conflict { background: #fbe6ef; }
+
+:root[data-theme="dark"] .yy-cell.conflict { background: #45222f; }

@@ -4,6 +4,7 @@ import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./BallSort.css";
 
 const COLOR_COUNT: Record<Diff, number> = { easy: 4, medium: 6, hard: 8 };
 const TUBE_SIZE = 4;

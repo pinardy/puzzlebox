@@ -1,0 +1,110 @@
+/* Yajilin: styles only this board uses. Loaded with its chunk. */
+
+.yj-grid {
+  display: grid;
+  gap: 0;
+  align-self: center;
+  width: min(100%, 440px);
+  aspect-ratio: 1;
+  margin: 6px 0;
+  touch-action: manipulation;
+}
+
+.yj-cell {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--grid-line);
+  border-radius: 4px;
+  background: var(--card);
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: clamp(11px, 3.2vw, 17px);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--grid-line);
+}
+
+.yj-cell.on { color: var(--coral); }
+
+.yj-cell.shade { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+
+.yj-cell.bad { border-color: var(--rose); box-shadow: inset 0 0 0 2px var(--rose); color: var(--rose); }
+
+.yj-cell.shade.bad { background: var(--rose); border-color: var(--rose); color: #fff; }
+
+.yj-clue {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  background: #e5eaf0;
+  border-color: var(--ink-soft);
+  color: var(--ink);
+  cursor: default;
+  font-size: clamp(9px, 2.7vw, 14px);
+}
+
+.yj-arrow { font-family: var(--body); }
+
+.yj-num { font-variant-numeric: tabular-nums; }
+
+.yj-clue.ok { box-shadow: inset 0 0 0 2px var(--green); }
+
+.yj-clue.ok .yj-num { text-decoration: line-through; color: var(--green); }
+
+.yj-clue.over { box-shadow: inset 0 0 0 2px var(--rose); }
+
+.yj-clue.over .yj-num { color: var(--rose); }
+
+/* The segment buttons sit in the narrow tracks between cells; the negative
+   margin steals a few pixels back from each neighbour so the tap target
+   stays thumb-sized on a 10×10 board, and z-index keeps the drawn line
+   painted over the cell borders. */
+.yj-edge {
+  position: relative;
+  z-index: 1;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  color: var(--ink-soft);
+  font-size: clamp(9px, 2.4vw, 12px);
+}
+
+.yj-edge.h { margin: 0 -3px; }
+
+.yj-edge.v { margin: -3px 0; }
+
+.yj-edge::before {
+  content: "";
+  position: absolute;
+  background: var(--grid-line);
+  border-radius: 2px;
+}
+
+.yj-edge.h::before { left: 0; right: 0; height: 2px; }
+
+.yj-edge.v::before { top: 0; bottom: 0; width: 2px; }
+
+.yj-edge.line::before { background: var(--coral); }
+
+.yj-edge.h.line::before { height: 6px; }
+
+.yj-edge.v.line::before { width: 6px; }
+
+.yj-edge.line.bad::before { background: var(--rose); }
+
+.yj-edge.off::before { background: transparent; }
+
+:root[data-theme="dark"] .yj-clue { background: #2a3340; }
+
+:root[data-theme="dark"] .yj-clue.ok .yj-num { color: #5fd39b; }
+
+:root[data-theme="dark"] .yj-clue.over .yj-num { color: #f5799f; }
+
+@media (min-width: 700px) {
+  .yj-grid { width: min(100%, 520px); margin-top: auto; margin-bottom: auto; }
+}

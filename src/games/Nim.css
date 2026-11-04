@@ -1,0 +1,71 @@
+/* Nim: styles only this board uses. Loaded with its chunk. */
+
+.nm-heaps {
+  align-self: center;
+  width: min(100%, 420px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.nm-heap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
+
+.nm-label {
+  flex: none;
+  width: 16px;
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  text-align: center;
+}
+
+.nm-row { display: flex; flex-wrap: wrap; gap: 6px; min-height: 30px; align-items: center; }
+
+.nm-counter {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  background: var(--teal);
+  /* White reads on the teal and rose fills, which are the same in both
+     themes, so this needs no dark override. */
+  color: #fff;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.nm-counter:disabled { cursor: default; opacity: 0.7; }
+
+.nm-counter.nm-doomed { background: var(--rose); }
+
+.nm-counter.nm-tip { outline: 3px solid var(--amber); outline-offset: 2px; }
+
+.nm-gone { font-family: var(--mono); font-size: 12px; color: var(--ink-soft); }
+
+.nm-turn { color: var(--ink-soft); }
+
+.nm-turn.nm-thinking { color: var(--blue); }
+
+.nm-note {
+  margin: 2px 0 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  text-align: center;
+}

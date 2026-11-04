@@ -4,6 +4,7 @@ import { type Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Codeword.css";
 
 const GIVENS: Record<Diff, number> = { easy: 4, medium: 3, hard: 2 };
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");

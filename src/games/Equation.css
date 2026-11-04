@@ -1,0 +1,8 @@
+/* Equation: styles only this board uses. Loaded with its chunk. */
+
+.eq-grid .word-cell {
+  width: min(42px, 10.5vw);
+  height: min(42px, 10.5vw);
+  font-size: 20px;
+  border-radius: 6px;
+}

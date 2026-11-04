@@ -4,6 +4,7 @@ import { type Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result, Toast } from "./ui";
+import "./Typeshift.css";
 
 const COUNT: Record<Diff, number> = { easy: 3, medium: 4, hard: 5 };
 const HELP =

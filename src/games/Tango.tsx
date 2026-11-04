@@ -4,6 +4,7 @@ import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Tango.css";
 
 const REMOVALS: Record<Diff, number> = { easy: 22, medium: 26, hard: 30 };
 const HELP =

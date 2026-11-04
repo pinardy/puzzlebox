@@ -5,6 +5,7 @@ import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./WordSearch.css";
 
 const GRID = 10;
 const WORDS: Record<Diff, number> = { easy: 6, medium: 7, hard: 9 };

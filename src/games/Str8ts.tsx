@@ -6,6 +6,7 @@ import { useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
 import { Numpad } from "./Numpad";
+import "./Str8ts.css";
 
 const SIZE: Record<Diff, number> = { easy: 6, medium: 6, hard: 7 };
 const REVEAL: Record<Diff, number> = { easy: 0.42, medium: 0.32, hard: 0.28 };

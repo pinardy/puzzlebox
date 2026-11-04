@@ -5,6 +5,7 @@ import { useGame } from "../lib/useGame";
 import { generateBee, geniusScore, isPangram, rankFor, scoreWord } from "../lib/bee";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result, Toast } from "./ui";
+import "./SpellingBee.css";
 
 /** Words a set yields. A fat set forgives a miss — no single word carries
  *  much of the total — while a lean one leans on its longest words, and on

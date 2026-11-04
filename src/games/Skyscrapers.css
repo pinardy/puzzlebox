@@ -1,0 +1,54 @@
+/* Skyscrapers: styles only this board uses. Loaded with its chunk. */
+
+.sky-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--gn), 1fr);
+  align-self: center;
+  width: min(100%, 420px);
+  aspect-ratio: 1;
+  margin: 6px 0;
+  gap: 2px;
+}
+
+.sky-cell {
+  border: 1.5px solid var(--ink);
+  border-radius: 8px;
+  background: var(--card);
+  font-family: var(--mono);
+  font-size: clamp(16px, 4.6vw, 24px);
+  font-weight: 600;
+  color: var(--teal);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  cursor: pointer;
+}
+
+.sky-cell.selected { outline: 2.5px solid var(--teal); outline-offset: -2.5px; }
+
+.sky-cell.conflict { color: var(--rose); background: #fbe6ef; }
+
+.sky-clue {
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-size: clamp(12px, 3.4vw, 17px);
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.sky-clue.ok { color: var(--green); }
+
+.sky-clue.bad { color: var(--rose); }
+
+@media (min-width: 700px) {
+  .sky-grid { width: min(100%, 520px); }
+  .sky-grid {
+    margin-top: auto;
+    margin-bottom: auto;
+  }
+}
+
+:root[data-theme="dark"] .sky-cell.conflict {
+  background: #45222f;
+}

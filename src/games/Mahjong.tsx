@@ -4,6 +4,7 @@ import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Mahjong.css";
 
 const HELP =
   "Clear the board by removing matching pairs. A tile is free when " +

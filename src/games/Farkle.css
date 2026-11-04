@@ -1,0 +1,47 @@
+/* Farkle: styles only this board uses. Loaded with its chunk. */
+
+.fk-status {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-self: center;
+  width: min(100%, 440px);
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+.fk-status b { color: var(--ink); font-family: var(--mono); }
+
+.fk-farkle {
+  margin: 0;
+  align-self: center;
+  font-weight: 700;
+  color: var(--rose);
+}
+
+.fk-actions { display: flex; gap: 10px; justify-content: center; }
+
+.fk-btn {
+  border: 1.5px solid var(--ink);
+  border-radius: 10px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.fk-btn:active { transform: translateY(2px); box-shadow: none; }
+
+.fk-btn:disabled { opacity: 0.45; box-shadow: none; cursor: default; }
+
+.fk-btn.result-primary { background: var(--ink); color: var(--paper); }
+
+.fk-legend {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ink-soft);
+  text-align: center;
+}

@@ -4,6 +4,7 @@ import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./YinYang.css";
 
 const SIZE: Record<Diff, number> = { easy: 6, medium: 8, hard: 10 };
 const REVEAL: Record<Diff, number> = { easy: 0.4, medium: 0.32, hard: 0.26 };

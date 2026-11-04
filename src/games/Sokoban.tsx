@@ -4,6 +4,7 @@ import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Sokoban.css";
 
 const SIZE: Record<Diff, number> = { easy: 7, medium: 8, hard: 9 };
 const BOXES: Record<Diff, number> = { easy: 2, medium: 3, hard: 4 };

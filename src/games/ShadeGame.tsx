@@ -4,6 +4,7 @@ import type { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./ShadeGame.css";
 
 /** What a shading puzzle has to tell this board: how big it is, which
  *  cells carry clues and how to draw them, whether a shading wins, and

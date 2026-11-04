@@ -1,0 +1,17 @@
+/* Killer: styles only this board uses. Loaded with its chunk. */
+
+.killer-cell { position: relative; }
+
+.killer-cell.kc-t { border-top: 1.5px dashed var(--ink-soft); }
+
+.killer-cell.kc-l { border-left: 1.5px dashed var(--ink-soft); }
+
+.killer-sum {
+  position: absolute;
+  top: 0;
+  left: 2px;
+  font-size: 8px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  line-height: 1.4;
+}

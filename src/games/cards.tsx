@@ -1,5 +1,6 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { SUITS, cardId, isRed, label } from "../lib/cards";
+import "./cards.css";
 
 type ButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children">;
 

@@ -4,6 +4,7 @@ import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Stars.css";
 
 const SIZE: Record<Diff, number> = { easy: 8, medium: 9, hard: 10 };
 const HELP =

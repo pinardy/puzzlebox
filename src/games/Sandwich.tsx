@@ -7,6 +7,7 @@ import { useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
 import { Numpad } from "./Numpad";
+import "./Sandwich.css";
 
 const GIVENS: Record<Diff, number> = { easy: 26, medium: 20, hard: 14 };
 const HELP =

@@ -1,0 +1,41 @@
+/* ShadeGame: styles only this board uses. Loaded with its chunk. */
+
+.shade-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+  gap: 2px;
+  align-self: center;
+  width: min(100%, 460px);
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  padding: 3px;
+  background: var(--grid-line);
+}
+
+.shade-cell {
+  aspect-ratio: 1;
+  border: none;
+  border-radius: 3px;
+  background: var(--card);
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  color: var(--ink-soft);
+  font-size: clamp(9px, 2.6vw, 13px);
+}
+
+.shade-cell.shade-on { background: var(--ink); }
+
+.shade-cell.shade-off { color: var(--ink-soft); }
+
+.shade-cell.shade-clue {
+  background: var(--paper);
+  cursor: default;
+  color: var(--ink);
+}
+
+/* Dark theme tweaks for the new boards. */
+:root[data-theme="dark"] .shade-cell.shade-clue { background: #202b39; }

@@ -1,0 +1,13 @@
+/* Pyramid: styles only this board uses. Loaded with its chunk. */
+
+.pyr-board {
+  aspect-ratio: 10 / 7.6;
+  width: min(100%, 420px);
+}
+
+.pyr-card {
+  width: 12.5%;
+  height: 19%;
+  left: calc(var(--x) * 12.5% + 6.5%);
+  top: calc(var(--r) * 13.5%);
+}

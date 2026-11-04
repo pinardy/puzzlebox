@@ -5,6 +5,7 @@ import { useGame } from "../lib/useGame";
 import { useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./MagicSquare.css";
 
 const SIZE: Record<Diff, number> = { easy: 3, medium: 4, hard: 4 };
 const GIVENS: Record<Diff, number> = { easy: 3, medium: 8, hard: 6 };

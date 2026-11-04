@@ -18,6 +18,7 @@ import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { Foundation, PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
+import "./PileGame.css";
 
 // Beyond this depth a fan would run off a narrow phone, so deeper cards
 // pile up at the same offset — only the exposed end must stay readable.

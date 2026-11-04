@@ -1,0 +1,55 @@
+/* TrainTracks: styles only this board uses. Loaded with its chunk. */
+
+.tt-grid {
+  align-self: center;
+  width: min(100%, 420px);
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  gap: 0;
+}
+
+.tt-corner { aspect-ratio: 1; }
+
+.tt-count {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  font-family: var(--mono);
+  font-size: clamp(11px, 3vw, 15px);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.tt-count.ok { color: var(--green); text-decoration: line-through; }
+
+.tt-count.over { color: var(--rose); }
+
+.tt-cell {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--grid-line);
+  background: var(--card);
+  padding: 0;
+  cursor: pointer;
+  user-select: none;
+  touch-action: manipulation;
+  font-family: var(--mono);
+  /* Box-drawing glyphs read as rails only when they are much bigger than
+     the clue digits. */
+  font-size: clamp(18px, 4.9vw, 26px);
+  line-height: 1;
+  color: var(--indigo);
+}
+
+.tt-cell.given { background: var(--grid-line); color: var(--ink); cursor: default; }
+
+.tt-cell.clash { color: var(--rose); outline: 2px solid var(--rose); outline-offset: -2px; }
+
+.tt-cell.edge-n { border-top: 3px solid var(--teal); }
+
+.tt-cell.edge-e { border-right: 3px solid var(--teal); }
+
+.tt-cell.edge-s { border-bottom: 3px solid var(--teal); }
+
+.tt-cell.edge-w { border-left: 3px solid var(--teal); }

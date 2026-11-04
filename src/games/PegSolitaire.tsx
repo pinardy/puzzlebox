@@ -3,6 +3,7 @@ import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./PegSolitaire.css";
 
 const HELP =
   "A peg jumps over an adjacent peg into an empty hole, and the jumped peg " +

@@ -19,6 +19,7 @@ import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result, Toast } from "./ui";
+import "./Boggle.css";
 
 const SIZE: Record<Diff, number> = { easy: 4, medium: 4, hard: 5 };
 const SHARE: Record<Diff, number> = { easy: 0.25, medium: 0.3, hard: 0.32 };

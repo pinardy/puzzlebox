@@ -5,6 +5,7 @@ import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { Foundation, PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
+import "./BakersDozen.css";
 
 const HELP =
   "Thirteen columns, everything face up, no deck to fall back on. Build " +

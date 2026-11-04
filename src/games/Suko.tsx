@@ -5,6 +5,7 @@ import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Suko.css";
 
 const LETTERS = ["A", "B", "C"];
 const CORNER = ["Top left", "Top right", "Bottom left", "Bottom right"];

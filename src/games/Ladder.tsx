@@ -5,6 +5,7 @@ import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result, Toast } from "./ui";
+import "./Ladder.css";
 
 const PAR: Record<Diff, number> = { easy: 4, medium: 5, hard: 6 };
 const KEY_ROWS = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"];

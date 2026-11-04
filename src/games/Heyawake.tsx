@@ -4,6 +4,7 @@ import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Heyawake.css";
 
 const SIZE: Record<Diff, number> = { easy: 6, medium: 7, hard: 8 };
 const CLUE_RATE: Record<Diff, number> = { easy: 0.75, medium: 0.6, hard: 0.5 };

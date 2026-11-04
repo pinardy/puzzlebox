@@ -7,6 +7,7 @@ import { useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
 import { Numpad } from "./Numpad";
+import "./Killer.css";
 
 const GIVENS: Record<Diff, number> = { easy: 12, medium: 5, hard: 0 };
 const HELP =

@@ -3,6 +3,7 @@ import { makeRng } from "../lib/rng";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Yahtzee.css";
 
 const HELP =
   "Thirteen rounds: roll up to three times, tapping dice to hold them " +

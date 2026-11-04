@@ -5,6 +5,7 @@ import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./FillAPix.css";
 
 type Mark = 0 | 1 | 2; // empty | filled | crossed
 

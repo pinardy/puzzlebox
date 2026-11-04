@@ -4,6 +4,7 @@ import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
+import "./Osmosis.css";
 
 const HELP =
   "Four reserve piles of four, and four foundation rows — one per suit. " +

@@ -10,6 +10,7 @@ import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Ripple.css";
 
 const SIZE: Record<Diff, number> = { easy: 5, medium: 6, hard: 7 };
 const GIVEN_RATE: Record<Diff, number> = { easy: 0.5, medium: 0.34, hard: 0.24 };

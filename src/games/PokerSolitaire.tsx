@@ -6,6 +6,7 @@ import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
+import "./PokerSolitaire.css";
 
 const SIZE = 5;
 const CELLS = SIZE * SIZE;

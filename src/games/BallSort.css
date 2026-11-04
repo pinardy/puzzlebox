@@ -1,0 +1,40 @@
+/* BallSort: styles only this board uses. Loaded with its chunk. */
+
+.bs-board {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  align-content: center;
+  align-self: center;
+  width: min(100%, 460px);
+  margin: auto 0;
+}
+
+.bs-tube {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: 4px;
+  width: 38px;
+  height: 152px;
+  padding: 3px;
+  border: 2.5px solid var(--ink);
+  border-top: none;
+  border-radius: 0 0 22px 22px;
+  background: var(--card);
+  cursor: pointer;
+}
+
+.bs-tube.selected { border-color: var(--amber); }
+
+.bs-ball {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid rgba(27, 39, 51, 0.4);
+  background: var(--ball);
+  flex-shrink: 0;
+}
+
+.bs-ball.lifted { transform: translateY(-10px); }

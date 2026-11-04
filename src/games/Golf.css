@@ -1,0 +1,21 @@
+/* Golf: styles only this board uses. Loaded with its chunk. */
+
+.golf-board {
+  display: flex;
+  gap: 6px;
+  align-self: center;
+  width: min(100%, 440px);
+  min-height: clamp(150px, 40vw, 190px);
+  margin-top: 6px;
+}
+
+.golf-col { position: relative; flex: 1; }
+
+.golf-card {
+  position: absolute;
+  width: 100%;
+  top: calc(var(--stack) * clamp(16px, 4.5vw, 24px));
+  left: 0;
+}
+
+.golf-card:disabled { cursor: default; }

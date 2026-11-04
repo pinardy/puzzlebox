@@ -3,6 +3,7 @@ import { RANKS, isRed, label, rank } from "../lib/cards";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Clock.css";
 
 const HELP =
   "The old fortune-telling patience, also called Travellers. Fifty-two " +

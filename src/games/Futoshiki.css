@@ -1,0 +1,10 @@
+/* Futoshiki: styles only this board uses. Loaded with its chunk. */
+
+.futo-sign {
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-size: clamp(12px, 3.4vw, 17px);
+  font-weight: 700;
+  color: var(--ink-soft);
+}

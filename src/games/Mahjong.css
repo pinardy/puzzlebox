@@ -1,0 +1,56 @@
+/* Mahjong: styles only this board uses. Loaded with its chunk. */
+
+.mj-board {
+  position: relative;
+  align-self: center;
+  width: min(100%, 460px);
+  aspect-ratio: calc(var(--mjc) / var(--mjr) / 1.25);
+  margin: 8px 0 2px;
+}
+
+.mj-tile {
+  position: absolute;
+  width: calc(100% / var(--mjc));
+  height: calc(100% / var(--mjr));
+  left: calc(var(--gx) / var(--mjc) * 100%);
+  top: calc(var(--gy) / var(--mjr) * 100%);
+  transform: translate(calc(var(--l) * -7%), calc(var(--l) * -9%));
+  z-index: calc(var(--l) * 10 + 1);
+  border: 1.5px solid var(--ink);
+  border-radius: 5px;
+  background: var(--card);
+  box-shadow: 2px 3px 0 rgba(27, 39, 51, 0.35);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 0;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.mj-tile b { font-family: var(--mono); font-size: clamp(10px, 2.9vw, 15px); }
+
+.mj-tile i { font-style: normal; font-size: clamp(8px, 2.2vw, 12px); }
+
+.mj-tile.locked { filter: brightness(0.82); cursor: default; }
+
+.mj-tile.selected { outline: 3px solid var(--blue); outline-offset: 1px; z-index: 99; }
+
+.mj-hue0 b,
+.mj-hue0 i { color: var(--blue); }
+
+.mj-hue1 b,
+.mj-hue1 i { color: var(--rose); }
+
+.mj-hue2 b,
+.mj-hue2 i { color: var(--green); }
+
+.mj-hue3 b,
+.mj-hue3 i { color: var(--amber); }
+
+.mj-hue4 b,
+.mj-hue4 i { color: var(--indigo); }
+
+:root[data-theme="dark"] .mj-tile { box-shadow: 2px 3px 0 rgba(0, 0, 0, 0.6); }

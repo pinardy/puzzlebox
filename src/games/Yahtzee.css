@@ -1,0 +1,46 @@
+/* Yahtzee: styles only this board uses. Loaded with its chunk. */
+
+.yz-roll { margin-left: 6px; }
+
+.yz-sheet {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin: 8px 0 auto;
+}
+
+.yz-cat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  border: 1.5px solid var(--ink);
+  border-radius: 8px;
+  background: var(--card);
+  padding: 8px 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.yz-cat b { font-family: var(--mono); font-size: 15px; }
+
+.yz-cat.scored { background: var(--grid-line); color: var(--ink-soft); cursor: default; box-shadow: none; }
+
+.yz-cat.good b { color: var(--green); }
+
+.yz-cat.scored b { color: var(--ink); }
+
+.yz-cat:disabled { opacity: 0.9; }
+
+.yz-total {
+  grid-column: 1 / -1;
+  background: var(--ink);
+  color: var(--paper);
+  cursor: default;
+}
+
+.yz-total b { font-size: 17px; }
+
+@media (min-width: 700px) {
+  .yz-sheet { max-width: 560px; width: 100%; align-self: center; }
+}

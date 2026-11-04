@@ -11,6 +11,7 @@ import {
 } from "../lib/waffle";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Waffle.css";
 
 const DEPTH: Record<Diff, number> = { easy: 8, medium: 11, hard: 13 };
 const BUDGET = 15;

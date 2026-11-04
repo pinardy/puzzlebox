@@ -16,6 +16,7 @@ import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { Foundation, PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
+import "./BeleagueredCastle.css";
 
 // Beyond this depth the fan would run off a narrow phone, so deeper cards
 // pile up at the same offset — only the exposed end has to stay readable.

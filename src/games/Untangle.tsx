@@ -4,6 +4,7 @@ import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Untangle.css";
 
 const NODES: Record<Diff, number> = { easy: 8, medium: 12, hard: 16 };
 const HELP =

@@ -19,6 +19,7 @@ import {
 } from "../lib/boxed";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result, Toast } from "./ui";
+import "./LetterBoxed.css";
 
 const HELP =
   "Twelve letters sit three to a side. Spell words by hopping from letter " +

@@ -4,6 +4,7 @@ import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Kakurasu.css";
 
 const SIZE: Record<Diff, number> = { easy: 5, medium: 6, hard: 7 };
 const HELP =

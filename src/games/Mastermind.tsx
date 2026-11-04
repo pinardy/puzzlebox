@@ -4,6 +4,7 @@ import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Mastermind.css";
 
 const ALL_COLORS = [
   "#e05252", "#e0a23b", "#2e9e6b", "#3b6fe0", "#7857c9", "#e06fb2",

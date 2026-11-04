@@ -1,0 +1,65 @@
+/* Gaps: styles only this board uses. Loaded with its chunk. */
+
+.gp-wrap {
+  align-self: center;
+  width: 100%;
+  overflow-x: auto;
+  padding: 4px 0 6px;
+  margin: 2px 0 auto;
+}
+
+.gp-board {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: max-content;
+  margin: 0 auto;
+}
+
+.gp-row { display: flex; gap: 2px; }
+
+/* Thirteen columns is the whole game, and the thirteenth is where each run
+   ends — so the row has to fit. A 2px gutter and a 26px floor get all
+   thirteen onto a 390px phone; below that the cards stop shrinking and the
+   wrapper scrolls, so the page never does. */
+.game-gaps .kl-card {
+  width: max(26px, (min(100vw - 34px, 434px) - 24px) / 13);
+  border-width: 1px;
+  border-radius: 4px;
+  font-size: 10px;
+  line-height: 1;
+}
+
+.gp-cell { position: relative; }
+
+.gp-r { font-size: 11px; font-weight: 700; }
+
+.gp-s { font-size: 10px; }
+
+.gp-ghost { color: var(--ink-soft); opacity: 0.75; }
+
+.gp-cell.gp-live { outline: 2px solid var(--amber); outline-offset: -2px; }
+
+.gp-cell.gp-target { border-color: var(--green); border-style: dashed; outline: 2px solid var(--green); outline-offset: -2px; }
+
+.gp-cell.gp-home { border-color: var(--green); }
+
+.gp-cell.selected { outline: 3px solid var(--blue); outline-offset: -1px; }
+
+.gp-mark {
+  position: absolute;
+  top: 0;
+  right: 2px;
+  font-size: 8px;
+  line-height: 1;
+  color: var(--amber);
+}
+
+.gp-stuck { color: var(--rose); font-weight: 700; }
+
+@media (min-width: 700px) {
+  .game-gaps .kl-card { width: max(28px, (min(100vw - 64px, 520px) - 36px) / 13); }
+  .gp-r { font-size: 13px; }
+  .gp-s { font-size: 12px; }
+  .gp-mark { font-size: 10px; }
+}

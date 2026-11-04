@@ -5,6 +5,7 @@ import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
+import "./Golf.css";
 
 const HELP =
   "Clear the seven columns onto the waste pile: only the bottom card of a " +

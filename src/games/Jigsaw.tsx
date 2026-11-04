@@ -6,6 +6,7 @@ import { useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
 import { Numpad } from "./Numpad";
+import "./Jigsaw.css";
 
 const HOLES: Record<Diff, number> = { easy: 40, medium: 48, hard: 54 };
 const HELP =

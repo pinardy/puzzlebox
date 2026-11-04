@@ -1,0 +1,5 @@
+/* Fillomino: styles only this board uses. Loaded with its chunk. */
+
+.fillo-cell.given .kenken-val { font-weight: 800; }
+
+.fillo-cell:not(.given) .kenken-val { color: var(--blue); }

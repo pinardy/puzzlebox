@@ -4,6 +4,7 @@ import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./SameGame.css";
 
 const CONF: Record<Diff, { w: number; h: number; colors: number }> = {
   easy: { w: 8, h: 8, colors: 4 },

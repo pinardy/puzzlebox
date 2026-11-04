@@ -1,0 +1,34 @@
+/* Norinori: styles only this board uses. Loaded with its chunk. */
+
+.nn-grid {
+  align-self: center;
+  width: min(100%, 420px);
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  aspect-ratio: 1;
+  background: var(--card);
+}
+
+.nn-cell {
+  aspect-ratio: 1;
+  border: 0.5px solid var(--grid-line);
+  background: var(--card);
+  padding: 0;
+  cursor: pointer;
+}
+
+.nn-cell.on { background: var(--purple); }
+
+.nn-cell.settled:not(.on) { background: #f2f0fa; }
+
+.nn-cell.conflict { background: var(--rose); }
+
+.nn-cell.reg-t { border-top: 2px solid var(--ink); }
+
+.nn-cell.reg-l { border-left: 2px solid var(--ink); }
+
+.nn-cell.reg-b { border-bottom: 2px solid var(--ink); }
+
+.nn-cell.reg-r { border-right: 2px solid var(--ink); }
+
+:root[data-theme="dark"] .nn-cell.settled:not(.on) { background: #232030; }

@@ -4,6 +4,7 @@ import { WORDS3, WORDS4, WORDS5, Entry } from "../lib/crossword";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./MiniCrossword.css";
 
 const N = 5;
 const KEY_ROWS = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"];

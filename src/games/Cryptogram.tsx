@@ -5,6 +5,7 @@ import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Cryptogram.css";
 
 const ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 const KEY_ROWS = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"];

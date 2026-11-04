@@ -5,6 +5,7 @@ import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { Foundation, PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
+import "./Canfield.css";
 
 const HELP =
   "The foundations start on whatever rank the first card happens to be, " +

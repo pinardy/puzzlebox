@@ -1,0 +1,8 @@
+/* Wordle: styles only this board uses. Loaded with its chunk. */
+
+/* The answer, shown after a loss. */
+.word-cell.answer-cell {
+  background: transparent;
+  border: 2px solid var(--ok);
+  color: var(--ok);
+}

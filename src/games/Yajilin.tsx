@@ -13,6 +13,7 @@ import {
 } from "../lib/yajilin";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Yajilin.css";
 
 const SIZE: Record<Diff, number> = { easy: 6, medium: 8, hard: 10 };
 const HELP =

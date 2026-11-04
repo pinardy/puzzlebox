@@ -4,6 +4,7 @@ import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Dominoes.css";
 
 // A full double-N set tiles a (N+1) × (N+2) grid exactly.
 const MAX_PIP: Record<Diff, number> = { easy: 4, medium: 5, hard: 6 };

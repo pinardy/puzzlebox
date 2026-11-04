@@ -1,0 +1,30 @@
+/* Anagram: styles only this board uses. Loaded with its chunk. */
+
+.anagram-slots { margin: auto 0 12px; }
+
+.anagram-slots.shake { animation: shake 380ms ease; }
+
+.anagram-rack {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: auto;
+}
+
+.anagram-tile {
+  flex: 0 0 auto;
+  width: 52px;
+  height: 58px;
+  max-width: none;
+  font-size: 22px;
+}
+
+.anagram-tile:disabled { opacity: 0.25; box-shadow: none; }
+
+/* The slots and tiles also carry the shared .word-grid and .key classes,
+   whose wide-screen sizing used to override the rules above. This sheet now
+   loads after the global one, so restate that override here. */
+@media (min-width: 700px) {
+  .anagram-slots { margin-top: auto; margin-bottom: auto; }
+  .anagram-tile { max-width: 48px; height: 56px; }
+}

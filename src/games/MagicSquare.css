@@ -1,0 +1,101 @@
+/* MagicSquare: styles only this board uses. Loaded with its chunk. */
+
+/* Sums live outside the board: rows down the right edge, columns along the
+   bottom, and each diagonal labelled at the corner it runs into. */
+.ms-wrap {
+  align-self: center;
+  width: min(100%, 420px);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto 1fr auto;
+  gap: 3px;
+}
+
+.ms-grid {
+  grid-area: 2 / 1;
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  border: 2px solid var(--ink);
+  background: var(--card);
+  aspect-ratio: 1;
+}
+
+.ms-cell {
+  border: 0.5px solid var(--grid-line);
+  background: var(--card);
+  padding: 0;
+  font-family: var(--mono);
+  font-size: clamp(15px, 5vw, 26px);
+  font-weight: 700;
+  color: var(--blue);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  aspect-ratio: 1;
+}
+
+.ms-cell.diag { background: #f4f1fb; }
+
+.ms-cell.given { color: var(--ink); font-weight: 800; background: var(--paper); }
+
+.ms-cell.selected { background: #c3d7f8; outline: 2px solid var(--blue); outline-offset: -2px; }
+
+.ms-rowsums { grid-area: 2 / 2; display: grid; grid-template-rows: repeat(var(--n), 1fr); }
+
+.ms-colsums { grid-area: 3 / 1; display: grid; grid-template-columns: repeat(var(--n), 1fr); }
+
+.ms-diag { display: flex; align-items: center; justify-content: flex-end; gap: 1px; color: var(--ink-soft); font-size: 12px; }
+
+.ms-up { grid-area: 1 / 2; }
+
+.ms-down { grid-area: 3 / 2; }
+
+.ms-sum {
+  display: grid;
+  place-items: center;
+  min-width: 32px;
+  padding: 1px 3px;
+  border-radius: 6px;
+  font-family: var(--mono);
+  font-size: clamp(11px, 2.9vw, 14px);
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.ms-sum.ok { color: var(--green); background: #dcf0e5; }
+
+.ms-sum.bad { color: var(--rose); background: #fbe6ef; }
+
+.ms-tray { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin-top: 4px; }
+
+.ms-chip {
+  min-width: 34px;
+  height: 34px;
+  border: 1.5px solid var(--ink);
+  border-radius: 8px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink);
+  cursor: pointer;
+  padding: 0 6px;
+}
+
+.ms-chip:active { transform: translateY(2px); box-shadow: none; }
+
+.ms-chip:disabled { opacity: 0.45; box-shadow: none; cursor: default; }
+
+/* Struck through as well as faded, so "already placed" reads without colour. */
+.ms-chip.used { opacity: 0.35; text-decoration: line-through; border-style: dashed; }
+
+:root[data-theme="dark"] .ms-cell.diag { background: #21212f; }
+
+:root[data-theme="dark"] .ms-cell.given { background: #202b39; }
+
+:root[data-theme="dark"] .ms-cell.selected { background: #2e4a6d; }
+
+:root[data-theme="dark"] .ms-sum.ok { background: #1c3a2b; }
+
+:root[data-theme="dark"] .ms-sum.bad { background: #45222f; }

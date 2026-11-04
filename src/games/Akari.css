@@ -1,0 +1,54 @@
+/* Akari: styles only this board uses. Loaded with its chunk. */
+
+.akari-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--card);
+  align-self: center;
+  width: min(100%, 420px);
+  aspect-ratio: 1;
+  margin: 6px 0;
+}
+
+.akari-cell {
+  border: 0.5px solid var(--grid-line);
+  background: var(--card);
+  font-size: clamp(12px, 3.6vw, 20px);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  cursor: pointer;
+  color: var(--ink-soft);
+}
+
+.akari-cell.lit { background: #fdf6da; }
+
+.akari-cell.conflict { background: #fbe6ef; }
+
+.akari-wall {
+  display: grid;
+  place-items: center;
+  background: var(--ink);
+  border: 0.5px solid #33424f;
+  color: var(--paper);
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: clamp(13px, 3.8vw, 20px);
+}
+
+@media (min-width: 700px) {
+  .akari-grid { width: min(100%, 500px); }
+  .akari-grid {
+    margin-top: auto;
+    margin-bottom: auto;
+  }
+}
+
+:root[data-theme="dark"] .akari-cell.lit { background: #3a3420; }
+
+:root[data-theme="dark"] .akari-cell.conflict { background: #45222f; }
+
+:root[data-theme="dark"] .akari-wall { background: #0b0e12; border-color: #2b3540; }

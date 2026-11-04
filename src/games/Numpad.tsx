@@ -1,3 +1,4 @@
+import "./Numpad.css";
 /** The digit pad under the number grids: 1…max, then a notes toggle (if
  *  the game has pencil marks) and erase. `remaining`, when given, shows
  *  how many of each digit are still to place and disables a digit that is

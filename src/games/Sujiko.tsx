@@ -6,6 +6,7 @@ import { useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
 import { Numpad } from "./Numpad";
+import "./Sujiko.css";
 
 const GIVENS: Record<Diff, number> = { easy: 3, medium: 2, hard: 1 };
 const HELP =

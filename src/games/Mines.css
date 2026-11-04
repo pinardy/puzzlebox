@@ -1,0 +1,62 @@
+/* Mines: styles only this board uses. Loaded with its chunk. */
+
+.mines-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--card);
+  align-self: center;
+  width: min(100%, 440px);
+  aspect-ratio: 1;
+  margin: 6px 0;
+}
+
+.mine-cell {
+  border: 0.5px solid var(--grid-line);
+  background: #dfe5ec;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.7);
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: clamp(11px, 3.4vw, 17px);
+  padding: 0;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.mine-cell.open { background: var(--card); box-shadow: none; cursor: default; }
+
+.mine-cell.boom { background: var(--rose); color: #fff; }
+
+.mine-cell.c1 { color: var(--blue); }
+
+.mine-cell.c2 { color: var(--green); }
+
+.mine-cell.c3 { color: var(--rose); }
+
+.mine-cell.c4 { color: var(--purple); }
+
+.mine-cell.c5 { color: #a3552b; }
+
+.mine-cell.c6 { color: var(--teal); }
+
+.mine-cell.c7 { color: var(--ink); }
+
+.mine-cell.c8 { color: var(--ink-soft); }
+
+.tool-btn.mines-flag.active { background: var(--purple); border-color: var(--purple); }
+
+@media (min-width: 700px) {
+  .mines-grid { width: min(100%, 560px); }
+  .mines-grid {
+    margin-top: auto;
+    margin-bottom: auto;
+  }
+}
+
+:root[data-theme="dark"] .mine-cell {
+  background: #2a3542;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.06);
+}

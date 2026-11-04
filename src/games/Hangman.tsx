@@ -6,6 +6,7 @@ import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Hangman.css";
 
 // Short words are brutal in hangman — fewer letters means fewer freebies —
 // so Hard pairs 4-letter answers with a shorter rope.

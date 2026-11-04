@@ -6,6 +6,7 @@ import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Anagram.css";
 
 const HELP =
   "Rearrange the scrambled letters into a real word. Tap tiles to build " +

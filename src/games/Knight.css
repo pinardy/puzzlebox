@@ -1,0 +1,39 @@
+/* Knight: styles only this board uses. Loaded with its chunk. */
+
+.kt-grid {
+  align-self: center;
+  width: min(100%, 420px);
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  border: 2px solid var(--ink);
+  aspect-ratio: 1;
+}
+
+.kt-cell {
+  aspect-ratio: 1;
+  border: none;
+  background: var(--card);
+  padding: 0;
+  font-family: var(--mono);
+  font-size: clamp(10px, 2.6vw, 14px);
+  color: var(--ink-soft);
+  display: grid;
+  place-items: center;
+  cursor: default;
+}
+
+.kt-cell.dark { background: var(--grid-line); }
+
+.kt-cell.seen { color: var(--indigo); font-weight: 700; }
+
+.kt-cell.here { background: var(--indigo); color: #fff; font-size: clamp(16px, 4.5vw, 24px); }
+
+.kt-cell.legal {
+  cursor: pointer;
+  outline: 2.5px solid var(--green);
+  outline-offset: -3px;
+}
+
+.kt-cell.suggested { background: var(--amber); color: #fff; }
+
+:root[data-theme="dark"] .kt-cell.dark { background: #202b39; }

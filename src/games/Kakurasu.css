@@ -1,0 +1,45 @@
+/* Kakurasu: styles only this board uses. Loaded with its chunk. */
+
+.ks-grid {
+  align-self: center;
+  width: min(100%, 380px);
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  gap: 2px;
+}
+
+.ks-pad { aspect-ratio: 1; }
+
+.ks-weight {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  font-family: var(--mono);
+  font-size: clamp(10px, 2.8vw, 14px);
+  color: var(--ink-soft);
+}
+
+.ks-cell {
+  aspect-ratio: 1;
+  border: 1.5px solid var(--grid-line);
+  border-radius: 4px;
+  background: var(--card);
+  padding: 0;
+  cursor: pointer;
+}
+
+.ks-cell.on { background: var(--olive); border-color: var(--ink); }
+
+.ks-target {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  font-family: var(--mono);
+  font-size: clamp(11px, 3vw, 15px);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.ks-target.ok { color: var(--green); }
+
+.ks-target.over { color: var(--rose); }

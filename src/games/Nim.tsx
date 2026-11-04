@@ -4,6 +4,7 @@ import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Nim.css";
 
 const HEAPS: Record<Diff, number> = { easy: 3, medium: 4, hard: 5 };
 const MAX: Record<Diff, number> = { easy: 5, medium: 7, hard: 9 };

@@ -18,6 +18,7 @@ import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
+import "./Gaps.css";
 
 const NAMES = ["spades", "hearts", "diamonds", "clubs"];
 const name = (id: number) => `${RANKS[rank(id) - 1]} of ${NAMES[suit(id)]}`;

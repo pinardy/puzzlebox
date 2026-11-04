@@ -4,6 +4,7 @@ import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Math24.css";
 
 const HELP =
   "Combine all four numbers with +, −, ×, ÷ to make exactly 24, using each " +

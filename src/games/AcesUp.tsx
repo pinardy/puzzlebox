@@ -5,6 +5,7 @@ import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
+import "./AcesUp.css";
 
 // Aces are the highest card here, which is why they are the survivors.
 const value = (id: number) => (rank(id) === 1 ? 14 : rank(id));

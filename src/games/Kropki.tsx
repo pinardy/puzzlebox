@@ -7,6 +7,7 @@ import { useGridKeys } from "../lib/keys";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
 import { Numpad } from "./Numpad";
+import "./Kropki.css";
 
 const SIZE: Record<Diff, number> = { easy: 4, medium: 5, hard: 6 };
 const HELP =

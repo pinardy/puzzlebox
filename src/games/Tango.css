@@ -1,0 +1,48 @@
+/* Tango: styles only this board uses. Loaded with its chunk. */
+
+.tango-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--card);
+  align-self: center;
+  width: min(100%, 380px);
+  aspect-ratio: 1;
+  margin: 6px 0;
+}
+
+.tango-cell {
+  border: 0.5px solid var(--grid-line);
+  background: var(--card);
+  font-size: clamp(18px, 5.5vw, 28px);
+  padding: 0;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.tango-cell.given { background: #f1f3f6; cursor: default; }
+
+.tango-cell.sun { color: var(--amber); }
+
+.tango-cell.moon { color: var(--indigo); }
+
+.tango-cell.conflict { background: #fbe6ef; }
+
+@media (min-width: 700px) {
+  .tango-grid { width: min(100%, 470px); }
+  .tango-grid {
+    margin-top: auto;
+    margin-bottom: auto;
+  }
+}
+
+:root[data-theme="dark"] .tango-cell.conflict {
+  background: #45222f;
+}
+
+:root[data-theme="dark"] .tango-cell.given {
+  background: #262f3a;
+}

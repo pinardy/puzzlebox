@@ -6,6 +6,7 @@ import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { Foundation, PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
+import "./Klondike.css";
 
 const DRAW: Record<Diff, number> = { easy: 1, medium: 3, hard: 3 };
 // Hard is Vegas-style: three passes through the deck in total.

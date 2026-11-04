@@ -6,6 +6,7 @@ import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
+import "./Pyramid.css";
 
 const HELP =
   "Clear the pyramid by removing pairs that add to 13 — J is 11, Q is 12, " +

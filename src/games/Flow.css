@@ -1,0 +1,47 @@
+/* Flow: styles only this board uses. Loaded with its chunk. */
+
+.flow-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--card);
+  align-self: center;
+  width: min(100%, 420px);
+  aspect-ratio: 1;
+  margin: 6px 0;
+  touch-action: none;
+  user-select: none;
+}
+
+.flow-cell {
+  position: relative;
+  border: 0.5px solid var(--grid-line);
+  display: grid;
+  place-items: center;
+}
+
+.flow-fill {
+  position: absolute;
+  inset: 12%;
+  border-radius: 22%;
+  background: var(--pipe);
+  opacity: 0.45;
+}
+
+.flow-dot {
+  position: relative;
+  width: 58%;
+  height: 58%;
+  border-radius: 50%;
+  border: 2px solid rgba(27, 39, 51, 0.4);
+}
+
+@media (min-width: 700px) {
+  .flow-grid { width: min(100%, 500px); }
+  .flow-grid {
+    margin-top: auto;
+    margin-bottom: auto;
+  }
+}

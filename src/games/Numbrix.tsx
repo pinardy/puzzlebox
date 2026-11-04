@@ -5,6 +5,7 @@ import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import "./Numbrix.css";
 
 const SIZE: Record<Diff, number> = { easy: 5, medium: 6, hard: 7 };
 const REVEAL: Record<Diff, number> = { easy: 0.45, medium: 0.34, hard: 0.26 };

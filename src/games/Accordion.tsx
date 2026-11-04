@@ -5,6 +5,7 @@ import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { PlayingCard } from "./cards";
 import { GameTools, Result } from "./ui";
+import "./Accordion.css";
 
 const HELP =
   "Fifty-two piles in a row, squeezing together like an accordion. A pile " +
