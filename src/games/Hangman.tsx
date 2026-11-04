@@ -48,6 +48,17 @@ export default function Hangman({ onExit }: { onExit: () => void }) {
     );
   }
 
+  // Hint: guess one letter of the word for free (it can't cost a life).
+  function hint() {
+    if (saved.done) return;
+    const left = [...new Set(answer)].filter((c) => !saved.guessed.includes(c));
+    if (!left.length) return;
+    const letter = left[Math.floor(Math.random() * left.length)];
+    const guessed = [...saved.guessed, letter];
+    const won = [...answer].every((c) => guessed.includes(c));
+    commit({ guessed, done: won, won }, { hint: true, outcome: won ? "won" : undefined });
+  }
+
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       if (/^[a-zA-Z]$/.test(e.key)) guess(e.key.toUpperCase());
@@ -63,7 +74,12 @@ export default function Hangman({ onExit }: { onExit: () => void }) {
         Guess the {answer.length}-letter word one letter at a time — {LIVES}{" "}
         misses and it's gone.
       </p>
-      <GameTools diff={diff} onDiff={newPuzzle} help={HELP} />
+      <GameTools
+        diff={diff}
+        onDiff={newPuzzle}
+        help={HELP}
+        onHint={saved.done ? undefined : hint}
+      />
 
       <div className="hangman-lives" aria-label={`${livesLeft} lives left`}>
         {Array.from({ length: LIVES }).map((_, i) => (
@@ -80,6 +96,12 @@ export default function Hangman({ onExit }: { onExit: () => void }) {
             return (
               <div
                 key={i}
+                role="img"
+                aria-label={`Letter ${i + 1}, ${
+                  show
+                    ? `${c}${saved.done && !saved.guessed.includes(c) ? ", missed" : ""}`
+                    : "hidden"
+                }`}
                 className={`word-cell${show ? " filled" : ""}${
                   saved.done && !saved.guessed.includes(c) ? " is-absent" : ""
                 }`}
@@ -91,7 +113,7 @@ export default function Hangman({ onExit }: { onExit: () => void }) {
         </div>
       </div>
 
-      <div className="keyboard">
+      <div className="keyboard" role="group" aria-label="Keyboard">
         {KEY_ROWS.map((row) => (
           <div className="key-row" key={row}>
             {row.split("").map((k) => {
@@ -104,6 +126,9 @@ export default function Hangman({ onExit }: { onExit: () => void }) {
                   className={`key${state}`}
                   onClick={() => guess(K)}
                   disabled={used}
+                  aria-label={`${K}${
+                    used ? (answer.includes(K) ? ", in the word" : ", not in the word") : ""
+                  }`}
                 >
                   {K}
                 </button>

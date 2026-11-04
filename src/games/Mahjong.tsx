@@ -4,6 +4,7 @@ import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import { useGridNav } from "../lib/gridnav";
 import "./Mahjong.css";
 
 const HELP =
@@ -159,6 +160,10 @@ export default function Mahjong({ onExit }: { onExit: () => void }) {
     setSelected(i);
   }
 
+  // Arrows move to the nearest tile on screen; Enter / Space selects it
+  // (the button's own click).
+  const nav = useGridNav();
+
   function startNew(d?: Diff) {
     newPuzzle(d);
     setSelected(null);
@@ -181,7 +186,7 @@ export default function Mahjong({ onExit }: { onExit: () => void }) {
         canUndo={canUndo && !saved.done}
       />
 
-      <div className="mj-board" role="group" aria-label="Mahjong board">
+      <div className="mj-board" role="group" aria-label="Mahjong board" {...nav}>
         {pos.map((p, i) => {
           if (!saved.present[i]) return null;
           const face = FACES[faces[i]];
@@ -189,6 +194,8 @@ export default function Mahjong({ onExit }: { onExit: () => void }) {
           return (
             <button
               key={i}
+              data-cell={i}
+              aria-pressed={selected === i}
               className={[
                 "mj-tile",
                 `mj-hue${face.hue}`,
@@ -203,7 +210,7 @@ export default function Mahjong({ onExit }: { onExit: () => void }) {
                 } as CSSProperties
               }
               onClick={() => tap(i)}
-              aria-label={`${face.main}${face.sub}${free ? "" : " (blocked)"}`}
+              aria-label={`${face.main}${face.sub}, layer ${p.l + 1}, ${free ? "free" : "blocked"}`}
             >
               <b>{face.main}</b>
               <i>{face.sub}</i>

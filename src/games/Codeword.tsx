@@ -4,6 +4,7 @@ import { type Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import { useGridNav } from "../lib/gridnav";
 import "./Codeword.css";
 
 const GIVENS: Record<Diff, number> = { easy: 4, medium: 3, hard: 2 };
@@ -113,6 +114,8 @@ export default function Codeword({ onExit }: { onExit: () => void }) {
   }
 
   const selNum = sel === null ? null : puzzle.nums[sel];
+  // Arrows walk the squares; Enter / Space selects (the button's own click).
+  const nav = useGridNav();
 
   return (
     <div className="game game-codeword">
@@ -133,6 +136,7 @@ export default function Codeword({ onExit }: { onExit: () => void }) {
         className="cw-grid"
         role="grid"
         aria-label="Codeword grid"
+        {...nav}
         style={{ "--n": N } as CSSProperties}
       >
         {puzzle.cells.map((ch, i) => {
@@ -144,6 +148,8 @@ export default function Codeword({ onExit }: { onExit: () => void }) {
             <button
               key={i}
               role="gridcell"
+              data-cell={i}
+              aria-selected={sel === i}
               className={[
                 "cw-cell",
                 sel === i ? "selected" : "",
@@ -151,7 +157,9 @@ export default function Codeword({ onExit }: { onExit: () => void }) {
                 isGiven(n) ? "cw-given" : ""
               ].join(" ")}
               onClick={() => setSel(i)}
-              aria-label={`Number ${n}${letter ? `, ${letter}` : ", blank"}`}
+              aria-label={`Row ${Math.floor(i / N) + 1}, column ${(i % N) + 1}, number ${n}${
+                letter ? `, ${letter}` : ", blank"
+              }${isGiven(n) ? ", given" : ""}`}
             >
               <span className="cw-letter">{letter}</span>
               <span className="cw-num">{n}</span>

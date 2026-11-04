@@ -5,6 +5,7 @@ import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import { useGridNav } from "../lib/gridnav";
 import "./WordSearch.css";
 
 const GRID = 10;
@@ -83,8 +84,10 @@ interface SavedState {
 }
 
 export default function WordSearch({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, newPuzzle }= useGame<SavedState>(() => ({ found: [], done: false })
-  );
+  const { seed, diff, saved, commit, newPuzzle } = useGame<SavedState>(() => ({
+    found: [],
+    done: false
+  }));
   const { letters, placed } = useMemo(
     () => buildPuzzle(`wordsearch-${seed}`, WORDS[diff]),
     [seed, diff]
@@ -117,6 +120,20 @@ export default function WordSearch({ onExit }: { onExit: () => void }) {
     commit({ found, done }, { outcome: done ? "won" : undefined });
   }
 
+  // Hint: mark one unfound word as found.
+  function hint() {
+    if (saved.done) return;
+    const left = placed.filter((p) => !saved.found.includes(p.word));
+    if (!left.length) return;
+    const pick = left[Math.floor(Math.random() * left.length)];
+    const found = [...saved.found, pick.word];
+    const done = found.length === placed.length;
+    setAnchor(null);
+    commit({ found, done }, { hint: true, outcome: done ? "won" : undefined });
+  }
+
+  const nav = useGridNav();
+
   function startNew(d?: Diff) {
     newPuzzle(d);
     setAnchor(null);
@@ -128,18 +145,29 @@ export default function WordSearch({ onExit }: { onExit: () => void }) {
       <p className="game-hint">
         Tap the first letter of a word, then its last letter.
       </p>
-      <GameTools diff={diff} onDiff={startNew} help={HELP} />
+      <GameTools
+        diff={diff}
+        onDiff={startNew}
+        help={HELP}
+        onHint={saved.done ? undefined : hint}
+      />
 
       <div
         className="ws-grid"
         style={{ "--n": GRID } as CSSProperties}
         role="grid"
         aria-label="Letter grid"
+        {...nav}
       >
         {letters.map((ch, i) => (
           <button
             key={i}
             role="gridcell"
+            data-cell={i}
+            aria-label={`Row ${Math.floor(i / GRID) + 1}, column ${(i % GRID) + 1}, ${ch}${
+              foundCells.has(i) ? ", found" : ""
+            }${anchor === i ? ", selected" : ""}`}
+            aria-selected={anchor === i}
             className={[
               "ws-cell",
               foundCells.has(i) ? "found" : "",
@@ -152,11 +180,13 @@ export default function WordSearch({ onExit }: { onExit: () => void }) {
         ))}
       </div>
 
-      <div className="ws-words">
+      <div className="ws-words" role="list" aria-label="Words to find">
         {placed.map((p) => (
           <span
             key={p.word}
+            role="listitem"
             className={`ws-word${saved.found.includes(p.word) ? " found" : ""}`}
+            aria-label={`${p.word.toLowerCase()}${saved.found.includes(p.word) ? ", found" : ""}`}
           >
             {p.word.toLowerCase()}
           </span>

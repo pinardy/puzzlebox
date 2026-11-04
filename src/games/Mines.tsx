@@ -4,6 +4,7 @@ import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import { useGridNav } from "../lib/gridnav";
 import "./Mines.css";
 
 const LEVELS: Record<Diff, [number, number]> = {
@@ -14,7 +15,8 @@ const LEVELS: Record<Diff, [number, number]> = {
 const HELP =
   "Numbers count mines in the eight touching squares; the first tap is " +
   "always safe. Long-press to plant a flag, and tap a satisfied number to " +
-  "reveal its remaining neighbours at once.";
+  "reveal its remaining neighbours at once. On a keyboard, arrows move, " +
+  "Enter digs and Shift+Enter flags.";
 
 function neighbours(idx: number, n: number): number[] {
   const r = Math.floor(idx / n), c = idx % n;
@@ -61,7 +63,7 @@ function fresh(n: number): SavedState {
 }
 
 export default function Mines({ onExit }: { onExit: () => void }) {
-  const { seed, diff, saved, commit, finish, undo, canUndo, newPuzzle } =
+  const { seed, diff, saved, commit, commitHint, finish, undo, canUndo, newPuzzle } =
     useGame<SavedState>((_s, d) => fresh(LEVELS[d][0]));
   const [n, mineCount] = LEVELS[diff];
   const [flagMode, setFlagMode] = useState(false);
@@ -155,6 +157,31 @@ export default function Mines({ onExit }: { onExit: () => void }) {
     revealCells([idx]);
   }
 
+  /** Hint: open one safe square, preferring one beside the open area so it
+   *  is a usable lead. The layout is fixed after the first dig, so this is
+   *  exact; before then there is nothing to hint. */
+  function hint() {
+    if (saved.done || !isMine || !counts) return;
+    const safe = (i: number) => !saved.revealed[i] && !isMine[i];
+    const all = [...Array(n * n).keys()].filter(safe);
+    if (!all.length) return;
+    const edge = all.filter((i) => neighbours(i, n).some((j) => saved.revealed[j]));
+    const pool = edge.length ? edge : all;
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+    const revealed = saved.revealed.slice();
+    const flagged = saved.flagged.slice();
+    flagged[pick] = false;
+    floodReveal(pick, isMine, counts, revealed);
+    commitHint({ ...saved, revealed, flagged });
+  }
+
+  // Keyboard: Enter / Space digs (or chords) like a tap, Shift+Enter flags.
+  const nav = useGridNav((i, alt) => {
+    longPressed.current = false;
+    if (alt) toggleFlag(i);
+    else tap(i);
+  });
+
   const flagsUsed = saved.flagged.filter(Boolean).length;
 
   return (
@@ -169,6 +196,7 @@ export default function Mines({ onExit }: { onExit: () => void }) {
         help={HELP}
         onUndo={undo}
         canUndo={canUndo && !saved.done}
+        onHint={saved.done || saved.firstTap === null ? undefined : hint}
       />
 
       <div className="lights-meta">
@@ -180,6 +208,7 @@ export default function Mines({ onExit }: { onExit: () => void }) {
         style={{ "--n": n } as CSSProperties}
         role="grid"
         aria-label="Minefield"
+        {...nav}
       >
         {saved.revealed.map((rev, i) => {
           const mine = isMine?.[i] ?? false;
@@ -188,6 +217,18 @@ export default function Mines({ onExit }: { onExit: () => void }) {
             <button
               key={i}
               role="gridcell"
+              data-cell={i}
+              aria-label={`Row ${Math.floor(i / n) + 1}, column ${(i % n) + 1}, ${
+                rev
+                  ? mine
+                    ? "mine"
+                    : cnt > 0
+                      ? `${cnt} mine${cnt === 1 ? "" : "s"} around`
+                      : "clear"
+                  : saved.flagged[i]
+                    ? "flagged"
+                    : "hidden"
+              }`}
               className={[
                 "mine-cell",
                 rev ? "open" : "",

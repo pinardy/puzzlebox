@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { makeRng, shuffled } from "../lib/rng";
 import { WORDS3, WORDS4, WORDS5, Entry } from "../lib/crossword";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import { useGridNav } from "../lib/gridnav";
 import "./MiniCrossword.css";
 
 const N = 5;
@@ -240,6 +241,8 @@ export default function MiniCrossword({ onExit }: { onExit: () => void }) {
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
+      // Enter / Space on a focused square was already handled by the grid.
+      if (e.defaultPrevented) return;
       if (/^[a-zA-Z]$/.test(e.key)) type(e.key.toLowerCase());
       else if (e.key === "Backspace" || e.key === "Delete") erase();
       else if (e.key === " ") {
@@ -251,6 +254,25 @@ export default function MiniCrossword({ onExit }: { onExit: () => void }) {
     return () => window.removeEventListener("keydown", h);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cursor, saved, activeSlot]);
+
+  // Keyboard: arrows walk the squares and carry the cursor with them;
+  // Enter / Space on the cursor square flips across/down, like a tap.
+  const nav = useGridNav((i) => tapCell(i));
+  const gridEl = useRef<HTMLDivElement | null>(null);
+  function gridKey(e: ReactKeyboardEvent<HTMLElement>) {
+    nav.onKeyDown(e);
+    if (!e.key.startsWith("Arrow")) return;
+    const at = (document.activeElement as HTMLElement | null)?.dataset.cell;
+    if (at !== undefined) setCursor(Number(at));
+  }
+  // Typing moves the cursor along the word; keep keyboard focus with it.
+  useEffect(() => {
+    const root = gridEl.current;
+    const active = document.activeElement as HTMLElement | null;
+    if (!root || !active || !root.contains(active) || active.dataset.cell === String(cursor))
+      return;
+    root.querySelector<HTMLElement>(`[data-cell="${cursor}"]`)?.focus();
+  }, [cursor]);
 
   function startNew() {
     newPuzzle();
@@ -296,14 +318,29 @@ export default function MiniCrossword({ onExit }: { onExit: () => void }) {
         onHint={saved.done ? undefined : hint}
       />
 
-      <div className="xw-grid" role="grid" aria-label="Crossword">
+      <div
+        className="xw-grid"
+        role="grid"
+        aria-label="Crossword"
+        ref={(el) => {
+          gridEl.current = el;
+          nav.ref(el);
+        }}
+        onFocus={nav.onFocus}
+        onKeyDown={gridKey}
+      >
         {puzzle.black.map((isBlack, i) => {
-          if (isBlack) return <span key={i} className="xw-black" />;
+          if (isBlack) return <span key={i} className="xw-black" aria-hidden="true" />;
           const inWord = activeSlot.cells.includes(i);
           return (
             <button
               key={i}
               role="gridcell"
+              data-cell={i}
+              aria-selected={cursor === i}
+              aria-label={`Row ${Math.floor(i / N) + 1}, column ${(i % N) + 1}${
+                numAt.has(i) ? `, clue ${numAt.get(i)}` : ""
+              }, ${saved.entries[i] ? saved.entries[i].toUpperCase() : "empty"}`}
               className={[
                 "xw-cell",
                 cursor === i ? "selected" : "",
@@ -326,7 +363,7 @@ export default function MiniCrossword({ onExit }: { onExit: () => void }) {
         {activeSlot.clue}
       </div>
 
-      <div className="keyboard">
+      <div className="keyboard" role="group" aria-label="Keyboard">
         {KEY_ROWS.map((row, i) => (
           <div className="key-row" key={row}>
             {row.split("").map((k) => (
@@ -335,7 +372,7 @@ export default function MiniCrossword({ onExit }: { onExit: () => void }) {
               </button>
             ))}
             {i === 2 && (
-              <button className="key key-wide" onClick={erase}>
+              <button className="key key-wide" onClick={erase} aria-label="Delete letter">
                 ⌫
               </button>
             )}

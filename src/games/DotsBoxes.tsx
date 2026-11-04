@@ -220,7 +220,7 @@ export default function DotsBoxes({ onExit }: { onExit: () => void }) {
         {Array.from({ length: span * span }, (_, k) => {
           const gr = Math.floor(k / span), gc = k % span;
           if (gr % 2 === 0 && gc % 2 === 0)
-            return <span key={k} className="db-dot" />;
+            return <span key={k} className="db-dot" aria-hidden="true" />;
           if (gr % 2 === 0) {
             const i = (gr / 2) * n + (gc - 1) / 2;
             return (
@@ -229,7 +229,9 @@ export default function DotsBoxes({ onExit }: { onExit: () => void }) {
                 className={`db-edge db-h${saved.h[i] ? " on" : ""}`}
                 disabled={saved.h[i] || !yourTurn}
                 onClick={() => play({ kind: "h", i }, 0)}
-                aria-label="Horizontal line"
+                aria-label={`Horizontal line, row ${gr / 2 + 1}, between dots ${(gc + 1) / 2} and ${
+                  (gc + 3) / 2
+                }${saved.h[i] ? ", drawn" : ""}`}
               />
             );
           }
@@ -241,14 +243,23 @@ export default function DotsBoxes({ onExit }: { onExit: () => void }) {
                 className={`db-edge db-v${saved.v[i] ? " on" : ""}`}
                 disabled={saved.v[i] || !yourTurn}
                 onClick={() => play({ kind: "v", i }, 0)}
-                aria-label="Vertical line"
+                aria-label={`Vertical line, column ${gc / 2 + 1}, between dots ${(gr + 1) / 2} and ${
+                  (gr + 3) / 2
+                }${saved.v[i] ? ", drawn" : ""}`}
               />
             );
           }
           const b = ((gr - 1) / 2) * n + (gc - 1) / 2;
           const o = saved.owner[b];
           return (
-            <span key={k} className={`db-box${o === 0 ? " you" : o === 1 ? " them" : ""}`}>
+            <span
+              key={k}
+              className={`db-box${o === 0 ? " you" : o === 1 ? " them" : ""}`}
+              role="img"
+              aria-label={`Box row ${Math.floor(b / n) + 1}, column ${(b % n) + 1}: ${
+                o === 0 ? "yours" : o === 1 ? "opponent's" : "open"
+              }`}
+            >
               {o === 0 ? "●" : o === 1 ? "○" : ""}
             </span>
           );

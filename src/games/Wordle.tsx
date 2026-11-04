@@ -10,6 +10,12 @@ import "./Wordle.css";
 
 const ROWS = 6;
 const LEN: Record<Diff, number> = { easy: 4, medium: 5, hard: 5 };
+const STATE_LABEL: Record<LetterState, string> = {
+  correct: "correct position",
+  present: "in the word, wrong position",
+  absent: "not in the word"
+};
+
 const KEY_ROWS = ["qwertyuiop", "asdfghjkl", "zxcvbnm"];
 const HELP =
   "Guess the word within six tries. Green is the right letter in the " +
@@ -176,7 +182,12 @@ export default function Wordle({ onExit }: { onExit: () => void }) {
         {anyRevealed && !saved.done && (
           <div className="word-row" role="row" aria-label="Revealed letters">
             {revealed.map((c, i) => (
-              <div key={i} className={`word-cell hint-reveal${c ? " filled" : ""}`}>
+              <div
+                key={i}
+                role="gridcell"
+                aria-label={c ? `Letter ${i + 1} is ${c}` : `Letter ${i + 1} unknown`}
+                className={`word-cell hint-reveal${c ? " filled" : ""}`}
+              >
                 {c ?? ""}
               </div>
             ))}
@@ -197,6 +208,13 @@ export default function Wordle({ onExit }: { onExit: () => void }) {
                 <div
                   key={c}
                   role="gridcell"
+                  aria-label={
+                    letters[c]
+                      ? `Row ${r + 1}, letter ${letters[c]}${
+                          score ? `, ${STATE_LABEL[score[c]]}` : ""
+                        }`
+                      : `Row ${r + 1}, empty`
+                  }
                   className={`word-cell${score ? ` is-${score[c]}` : ""}${
                     letters[c] ? " filled" : ""
                   }`}
@@ -211,7 +229,7 @@ export default function Wordle({ onExit }: { onExit: () => void }) {
         {saved.done && !saved.won && (
           <div className="word-row" role="row" aria-label="The answer">
             {answer.split("").map((c, i) => (
-              <div key={i} className="word-cell filled answer-cell">
+              <div key={i} role="gridcell" className="word-cell filled answer-cell">
                 {c}
               </div>
             ))}
@@ -221,7 +239,7 @@ export default function Wordle({ onExit }: { onExit: () => void }) {
 
       <Toast message={toast} />
 
-      <div className="keyboard">
+      <div className="keyboard" role="group" aria-label="Keyboard">
         {KEY_ROWS.map((row, i) => (
           <div className="key-row" key={row}>
             {i === 2 && (
@@ -237,13 +255,18 @@ export default function Wordle({ onExit }: { onExit: () => void }) {
                   key={k}
                   className={`key${st ? ` is-${st}` : ""}`}
                   onClick={() => onKey(K)}
+                  aria-label={st ? `${K}, ${STATE_LABEL[st]}` : K}
                 >
                   {K}
                 </button>
               );
             })}
             {i === 2 && (
-              <button className="key key-wide" onClick={() => onKey("back")}>
+              <button
+                className="key key-wide"
+                onClick={() => onKey("back")}
+                aria-label="Delete letter"
+              >
                 ⌫
               </button>
             )}

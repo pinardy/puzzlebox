@@ -19,6 +19,7 @@ import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result, Toast } from "./ui";
+import { useGridNav } from "../lib/gridnav";
 import "./Boggle.css";
 
 const SIZE: Record<Diff, number> = { easy: 4, medium: 4, hard: 5 };
@@ -124,6 +125,8 @@ export default function Boggle({ onExit }: { onExit: () => void }) {
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
+      // A key the focused grid cell already handled (Enter / Space taps it).
+      if (e.defaultPrevented) return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (e.key === "Enter") submit();
       else if (e.key === "Backspace") {
@@ -154,6 +157,10 @@ export default function Boggle({ onExit }: { onExit: () => void }) {
     setHint(pick);
     commitHint({ ...saved });
   }
+
+  // Arrows walk the grid; Enter / Space on a cell taps it (and only that —
+  // the window handler skips a handled key, so it doesn't also submit).
+  const nav = useGridNav((i) => tap(i));
 
   function startNew(d?: Diff) {
     newPuzzle(d);
@@ -193,13 +200,14 @@ export default function Boggle({ onExit }: { onExit: () => void }) {
       </div>
 
       <div className="bg-board" style={{ "--n": n } as CSSProperties}>
-        <div className="bg-grid" role="grid" aria-label="Letter grid">
+        <div className="bg-grid" role="grid" aria-label="Letter grid" {...nav}>
           {board.cells.map((cell, i) => {
             const step = shown.indexOf(i);
             return (
               <button
                 key={i}
                 role="gridcell"
+                data-cell={i}
                 className={[
                   "bg-cell",
                   step >= 0 ? "on" : "",

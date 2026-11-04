@@ -4,6 +4,7 @@ import { Diff } from "../lib/storage";
 import { useGame } from "../lib/useGame";
 import { GameHeader } from "./GameHeader";
 import { GameTools, Result } from "./ui";
+import { useGridNav } from "../lib/gridnav";
 import "./SameGame.css";
 
 const CONF: Record<Diff, { w: number; h: number; colors: number }> = {
@@ -12,6 +13,7 @@ const CONF: Record<Diff, { w: number; h: number; colors: number }> = {
   hard: { w: 12, h: 12, colors: 5 }
 };
 const COLORS = ["#e05252", "#3b6fe0", "#2e9e6b", "#e0a23b", "#7857c9"];
+const COLOR_NAMES = ["red", "blue", "green", "amber", "purple"];
 const HELP =
   "Tap any group of two or more touching tiles of one colour to pop it. " +
   "Tiles fall, empty columns close up. Bigger groups score far more — " +
@@ -116,6 +118,9 @@ export default function SameGame({ onExit }: { onExit: () => void }) {
     );
   }
 
+  // Arrows walk the board; Enter / Space pops (the button's own click).
+  const nav = useGridNav();
+
   return (
     <div className="game game-samegame">
       <GameHeader title="SameGame" onExit={onExit} onNew={() => newPuzzle()} />
@@ -139,15 +144,19 @@ export default function SameGame({ onExit }: { onExit: () => void }) {
         style={{ "--w": w, "--h": h } as CSSProperties}
         role="grid"
         aria-label="SameGame board"
+        {...nav}
       >
         {saved.cells.map((v, i) => (
           <button
             key={i}
             role="gridcell"
+            data-cell={i}
+            aria-label={`Row ${Math.floor(i / w) + 1}, column ${(i % w) + 1}, ${
+              v === null ? "empty" : COLOR_NAMES[v]
+            }`}
             className={`sg-cell${v === null ? " empty" : ""}`}
             style={v !== null ? ({ "--tile": COLORS[v] } as CSSProperties) : undefined}
             onClick={() => tap(i)}
-            tabIndex={-1}
           />
         ))}
       </div>

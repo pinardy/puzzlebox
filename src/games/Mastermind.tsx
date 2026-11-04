@@ -10,6 +10,7 @@ const ALL_COLORS = [
   "#e05252", "#e0a23b", "#2e9e6b", "#3b6fe0", "#7857c9", "#e06fb2",
   "#2a9d8f", "#8a5a2b"
 ];
+const COLOR_NAMES = ["red", "amber", "green", "blue", "purple", "pink", "teal", "brown"];
 const COLOR_COUNT: Record<Diff, number> = { easy: 5, medium: 6, hard: 8 };
 const CODE_LEN: Record<Diff, number> = { easy: 4, medium: 4, hard: 5 };
 const MAX_GUESSES = 10;
@@ -85,7 +86,12 @@ export default function Mastermind({ onExit }: { onExit: () => void }) {
         {saved.guesses.map((g, i) => {
           const { exact, near } = score(g, code);
           return (
-            <div key={i} className="mm-row">
+            <div
+              key={i}
+              className="mm-row"
+              role="group"
+              aria-label={`Guess ${i + 1}: ${g.map((c) => COLOR_NAMES[c]).join(", ")}. ${exact} right spot, ${near} wrong spot`}
+            >
               {g.map((c, j) => (
                 <span key={j} className="mm-peg" data-c={c + 1} style={{ background: ALL_COLORS[c] }} />
               ))}
@@ -105,7 +111,9 @@ export default function Mastermind({ onExit }: { onExit: () => void }) {
                 data-c={current[j] !== undefined ? current[j] + 1 : undefined}
                 style={current[j] !== undefined ? { background: ALL_COLORS[current[j]] } : undefined}
                 onClick={() => setCurrent((c) => c.slice(0, j))}
-                aria-label={`Slot ${j + 1}`}
+                aria-label={`Slot ${j + 1}, ${
+                  current[j] !== undefined ? COLOR_NAMES[current[j]] : "empty"
+                }`}
               />
             ))}
             <span className="mm-feedback mm-count">
@@ -114,7 +122,11 @@ export default function Mastermind({ onExit }: { onExit: () => void }) {
           </div>
         )}
         {saved.done && !saved.won && (
-          <div className="mm-row mm-answer">
+          <div
+            className="mm-row mm-answer"
+            role="group"
+            aria-label={`The code: ${code.map((c) => COLOR_NAMES[c]).join(", ")}`}
+          >
             {code.map((c, j) => (
               <span key={j} className="mm-peg" data-c={c + 1} style={{ background: ALL_COLORS[c] }} />
             ))}
@@ -123,7 +135,7 @@ export default function Mastermind({ onExit }: { onExit: () => void }) {
         )}
       </div>
 
-      <div className="mm-palette">
+      <div className="mm-palette" role="group" aria-label="Colours">
         {ALL_COLORS.slice(0, colors).map((col, i) => (
           <button
             key={col}
@@ -133,7 +145,7 @@ export default function Mastermind({ onExit }: { onExit: () => void }) {
             onClick={() =>
               setCurrent((c) => (c.length < codeLen ? [...c, i] : c))
             }
-            aria-label={`Colour ${i + 1}`}
+            aria-label={`Colour ${i + 1}, ${COLOR_NAMES[i]}`}
           />
         ))}
         <button

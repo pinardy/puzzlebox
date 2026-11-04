@@ -129,7 +129,11 @@ export default function Anagram({ onExit }: { onExit: () => void }) {
       </p>
       <GameTools diff={diff} onDiff={startNew} help={HELP} />
 
-      <div className={`word-grid anagram-slots${shake ? " shake" : ""}`}>
+      <div
+        className={`word-grid anagram-slots${shake ? " shake" : ""}`}
+        role="group"
+        aria-label="Answer slots"
+      >
         <div className="word-row">
           {slots.map((t, i) => (
             <button
@@ -138,6 +142,9 @@ export default function Anagram({ onExit }: { onExit: () => void }) {
                 saved.done && won ? " is-correct" : ""
               }`}
               onClick={() => tapSlot(i)}
+              aria-label={`Slot ${i + 1}, ${t !== null ? scrambled[t] : "empty"}${
+                saved.done && won ? ", correct" : ""
+              }`}
             >
               {t !== null ? scrambled[t] : ""}
             </button>
@@ -145,13 +152,14 @@ export default function Anagram({ onExit }: { onExit: () => void }) {
         </div>
       </div>
 
-      <div className="anagram-rack">
+      <div className="anagram-rack" role="group" aria-label="Letter tiles">
         {scrambled.map((ch, t) => (
           <button
             key={t}
             className="key anagram-tile"
             disabled={slots.includes(t) || saved.done}
             onClick={() => tapTile(t)}
+            aria-label={`Tile ${ch}${slots.includes(t) ? ", placed" : ""}`}
           >
             {ch}
           </button>

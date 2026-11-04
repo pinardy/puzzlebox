@@ -12,6 +12,16 @@ const HELP =
   "may never sit on a smaller one. Tap a peg to lift its top disk, then " +
   "tap where it should go. The optimal solve takes 2ⁿ−1 moves.";
 
+/** The first move of the shortest way to stack disks 1..k on `target`:
+ *  if disk k is already there, look at the smaller ones; otherwise the
+ *  smaller ones must first clear to the third peg, then k moves. */
+function nextMove(pegs: number[][], k: number, target: number): [number, number] | null {
+  if (k === 0) return null;
+  const from = pegs.findIndex((p) => p.includes(k));
+  if (from === target) return nextMove(pegs, k - 1, target);
+  return nextMove(pegs, k - 1, 3 - from - target) ?? [from, target];
+}
+
 interface SavedState {
   pegs: number[][]; // each peg: disk sizes, bottom → top
   moves: number;
@@ -62,6 +72,28 @@ export default function Hanoi({ onExit }: { onExit: () => void }) {
     commit({ pegs, moves: saved.moves + 1, done }, { outcome: done ? "won" : undefined });
   }
 
+  /** Hint: make the next move of the optimal solve from here. */
+  function hint() {
+    if (saved.done) return;
+    const mv = nextMove(saved.pegs, disks, 2);
+    if (!mv) return;
+    const pegs = saved.pegs.map((p) => p.slice());
+    pegs[mv[1]].push(pegs[mv[0]].pop()!);
+    setPicked(null);
+    const done = pegs[2].length === disks;
+    commit({ pegs, moves: saved.moves + 1, done }, { hint: true, outcome: done ? "won" : undefined });
+  }
+
+  // Digits 1–3 tap a peg; Tab / Enter work on the peg buttons as usual.
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key === "1" || e.key === "2" || e.key === "3") tap(Number(e.key) - 1);
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  });
+
   function startNew(d?: Diff) {
     newPuzzle(d);
     setPicked(null);
@@ -80,6 +112,7 @@ export default function Hanoi({ onExit }: { onExit: () => void }) {
         help={HELP}
         onUndo={undo}
         canUndo={canUndo && !saved.done}
+        onHint={saved.done ? undefined : hint}
       />
 
       <div className="lights-meta">
@@ -95,13 +128,16 @@ export default function Hanoi({ onExit }: { onExit: () => void }) {
         </button>
       </div>
 
-      <div className="hanoi-board">
+      <div className="hanoi-board" role="group" aria-label="Pegs">
         {saved.pegs.map((peg, p) => (
           <button
             key={p}
             className={`hanoi-peg${picked === p ? " picked" : ""}`}
             onClick={() => tap(p)}
-            aria-label={`Peg ${p + 1}, ${peg.length} disks`}
+            aria-pressed={picked === p}
+            aria-label={`Peg ${p + 1}, ${
+              peg.length ? `disks bottom to top: ${peg.join(", ")}` : "empty"
+            }${picked === p ? ", top disk lifted" : ""}`}
           >
             <span className="hanoi-pole" />
             <span className="hanoi-stack">
